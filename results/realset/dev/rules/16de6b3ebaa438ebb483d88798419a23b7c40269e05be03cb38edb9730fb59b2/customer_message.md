@@ -1,1 +1,1 @@
-Before printing, a person on our team will check this: the art sits on a solid #0a182d background, which we can remove so the sticker is cut to the art's shape. Our automatic fix did not apply: The background is not one flat colour (stars, texture or scattered detail), so the cut line needs a person. We will send you an updated proof.
+This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.

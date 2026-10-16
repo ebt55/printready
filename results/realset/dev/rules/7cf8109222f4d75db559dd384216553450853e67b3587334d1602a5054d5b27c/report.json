@@ -2,15 +2,12 @@
   "mode": "rules",
   "outcome": "needs_person",
   "handoff_reason": null,
-  "customer_message": "Before printing, a person on our team will check this: the art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out. We will send you an updated proof.",
+  "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. Before printing, a person on our team will check this: the smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering. We ...",
   "person_notes": [
-    "background fail (person): The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
-    "soft_alpha not verified: needs background removal first",
-    "edge_crop not verified: needs background removal first",
-    "islands not verified: needs background removal first"
+    "text_small warn (person): The smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering."
   ],
-  "cost_usd": 0.0,
-  "elapsed_s": 0.031,
+  "cost_usd": 0.003747,
+  "elapsed_s": 10.885,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -20,15 +17,37 @@
   "art": {
     "width": 1024,
     "height": 1024,
-    "ppi": 365.7142857142857,
+    "ppi": 327.68,
     "offset": [
       0,
       0
     ],
     "subject_px": null,
     "border_in": null,
-    "cut_px": null,
-    "history": [],
+    "cut_px": 966628,
+    "history": [
+      {
+        "fix": "fit_shape",
+        "ok": true,
+        "damaged": false,
+        "note": "Changed the order to a rounded-rectangle sticker of the whole image (3.00 x 3.00 in).",
+        "measured": {
+          "product": "rounded_rect",
+          "ppi": 327.68,
+          "finished_w_in": 3.0,
+          "finished_h_in": 3.0,
+          "bleed_in": 0.0625,
+          "corner_radius_in": 0.125
+        },
+        "guard": {
+          "metric": "image_px_changed",
+          "label": "image pixels changed",
+          "value": 0,
+          "limit": 0,
+          "passed": true
+        }
+      }
+    ],
     "meta": {
       "path": "C:\\Users\\ebin\\claude-ground\\printready\\data\\realset\\dev\\images\\7cf8109222f4d75db559dd384216553450853e67b3587334d1602a5054d5b27c.jpg",
       "bytes": 301509,
@@ -36,9 +55,32 @@
       "real_alpha": false,
       "width": 1024,
       "height": 1024
-    }
+    },
+    "shape": "rounded_rect"
   },
-  "history": [],
+  "history": [
+    {
+      "fix": "fit_shape",
+      "ok": true,
+      "damaged": false,
+      "note": "Changed the order to a rounded-rectangle sticker of the whole image (3.00 x 3.00 in).",
+      "measured": {
+        "product": "rounded_rect",
+        "ppi": 327.68,
+        "finished_w_in": 3.0,
+        "finished_h_in": 3.0,
+        "bleed_in": 0.0625,
+        "corner_radius_in": 0.125
+      },
+      "guard": {
+        "metric": "image_px_changed",
+        "label": "image pixels changed",
+        "value": 0,
+        "limit": 0,
+        "passed": true
+      }
+    }
+  ],
   "before": {
     "status": "fail",
     "findings": [
@@ -126,7 +168,7 @@
     ]
   },
   "after": {
-    "status": "fail",
+    "status": "warn",
     "findings": [
       {
         "check": "file",
@@ -145,74 +187,176 @@
       {
         "check": "resolution",
         "status": "pass",
-        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "message": "At 3 in this art prints at 328 PPI, meeting the 300 PPI target; lines thinner than 4.6 px print under 1 pt.",
         "measured": {
-          "ppi": 365.71,
-          "basis": "canvas",
-          "max_size_in_at_target": 3.613,
-          "max_size_in_at_floor": 7.027,
-          "one_pt_px": 5.08
+          "ppi": 327.68,
+          "basis": "image",
+          "max_size_in_at_target": 3.288,
+          "max_size_in_at_floor": 6.702,
+          "one_pt_px": 4.55
         },
         "fixer": "none",
         "boxes": []
       },
       {
         "check": "background",
-        "status": "fail",
-        "message": "The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
         "measured": {
-          "real_alpha": false,
-          "colour_rgb": [
-            47,
-            21,
-            8
-          ],
-          "colour_hex": "#2f1508",
-          "colour_lab": [
-            10.46,
-            12.29,
-            11.69
-          ],
-          "ring_uniform_frac": 0.1474,
-          "ring_band_px": 20
+          "applies": false
         },
-        "fixer": "person",
+        "fixer": "none",
         "boxes": []
       },
       {
         "check": "soft_alpha",
-        "status": "skip",
-        "message": "Not checked yet: the background has to be removed first.",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
         "measured": {
-          "reason": "needs background removal first"
+          "applies": false
         },
         "fixer": "none",
         "boxes": []
       },
       {
         "check": "edge_crop",
-        "status": "skip",
-        "message": "Not checked yet: the background has to be removed first.",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
         "measured": {
-          "reason": "needs background removal first"
+          "applies": false
         },
         "fixer": "none",
         "boxes": []
       },
       {
         "check": "islands",
-        "status": "skip",
-        "message": "Not checked yet: the background has to be removed first.",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
         "measured": {
-          "reason": "needs background removal first"
+          "applies": false
         },
         "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "product_fit",
+        "status": "warn",
+        "message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art.",
+        "measured": {
+          "applies": true,
+          "product": "rounded_rect",
+          "finished_w_in": 3.0,
+          "finished_h_in": 3.0,
+          "bleed_in": 0.0625,
+          "corner_radius_in": 0.125
+        },
+        "fixer": "customer",
+        "boxes": []
+      },
+      {
+        "check": "text_garbled",
+        "status": "pass",
+        "message": "The text reads correctly: \"MAPLE & MOSS\", \"COFFEE\".",
+        "measured": {
+          "items": [
+            {
+              "seen": "MAPLE & MOSS",
+              "intended": "MAPLE & MOSS",
+              "letters": "M A P L E / & / M O S S",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.24,
+                0.48,
+                0.76,
+                0.56
+              ],
+              "cap_height_px": 3.9,
+              "cap_height_pt": 0.86
+            },
+            {
+              "seen": "COFFEE",
+              "intended": "COFFEE",
+              "letters": "C O F F E E",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.32,
+                0.56,
+                0.68,
+                0.64
+              ],
+              "cap_height_px": 34.2,
+              "cap_height_pt": 7.51
+            }
+          ],
+          "notes": "Text matches request exactly with no issues.",
+          "model": "grok-4.3",
+          "request_sha256": "caeeaccc1d176b748a481e4bea72649299de81abfa32697cedca0d4265ca45de"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "text_small",
+        "status": "warn",
+        "message": "The smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering.",
+        "measured": {
+          "items": [
+            {
+              "seen": "MAPLE & MOSS",
+              "intended": "MAPLE & MOSS",
+              "letters": "M A P L E / & / M O S S",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.24,
+                0.48,
+                0.76,
+                0.56
+              ],
+              "cap_height_px": 3.9,
+              "cap_height_pt": 0.86
+            },
+            {
+              "seen": "COFFEE",
+              "intended": "COFFEE",
+              "letters": "C O F F E E",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.32,
+                0.56,
+                0.68,
+                0.64
+              ],
+              "cap_height_px": 34.2,
+              "cap_height_pt": 7.51
+            }
+          ],
+          "notes": "Text matches request exactly with no issues.",
+          "model": "grok-4.3",
+          "request_sha256": "caeeaccc1d176b748a481e4bea72649299de81abfa32697cedca0d4265ca45de",
+          "min_cap_height_pt": 0.86,
+          "min_text_pt_equiv": 1.23,
+          "threshold_cap_pt": 4.2,
+          "min_size_in_for_text": 13.87,
+          "max_size_in_at_floor": 6.32,
+          "unmeasured": 0
+        },
+        "fixer": "person",
         "boxes": []
       }
     ]
   },
   "outputs": {
+    "step-1": "step-1-fit_shape.png",
     "fixed": "fixed.png",
+    "cutline": "cutline.svg",
     "proof": "proof.png",
     "overlay": "overlay.png",
     "customer_message": "customer_message.md",

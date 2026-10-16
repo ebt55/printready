@@ -46,6 +46,8 @@ class Profile:
     damage_max_frac: float
     max_pieces: float
     max_specks: float
+    bleed_in: float
+    shape_corner_radius_in: float
     sources: dict[str, str] = field(default_factory=dict, compare=False, repr=False)  # key -> URL | "convention"
     whys: dict[str, str] = field(default_factory=dict, compare=False, repr=False)  # key -> one-line reason
 

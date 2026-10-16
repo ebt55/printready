@@ -11,13 +11,15 @@ from __future__ import annotations
 
 import numpy as np
 
-from printready.checks._common import skip_needs_mask
+from printready.checks._common import not_applicable, skip_needs_mask
 from printready.geometry import bbox, components, dilate, fill_holes
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
 
 
 def check_islands(art: Artwork, spec: Spec, profile: Profile) -> Finding:
+    if art.shape == "rounded_rect":
+        return not_applicable("islands")
     if art.subject is None:
         return skip_needs_mask("islands")
     subject, ppi = art.subject, art.ppi

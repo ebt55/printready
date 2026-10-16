@@ -35,6 +35,8 @@ UNITS = {
     "damage_max_frac": "{:.0%}",
     "max_pieces": "{:g} pieces",
     "max_specks": "{:g} specks",
+    "bleed_in": "{:g} in",
+    "shape_corner_radius_in": "{:g} in",
 }
 
 # One line per check: what it measures and which rules decide it.
@@ -52,6 +54,8 @@ CHECKS = {
     "auto when they join within max_bridge_border_in and number at most max_pieces.",
     "text_garbled": "Vision model (optional): misspelled or garbled words fail for a person.",
     "text_small": "Vision model (optional): cap height / cap_height_ratio under min_text_pt warns.",
+    "product_fit": "Only after fit_shape: warns (customer) that the order became a whole-image rounded rectangle, "
+    "offering a person cutout instead. The four cut-around-the-art checks then pass as not applicable.",
 }
 
 # One line per fix: which rules bound it.
@@ -64,6 +68,8 @@ FIXES = {
     "bridge_islands": "Grows the border up to max_bridge_border_in until the cut is one piece. Guard: art pixels bit-identical.",
     "pad_canvas": "Adds transparent margin for a border up to max_bridge_border_in; refused when the art is cut off. "
     "Guard: art pixels bit-identical.",
+    "fit_shape": "For scenes: a whole-image rounded rectangle, cut bleed_in inside the canvas with "
+    "shape_corner_radius_in corners; PPI = canvas long side / (size + 2 x bleed_in). Guard: no image pixel changes.",
 }
 
 

@@ -8,18 +8,19 @@ choosing a smaller size, unless even a 1 in sticker would be under the floor (pe
 from __future__ import annotations
 
 from printready.checks._common import rounded
+from printready.geometry import size_margin_in
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
 
 
 def check_resolution(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     ppi = art.ppi
-    border = profile.border_in
-    long_px = ppi * (spec.size_in - 2 * border)  # the bbox long side that set ppi
-    at_target = long_px / profile.ppi_target + 2 * border
-    at_floor = long_px / profile.ppi_floor + 2 * border
+    margin = size_margin_in(art.shape, profile)  # border added (die-cut) or bleed trimmed (rectangle)
+    long_px = ppi * (spec.size_in - margin)  # the pixel length that set ppi
+    at_target = long_px / profile.ppi_target + margin
+    at_floor = long_px / profile.ppi_floor + margin
     one_pt_px = profile.pt_to_px(profile.min_line_pt, ppi)
-    basis = "subject" if art.subject is not None else "canvas"
+    basis = "image" if art.shape == "rounded_rect" else ("subject" if art.subject is not None else "canvas")
     measured = {
         "ppi": rounded(ppi, 2),
         "basis": basis,

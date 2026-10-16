@@ -5,7 +5,7 @@
   "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. At 3 in it prints at 180 PPI; at 1.9 in or smaller it is fully sharp. Keep 3 in or choose a smaller size. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
   "cost_usd": 0.0,
-  "elapsed_s": 0.372,
+  "elapsed_s": 0.404,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -81,7 +81,8 @@
       "real_alpha": false,
       "width": 1024,
       "height": 1024
-    }
+    },
+    "shape": "die_cut"
   },
   "history": [
     {

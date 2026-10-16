@@ -1,1 +1,1 @@
-Before printing, a person on our team will check this: the art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out. We will send you an updated proof.
+This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.

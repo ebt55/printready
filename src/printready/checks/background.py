@@ -6,13 +6,15 @@ off (auto); gradients, textures and photos need a person."""
 
 from __future__ import annotations
 
-from printready.checks._common import rounded
+from printready.checks._common import not_applicable, rounded
 from printready.geometry import ring_uniformity
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
 
 
 def check_background(art: Artwork, spec: Spec, profile: Profile) -> Finding:
+    if art.shape == "rounded_rect":
+        return not_applicable("background")
     if art.subject is not None:
         removed = any(s.fix == "remove_background" and s.ok for s in art.history)
         msg = "The background was removed." if removed else "The background is transparent."

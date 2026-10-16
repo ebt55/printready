@@ -43,12 +43,27 @@ def long_side_px(mask: np.ndarray) -> int:
     return 0 if box is None else max(box[2] - box[0], box[3] - box[1])
 
 
-def ppi_for_long_side(long_px: float, spec: Spec, profile: Profile) -> float:
-    """PPI when `long_px` pixels print across spec.size_in minus the standard border on both sides."""
-    printable_in = spec.size_in - 2 * profile.border_in
+def size_margin_in(shape: str, profile: Profile) -> float:
+    """Inches the finished sticker adds around the measured pixels (long side): a die-cut adds the
+    white border on both sides; a whole-image sticker trims the bleed off both sides (negative)."""
+    return 2 * profile.border_in if shape == "die_cut" else -2 * profile.bleed_in
+
+
+def ppi_for_long_side(long_px: float, spec: Spec, profile: Profile, shape: str = "die_cut") -> float:
+    """PPI when `long_px` pixels (the subject for a die-cut, the whole canvas for a rounded
+    rectangle) make up spec.size_in once the product's margin is added or trimmed."""
+    printable_in = spec.size_in - size_margin_in(shape, profile)
     if printable_in <= 0:
         raise ValueError(f"a {spec.size_in} in sticker leaves no room inside a {profile.border_in} in border")
     return long_px / printable_in
+
+
+def rounded_rect_mask(h: int, w: int, inset_px: int, radius_px: int) -> np.ndarray:
+    """An HxW rounded rectangle inset `inset_px` from every canvas edge, corners of `radius_px`
+    (a shrunk rectangle grown back by a disc, so the corners are exact arcs)."""
+    core = np.zeros((h, w), bool)
+    core[inset_px + radius_px : h - inset_px - radius_px, inset_px + radius_px : w - inset_px - radius_px] = True
+    return dilate(core, radius_px)
 
 
 def min_margin_px(mask: np.ndarray) -> int | None:

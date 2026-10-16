@@ -13,7 +13,7 @@ from pathlib import Path
 
 from printready.commands import positive_float
 from printready.profile import ProfileError, load_profile
-from printready.types import RunResult, Spec
+from printready.types import SHAPE_LABELS, RunResult, Spec
 
 OUTCOME_LABELS = {"ready": "READY", "fixable": "FIXABLE", "needs_person": "NEEDS A PERSON"}
 
@@ -109,6 +109,7 @@ def run(args: argparse.Namespace) -> int:
             print(f"fix --mode agent: cannot run with {model}: {exc}", file=sys.stderr)
             return 2
 
-    print(f"{args.art.name} as a {spec.size_in:g} in die-cut sticker")
+    product = SHAPE_LABELS[result.art.shape if result.art is not None else "die_cut"]
+    print(f"{args.art.name} as a {spec.size_in:g} in {product}")
     print(summarize(result, out_dir))
     return 1 if result.outcome == "needs_person" else 0

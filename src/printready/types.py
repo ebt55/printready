@@ -24,15 +24,18 @@ Status = Literal["pass", "warn", "fail", "skip"]
 Fixer = Literal["auto", "customer", "person", "none"]  # who can resolve a failed/warned finding
 Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image; also the label set for real images
 Mode = Literal["rules", "agent"]
+Shape = Literal["die_cut", "rounded_rect"]  # the product: cut around the art, or the whole image
 
 STATUSES: tuple[str, ...] = get_args(Status)
 FIXERS: tuple[str, ...] = get_args(Fixer)
 OUTCOMES: tuple[str, ...] = get_args(Outcome)
 MODES: tuple[str, ...] = get_args(Mode)
+SHAPES: tuple[str, ...] = get_args(Shape)
+SHAPE_LABELS = {"die_cut": "die-cut sticker", "rounded_rect": "rounded-rectangle sticker"}
 PRODUCTS: tuple[str, ...] = ("die_cut",)  # v1 scope
 
-# add_border is standard production, not a correction.
-CORRECTIVE_FIXES: tuple[str, ...] = ("remove_background", "bridge_islands", "pad_canvas")
+# add_border is standard production, not a correction; fit_shape changes the product.
+CORRECTIVE_FIXES: tuple[str, ...] = ("remove_background", "bridge_islands", "pad_canvas", "fit_shape")
 
 DETERMINISTIC_CHECK_IDS: tuple[str, ...] = (
     "file",
@@ -43,7 +46,9 @@ DETERMINISTIC_CHECK_IDS: tuple[str, ...] = (
     "islands",
 )
 VISION_CHECK_IDS: tuple[str, ...] = ("text_garbled", "text_small")
-CHECK_IDS: tuple[str, ...] = DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS
+# Reported only when fit_shape changed the product, so die-cut reports keep their six checks.
+PRODUCT_CHECK_IDS: tuple[str, ...] = ("product_fit",)
+CHECK_IDS: tuple[str, ...] = DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS + PRODUCT_CHECK_IDS
 
 # Severity order for Report.status(); "skip" is not ranked because it is ignored.
 _SEVERITY = {"pass": 0, "warn": 1, "fail": 2}
@@ -194,6 +199,7 @@ class Artwork:
     cut: np.ndarray | None = None  # HxW bool cut mask, None until built
     history: list[Step] = field(default_factory=list)
     meta: dict[str, Any] = field(default_factory=dict)  # path, bytes, format; set by load_artwork
+    shape: Shape = "die_cut"  # set to "rounded_rect" only by fit_shape
 
     def __post_init__(self) -> None:
         if self.rgba.ndim != 3 or self.rgba.shape[2] != 4 or self.rgba.dtype != np.uint8:
@@ -202,6 +208,8 @@ class Artwork:
             mask = getattr(self, name)
             if mask is not None and (mask.shape != self.rgba.shape[:2] or mask.dtype != np.bool_):
                 raise ValueError(f"{name} must be HxW bool matching rgba, got {mask.shape} {mask.dtype}")
+        if self.shape not in SHAPES:
+            raise ValueError(f"unknown shape {self.shape!r}")
         if not self.ppi > 0:
             raise ValueError(f"ppi must be positive, got {self.ppi!r}")
         self.offset = (int(self.offset[0]), int(self.offset[1]))
@@ -230,6 +238,7 @@ class Artwork:
             "cut_px": None if self.cut is None else int(self.cut.sum()),
             "history": [s.to_dict() for s in self.history],
             "meta": _jsonable(self.meta),
+            "shape": self.shape,
         }
 
 

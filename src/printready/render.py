@@ -1,5 +1,6 @@
 """The two pictures a person looks at: the proof (art, white border and magenta cut line over a
-checkerboard, labelled with size and PPI) and the overlay (the original art with a box and label
+checkerboard, labelled with size and PPI; for a whole-image sticker the trimmed bleed is shown
+under a pale veil) and the overlay (the original art with a box and label
 for every warn/fail finding). Both are RGB PIL images."""
 
 from __future__ import annotations
@@ -83,8 +84,14 @@ def render_proof(art: Artwork, spec: Spec, profile: Profile) -> Image.Image:
         cut = cut_mask(subject, ppi, profile.border_in, profile.min_neck_in, profile.speck_max_in2)
     h, w = cut.shape
     base = checkerboard(h, w)
-    base[cut] = 255
-    img = Image.fromarray(composite(rgba, base))
+    if art.shape == "rounded_rect":
+        pixels = composite(rgba, base)
+        trimmed = ~cut  # the bleed: printed but cut off, shown two-thirds faded
+        pixels[trimmed] = ((pixels[trimmed].astype(np.uint16) + 2 * 255) // 3).astype(np.uint8)
+    else:
+        base[cut] = 255
+        pixels = composite(rgba, base)
+    img = Image.fromarray(pixels)
     draw = ImageDraw.Draw(img)
     width = max(2, round(profile.pt_to_px(0.5, ppi)))
     for poly in outline_polygons(cut, ppi):
@@ -92,7 +99,8 @@ def render_proof(art: Artwork, spec: Spec, profile: Profile) -> Image.Image:
         draw.line(pts + [pts[0]], fill=MAGENTA, width=width, joint="curve")
 
     font = _font(max(14, w // 28))
-    label = f"{spec.size_in:.1f} in die-cut, {ppi:.0f} PPI"
+    product = "die-cut" if art.shape == "die_cut" else "rounded-rectangle sticker"
+    label = f"{spec.size_in:.1f} in {product}, {ppi:.0f} PPI"
     label_h = int(getattr(font, "size", 16) * 2)
     out = Image.new("RGB", (w, h + label_h), (255, 255, 255))
     out.paste(img, (0, 0))

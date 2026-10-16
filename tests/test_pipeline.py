@@ -84,14 +84,20 @@ def test_clean_alpha_art_is_ready(tmp_path):
     assert [s.fix for s in result.art.history] == ["add_border"]
 
 
-def test_gradient_background_needs_person(tmp_path):
+def test_gradient_background_becomes_a_rounded_rectangle(tmp_path):
     gradient = np.repeat(np.linspace(0, 255, 320)[None, :, None], 320, axis=0).repeat(3, axis=2)
-    result, _ = run(tmp_path, "gradient.png", flatten(DISC, gradient))
-    assert result.outcome == "needs_person"
-    assert result.art.history == []  # nothing safe to do without a subject
-    assert result.after.by_check("background").fixer == "person"
-    assert result.person_notes and "cutline" not in result.outputs
-    assert (tmp_path / "out" / "gradient.png" / "proof.png").exists()
+    result, _ = run(tmp_path, "gradient.png", flatten(DISC, gradient), spec=Spec("die_cut", 3.0))
+    assert result.outcome == "fixable"
+    assert [(s.fix, s.ok) for s in result.art.history] == [("fit_shape", True)]
+    assert result.art.shape == "rounded_rect" and result.art.ppi == pytest.approx(320 / (3.0 + 2 * P.bleed_in))
+    fit = result.after.by_check("product_fit")
+    assert (fit.status, fit.fixer) == ("warn", "customer")
+    for check in ("background", "soft_alpha", "edge_crop", "islands"):
+        f = result.after.by_check(check)
+        assert (f.status, f.measured["applies"]) == ("pass", False)
+    assert "rounded-rectangle sticker" in result.customer_message and "ask a person" in result.customer_message
+    out = tmp_path / "out" / "gradient.png"
+    assert "<rect " in (out / "cutline.svg").read_text(encoding="utf-8") and (out / "proof.png").exists()
 
 
 def test_two_parts_with_gap_are_bridged(tmp_path):
@@ -140,11 +146,23 @@ def test_refused_fix_hands_finding_to_person(tmp_path, monkeypatch):
     import printready.guard as guard
     from printready.fixes._common import refuse
 
+    monkeypatch.setitem(guard.FIXES, "bridge_islands", lambda art, spec, profile: refuse(art, "Test refusal."))
+    gap = 0.4 * 200  # joins only with a wider border, which the refused bridge would have grown
+    rgba = disc_layer(240, round(120 + 200 + gap), [(110, 120, 50), (110 + 100 + gap, 120, 50)])
+    result, _ = run(tmp_path, "two.png", rgba, spec=Spec("die_cut", (200 + gap) / 200 + 0.2))
+    islands = result.after.by_check("islands")
+    assert (islands.status, islands.fixer) == ("fail", "person") and "Test refusal." in islands.message
+    assert result.outcome == "needs_person"
+
+
+def test_refused_background_removal_falls_back_to_the_whole_image(tmp_path, monkeypatch):
+    import printready.guard as guard
+    from printready.fixes._common import refuse
+
     monkeypatch.setitem(guard.FIXES, "remove_background", lambda art, spec, profile: refuse(art, "Test refusal."))
     result, _ = run(tmp_path, "white.png", flatten(DISC, (255, 255, 255)))
-    bg = result.after.by_check("background")
-    assert (bg.status, bg.fixer) == ("fail", "person") and "Test refusal." in bg.message
-    assert result.outcome == "needs_person"
+    assert [(s.fix, s.ok) for s in result.art.history] == [("remove_background", False), ("fit_shape", True)]
+    assert result.outcome == "fixable"
 
 
 def test_vision_runs_only_with_a_client(tmp_path, monkeypatch):
@@ -191,15 +209,15 @@ def test_soft_shadow_still_needs_person_after_border(tmp_path):
     assert result.outcome == "needs_person"
 
 
-def test_starry_background_needs_person(tmp_path):
+def test_starry_background_falls_back_to_a_rounded_rectangle(tmp_path):
     rng = np.random.default_rng(5)
     rgb = flatten(DISC, (20, 25, 60))
     for y, x in zip(rng.integers(12, 308, 600), rng.integers(12, 308, 600)):
         if np.hypot(x - 160, y - 160) > 110:
             rgb[y:y + 2, x:x + 2] = 250
     result, _ = run(tmp_path, "stars.png", rgb, spec=Spec("die_cut", 3.0))
-    assert result.outcome == "needs_person"
     step = result.art.history[0]
     assert (step.fix, step.ok) == ("remove_background", False) and step.measured["specks"] > 250
-    bg = result.after.by_check("background")
-    assert bg.fixer == "person" and "not one flat colour" in bg.message
+    assert "not one flat colour" in step.note
+    assert result.art.history[1].fix == "fit_shape" and result.outcome == "fixable"
+    assert any("remove_background was refused" in note for note in result.person_notes)

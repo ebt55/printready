@@ -2,6 +2,7 @@
 
 - add_border, bridge_islands, pad_canvas: every subject pixel must stay bit-identical after the
   offset (metric `subject_px_changed`, limit 0).
+- fit_shape: no image pixel may change at all (metric `image_px_changed`, limit 0).
 - remove_background: damage = removed pixels whose CIEDE2000 distance from the background colour
   exceeds 2 x bg_delta_e, over the kept subject area (metric `damage_frac`, limit damage_max_frac).
 A damaged fix is reverted and recorded as Step(damaged=True); outcome() then returns needs_person.
@@ -27,6 +28,7 @@ FIXES: dict[str, FixFn] = {
     "add_border": fixes.add_border,
     "bridge_islands": fixes.bridge_islands,
     "pad_canvas": fixes.pad_canvas,
+    "fit_shape": fixes.fit_shape,
 }
 REMOVAL_FIXES = ("remove_background",)
 
@@ -76,6 +78,10 @@ def measure(fix_name: str, before: Artwork, after: Artwork, profile: Profile) ->
             "far_px": damage["far_px"],
             "kept_px": damage["kept_px"],
         }
+    if fix_name == "fit_shape":
+        same_shape = before.rgba.shape == after.rgba.shape
+        value = int(np.any(before.rgba != after.rgba, axis=2).sum()) if same_shape else before.width * before.height
+        return {"metric": "image_px_changed", "label": "image pixels changed", "value": value, "limit": 0, "passed": value == 0}
     value = subject_px_changed(before, after)
     return {"metric": "subject_px_changed", "label": "subject pixels changed", "value": value, "limit": 0, "passed": value == 0}
 

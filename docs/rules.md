@@ -24,6 +24,8 @@ Die-cut sticker rules paraphrased from Sticker Mule's public FAQ pages (linked p
 | `damage_max_frac` | 2% | convention | - | Background removal is damaged if it erased more than this share of real subject colour. |
 | `max_pieces` | 8 pieces | convention | - | More separate parts than this (at the standard border) is scattered detail, not one sticker; a person decides the cut. |
 | `max_specks` | 250 specks | convention | - | A cut-out leaving more stray bits than this means the background was not flat (stars, texture); tuned on dev Grok images (clean at most 85, starry sky 2,326). |
+| `bleed_in` | 0.0625 in | Sticker Mule | [FAQ](https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels) | Artwork should extend a sixteenth of an inch past the cut line; a whole-image sticker trims that much off each side. |
+| `shape_corner_radius_in` | 0.125 in | convention | - | Corner radius for a whole-image rounded-rectangle sticker; round corners peel less than square ones, and an eighth of an inch keeps the image intact. |
 
 ## How each check measures it
 
@@ -35,6 +37,7 @@ Die-cut sticker rules paraphrased from Sticker Mule's public FAQ pages (linked p
 - **`islands`**: Art grown by border_in, holes filled, parts under speck_max_in2 ignored; more than one part fails, auto when they join within max_bridge_border_in and number at most max_pieces.
 - **`text_garbled`**: Vision model (optional): misspelled or garbled words fail for a person.
 - **`text_small`**: Vision model (optional): cap height / cap_height_ratio under min_text_pt warns.
+- **`product_fit`**: Only after fit_shape: warns (customer) that the order became a whole-image rounded rectangle, offering a person cutout instead. The four cut-around-the-art checks then pass as not applicable.
 
 ## How each fix uses them
 
@@ -42,3 +45,4 @@ Die-cut sticker rules paraphrased from Sticker Mule's public FAQ pages (linked p
 - **`add_border`**: White border of border_in (never under border_min_in), waists closed with a min_neck_in circle. Guard: art pixels bit-identical.
 - **`bridge_islands`**: Grows the border up to max_bridge_border_in until the cut is one piece. Guard: art pixels bit-identical.
 - **`pad_canvas`**: Adds transparent margin for a border up to max_bridge_border_in; refused when the art is cut off. Guard: art pixels bit-identical.
+- **`fit_shape`**: For scenes: a whole-image rounded rectangle, cut bleed_in inside the canvas with shape_corner_radius_in corners; PPI = canvas long side / (size + 2 x bleed_in). Guard: no image pixel changes.

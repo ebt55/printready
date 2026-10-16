@@ -32,7 +32,7 @@ def test_constants():
     assert SUBJECT_ALPHA == 128
     assert DETERMINISTIC_CHECK_IDS == ("file", "resolution", "background", "soft_alpha", "edge_crop", "islands")
     assert VISION_CHECK_IDS == ("text_garbled", "text_small")
-    assert CHECK_IDS == DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS
+    assert CHECK_IDS == DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS + ("product_fit",)
     assert "add_border" not in CORRECTIVE_FIXES
 
 
@@ -128,6 +128,7 @@ def test_artwork_and_results_to_dict_exclude_arrays():
     assert data["art"] == {
         "width": 6, "height": 4, "ppi": 412.5, "offset": [2, 3], "subject_px": 4, "border_in": None,
         "cut_px": None, "history": [step.to_dict()], "meta": {"path": "a.png", "bytes": 1234, "format": "PNG"},
+        "shape": "die_cut",
     }
     assert Step.from_dict(step.to_dict()) == step
     guarded = Step("add_border", True, False, "border added", {"border_in": 0.1},

@@ -6,13 +6,15 @@ fixed by pad_canvas (auto)."""
 
 from __future__ import annotations
 
-from printready.checks._common import rounded, skip_needs_mask
+from printready.checks._common import not_applicable, rounded, skip_needs_mask
 from printready.geometry import edge_pixel_count, longest_edge_run, min_margin_px
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
 
 
 def check_edge_crop(art: Artwork, spec: Spec, profile: Profile) -> Finding:
+    if art.shape == "rounded_rect":
+        return not_applicable("edge_crop")
     if art.subject is None:
         return skip_needs_mask("edge_crop")
     run = longest_edge_run(art.subject)

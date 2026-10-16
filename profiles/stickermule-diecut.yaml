@@ -77,3 +77,11 @@ rules:
     value: 250
     source: convention
     why: A cut-out leaving more stray bits than this means the background was not flat (stars, texture); tuned on dev Grok images (clean at most 85, starry sky 2,326).
+  bleed_in:
+    value: 0.0625
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: Artwork should extend a sixteenth of an inch past the cut line; a whole-image sticker trims that much off each side.
+  shape_corner_radius_in:
+    value: 0.125
+    source: convention
+    why: Corner radius for a whole-image rounded-rectangle sticker; round corners peel less than square ones, and an eighth of an inch keeps the image intact.

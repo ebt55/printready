@@ -3,6 +3,8 @@
 Fixed order: load -> check -> remove_background if background fail/auto -> re-check ->
 pad_canvas if edge_crop warn/auto or the margin is under the border it will need -> add_border ->
 bridge_islands if islands fail/auto -> re-check -> check_text if a client is given -> outcome().
+A scene goes another way: if the background needs a person, or remove_background is refused,
+fit_shape makes the order a whole-image rounded-rectangle sticker instead (no border, no padding).
 
 Progress events for the local web UI, `printready serve` (`on_event(dict)`, payloads JSON-ready):
   {"type": "findings", "stage": "before"|"after", "report": Report.to_dict()}
@@ -25,7 +27,7 @@ from printready.imageio import ImageLoadError, load_artwork, save_png
 from printready.profile import Profile, load_profile
 from printready.render import render_overlay, render_proof
 from printready.reporthtml import report_html
-from printready.types import Artwork, Finding, Outcome, Report, RunResult, Spec, Step, outcome
+from printready.types import SHAPE_LABELS, Artwork, Finding, Outcome, Report, RunResult, Spec, Step, outcome
 
 EventFn = Callable[[dict[str, Any]], None]
 CHECK_FOR_FIX = {"remove_background": "background", "pad_canvas": "edge_crop", "bridge_islands": "islands"}
@@ -93,10 +95,15 @@ def _join_and(items: list[str]) -> str:
 
 
 def customer_message(result: Outcome, art: Artwork | None, after: Report, spec: Spec) -> str:
-    """Rules-mode template: what changed, what the customer must decide, one approve line (< 80 words)."""
+    """Rules-mode template: a product change first (it is never trimmed), then what changed, what
+    the customer must decide, and one approve line; under 80 words."""
     size = f"{spec.size_in:g} in"
+    product = SHAPE_LABELS[art.shape if art else "die_cut"]
+    fit = after.by_check("product_fit")
+    parts = [fit.message] if fit is not None and fit.status in ("warn", "fail") else []
+    keep = len(parts)
     changes = [c for s in (art.history if art else []) if s.ok and (c := _change_phrase(s))]
-    parts = [f"We {_join_and(changes)}."] if changes else []
+    parts += [f"We {_join_and(changes)}."] if changes else []
     res = after.by_check("resolution")
     if res is not None and res.status in ("warn", "fail") and res.fixer == "customer":
         m = res.measured  # ppi and the largest sharp sizes
@@ -110,7 +117,11 @@ def customer_message(result: Outcome, art: Artwork | None, after: Report, spec: 
                 f"At {size} it prints at only {m['ppi']:.0f} PPI and will look soft; it is sharp at "
                 f"{m['max_size_in_at_target']:.1f} in and acceptable up to {m['max_size_in_at_floor']:.1f} in. Please choose a smaller size."
             )
-    parts += [f.message for f in after.findings if f.check != "resolution" and f.status in ("warn", "fail") and f.fixer == "customer"][:1]
+    parts += [
+        f.message
+        for f in after.findings
+        if f.check not in ("resolution", "product_fit") and f.status in ("warn", "fail") and f.fixer == "customer"
+    ][:1]
     if result == "needs_person":
         reason = next(
             (f.message for f in after.findings if f.status in ("warn", "fail") and f.fixer in ("person", "none", "auto")),
@@ -119,8 +130,8 @@ def customer_message(result: Outcome, art: Artwork | None, after: Report, spec: 
         reason = reason[:1].lower() + reason[1:]
         tail = f"Before printing, a person on our team will check this: {reason} We will send you an updated proof."
     else:
-        tail = f"If the proof looks right, approve it to print your {size} die-cut sticker."
-    while len(" ".join([*parts, tail]).split()) > MAX_MESSAGE_WORDS and parts:
+        tail = f"If the proof looks right, approve it to print your {size} {product}."
+    while len(" ".join([*parts, tail]).split()) > MAX_MESSAGE_WORDS and len(parts) > keep:
         parts.pop()
     text = " ".join([*parts, tail])
     words = text.split()
@@ -189,6 +200,12 @@ def run_rules(
         current = before
         if _has(before, "background", "fail", "auto"):
             run_fix("remove_background")
+            removal = art.history[-1]
+            if not removal.ok and not removal.damaged:  # refused (e.g. a starry sky): try the whole image
+                run_fix("fit_shape")
+            current = run_checks(art, spec, profile)
+        elif _has(before, "background", "fail", "person"):  # a scene: no background to cut around
+            run_fix("fit_shape")
             current = run_checks(art, spec, profile)
         if art.subject is not None:
             will_bridge = _has(current, "islands", "fail", "auto")

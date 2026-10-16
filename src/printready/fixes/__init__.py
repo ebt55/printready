@@ -7,19 +7,21 @@ from __future__ import annotations
 from printready.fixes.background import remove_background
 from printready.fixes.border import add_border, bridge_islands
 from printready.fixes.pad import pad_canvas
+from printready.fixes.shape import fit_shape
+from printready.geometry import size_margin_in
 from printready.profile import Profile
 from printready.types import Artwork, Spec
 
 
 def recommend_size(art: Artwork, spec: Spec, profile: Profile) -> dict:
-    """Largest finished sizes (border included) that meet the PPI rules at this art's pixel size."""
-    border = profile.border_in
-    long_px = art.ppi * (spec.size_in - 2 * border)
+    """Largest finished sizes of this product that meet the PPI rules at this art's pixel size."""
+    margin = size_margin_in(art.shape, profile)
+    long_px = art.ppi * (spec.size_in - margin)
     return {
-        "max_size_in_at_target": round(long_px / profile.ppi_target + 2 * border, 3),
-        "max_size_in_at_floor": round(long_px / profile.ppi_floor + 2 * border, 3),
+        "max_size_in_at_target": round(long_px / profile.ppi_target + margin, 3),
+        "max_size_in_at_floor": round(long_px / profile.ppi_floor + margin, 3),
         "ppi_at_size": round(art.ppi, 2),
     }
 
 
-__all__ = ["add_border", "bridge_islands", "pad_canvas", "recommend_size", "remove_background"]
+__all__ = ["add_border", "bridge_islands", "fit_shape", "pad_canvas", "recommend_size", "remove_background"]
