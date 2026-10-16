@@ -1,0 +1,464 @@
+"""`printready bench report`: score predictions.jsonl against the manifest's labels.
+
+Writes to results/bench/<split>/:
+- report.md     headline table, confusion matrices, fixer agreement, fix success, outcomes, and every
+                disagreement with the ground-truth value, its threshold and what the detector measured
+- summary.json  the same numbers for the UI's Results screen (heat-table shaped; metrics.json is an
+                identical copy under the name the Results screen reads)
+- confusion.png one confusion matrix per deterministic check plus the outcome matrix
+
+Vision checks are live-only and not scored here; agent mode is not run on the benchmark.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any
+
+from printready.bench.generate import read_manifest
+from printready.bench.labels import Thresholds
+from printready.bench.run import default_manifest, limit_rows, results_dir
+from printready.profile import load_profile
+from printready.types import DETERMINISTIC_CHECK_IDS, OUTCOMES
+
+STATUSES = ("pass", "warn", "fail", "skip")
+FLAGGED = ("warn", "fail")
+ERROR = "error"  # no prediction (the detector or pipeline raised)
+FIX_IOU_MIN = 0.98
+
+
+# --- reading ----------------------------------------------------------------------------------------
+
+
+def load_predictions(path: Path) -> dict[str, dict[str, Any]]:
+    with Path(path).open(encoding="utf-8") as fh:
+        return {p["id"]: p for p in (json.loads(line) for line in fh if line.strip())}
+
+
+def _status(pred: dict | None, stage: str, check: str) -> str:
+    entry = ((pred or {}).get(stage) or {}).get(check)
+    return entry["status"] if entry else ERROR
+
+
+def _fixer(pred: dict | None, stage: str, check: str) -> str:
+    entry = ((pred or {}).get(stage) or {}).get(check)
+    return entry["fixer"] if entry else ERROR
+
+
+def _label(status: str, fixer: str) -> str:
+    return f"{status}/{fixer}" if status in FLAGGED else status
+
+
+# --- describing a row ----------------------------------------------------------------------------
+
+
+def describe_param(row: dict[str, Any]) -> str:
+    p, gt = row["param"], row["gt"]
+    return {
+        "clean": lambda: row["kind"],
+        "resolution": lambda: f"ppi {p['ppi']}",
+        "background": lambda: p["background"],
+        "islands": lambda: f"gap {p['gap_in']} in",
+        "soft_alpha": lambda: f"ramp {p['ramp_in']} in ({p['ramp_px']} px, {p['style']})",
+        "edge_crop": lambda: f"case {p['case']}, run {gt['edge_run_in']:.3f} in",
+        "text": lambda: f"{p['variant']} {p['word']}",
+    }[row["family"]]()
+
+
+def describe_gt(row: dict[str, Any], check: str, th: Thresholds) -> str:
+    """The ground-truth quantity that decides `check`, against its threshold(s)."""
+    gt = row["gt"]
+    if check == "file":
+        return (f"{gt['file_bytes'] / 1e6:.2f} MB, short side {gt['min_side_px']} px "
+                f"(limits {th.max_upload_bytes / 1e6:g} MB, 64 px)")
+    if check == "resolution":
+        basis = "canvas" if gt["opaque"] else "subject bbox"
+        return f"PPI {gt['ppi']:.1f} from the {basis} (floor {th.ppi_floor:g}, target {th.ppi_target:g})"
+    if check == "background":
+        if not gt["opaque"]:
+            return "real alpha"
+        return (f"ring uniformity {gt['ring_uniformity']:.3f} (auto at >= {th.bg_ring_uniform_frac:g}), "
+                f"ring max dE {gt['ring_de_max']:.2f} from its mean (tolerance {th.bg_delta_e:g})")
+    if gt["opaque"] and check in ("soft_alpha", "edge_crop", "islands"):
+        return "opaque image: no subject until the background is removed"
+    if check == "soft_alpha":
+        return (f"ramp {gt['ramp_in']:.4f} in ({gt['ramp_px']} px) "
+                f"(warn above {th.soft_alpha_max_in:g} in)")
+    if check == "edge_crop":
+        return (f"longest edge run {gt['edge_run_in']:.3f} in ({gt['edge_run_px']} px) "
+                f"(fail above {th.edge_cut_min_run_in:g} in)")
+    if check == "islands":
+        if gt["parts"] == 1:
+            return "one part"
+        return (f"gap {gt['gap_in']:.3f} in (merges below {th.merge_gap_in:g}, "
+                f"bridgeable to {th.bridge_gap_in:g})")
+    return ""
+
+
+def describe_measured(pred: dict | None, check: str, limit: int = 160) -> str:
+    entry = ((pred or {}).get("before") or {}).get(check)
+    if not entry:
+        return "; ".join((pred or {}).get("errors") or ["no prediction"])
+    parts = [f"{k}={v}" for k, v in entry.get("measured", {}).items()
+             if v is None or isinstance(v, (int, float, str, bool))]
+    text = ", ".join(parts)
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+# --- metrics --------------------------------------------------------------------------------------
+
+
+def _matrix(counts: dict[str, Counter], rows: list[str], cols: list[str]) -> dict[str, Any]:
+    return {"rows": rows, "cols": cols, "counts": [[counts[r][c] for c in cols] for r in rows]}
+
+
+def _rate(k: int, n: int) -> float | None:
+    return round(k / n, 4) if n else None
+
+
+def check_metrics(rows, preds, check: str) -> dict[str, Any]:
+    counts: dict[str, Counter] = defaultdict(Counter)
+    flagged_n = exact = detected = 0
+    by_status: dict[str, list[int]] = {s: [0, 0] for s in FLAGGED}
+    clean_n = clean_flag = 0
+    fix_n = fix_agree = 0
+    for row in rows:
+        pred = preds.get(row["id"])
+        exp = row["expected"][check]
+        got_s, got_f = _status(pred, "before", check), _fixer(pred, "before", check)
+        counts[exp["status"]][got_s] += 1
+        if exp["status"] in FLAGGED:
+            flagged_n += 1
+            exact += got_s == exp["status"]
+            detected += got_s in FLAGGED
+            by_status[exp["status"]][0] += 1
+            by_status[exp["status"]][1] += got_s == exp["status"]
+            if got_s in FLAGGED:
+                fix_n += 1
+                fix_agree += got_f == exp["fixer"]
+        if row["family"] == "clean":
+            clean_n += 1
+            clean_flag += got_s != "pass"
+    expected_rows = [s for s in STATUSES if counts.get(s)]
+    cols = list(STATUSES) + ([ERROR] if any(c[ERROR] for c in counts.values()) else [])
+    return {
+        "n": len(rows),
+        "matrix": _matrix(counts, expected_rows, cols),
+        "recall": _rate(exact, flagged_n),
+        "detected": _rate(detected, flagged_n),
+        "recall_by_status": {s: {"n": n, "hit": k, "rate": _rate(k, n)} for s, (n, k) in by_status.items() if n},
+        "n_expected_flagged": flagged_n,
+        "clean_false_flag": _rate(clean_flag, clean_n),
+        "clean_false_flags": {"n": clean_n, "flagged": clean_flag},
+        "fixer_agreement": _rate(fix_agree, fix_n),
+        "fixer_pairs": {"n": fix_n, "agree": fix_agree},
+    }
+
+
+def disagreements(rows, preds, th: Thresholds) -> list[dict[str, Any]]:
+    """Every (sample, check) whose BEFORE status, or fixer on a warn/fail, differs from the label."""
+    out = []
+    for row in rows:
+        pred = preds.get(row["id"])
+        for check in DETERMINISTIC_CHECK_IDS:
+            exp = row["expected"][check]
+            got_s, got_f = _status(pred, "before", check), _fixer(pred, "before", check)
+            same = got_s == exp["status"] and (got_s not in FLAGGED or got_f == exp["fixer"])
+            if not same:
+                out.append({
+                    "id": row["id"], "family": row["family"], "param": describe_param(row), "check": check,
+                    "expected": _label(exp["status"], exp["fixer"]), "predicted": _label(got_s, got_f),
+                    "ground_truth": describe_gt(row, check, th), "measured": describe_measured(pred, check),
+                })
+    return out
+
+
+def expected_auto(row: dict[str, Any]) -> bool:
+    return any(v["status"] in FLAGGED and v["fixer"] == "auto" for c, v in row["expected"].items()
+               if c in DETERMINISTIC_CHECK_IDS)
+
+
+def fix_success(rows, preds) -> dict[str, Any]:
+    """Whole rules pipeline on expected-auto samples: final deterministic checks all pass, no step
+    damaged, and the final subject matches the ground truth (IoU >= 0.98 outside a 2 px edge band)."""
+    results = []
+    for row in rows:
+        if not expected_auto(row):
+            continue
+        pred = preds.get(row["id"]) or {}
+        reasons = list(pred.get("errors") or [])
+        for check in DETERMINISTIC_CHECK_IDS:
+            status = _status(pred, "after", check)
+            if status != "pass":
+                reasons.append(f"final {check} {status}")
+        reasons += [f"{s['fix']} damaged" for s in pred.get("steps", []) if s.get("damaged")]
+        iou = pred.get("iou")
+        if iou is None:
+            reasons.append("no final subject to compare")
+        elif iou < FIX_IOU_MIN:
+            reasons.append(f"subject IoU {iou:.4f} < {FIX_IOU_MIN}")
+        results.append({"id": row["id"], "family": row["family"], "param": describe_param(row),
+                        "ok": not reasons, "iou": iou, "reasons": reasons,
+                        "steps": [s["fix"] + ("" if s["ok"] else " (refused)") for s in pred.get("steps", [])]})
+    by_family: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    for r in results:
+        by_family[r["family"]][0] += 1
+        by_family[r["family"]][1] += r["ok"]
+    ok = sum(r["ok"] for r in results)
+    return {"n": len(results), "ok": ok, "rate": _rate(ok, len(results)),
+            "by_family": {f: {"n": n, "ok": k} for f, (n, k) in by_family.items()},
+            "rows": results}
+
+
+def outcome_metrics(rows, preds) -> dict[str, Any]:
+    counts: dict[str, Counter] = defaultdict(Counter)
+    misses = []
+    for row in rows:
+        pred = preds.get(row["id"]) or {}
+        got = pred.get("outcome") or ERROR
+        counts[row["outcome"]][got] += 1
+        if got != row["outcome"]:
+            misses.append({"id": row["id"], "family": row["family"], "param": describe_param(row),
+                           "expected": row["outcome"], "predicted": got,
+                           "final": ", ".join(f"{c} {v['status']}/{v['fixer']}"
+                                              for c, v in (pred.get("after") or {}).items()
+                                              if v["status"] != "pass") or "all pass",
+                           "steps": ", ".join(s["fix"] + ("" if s["ok"] else " (refused)")
+                                              for s in pred.get("steps", [])) or "none",
+                           "handoff": pred.get("handoff_reason")})
+    cols = list(OUTCOMES) + ([ERROR] if any(c[ERROR] for c in counts.values()) else [])
+    agree = sum(counts[o][o] for o in OUTCOMES)
+    return {"n": len(rows), "agree": agree, "accuracy": _rate(agree, len(rows)),
+            "matrix": _matrix(counts, list(OUTCOMES), cols), "misses": misses}
+
+
+def final_agreement(rows, preds) -> dict[str, dict[str, Any]]:
+    """Final (after the pipeline) status per check vs the manifest's expected_final."""
+    out = {}
+    for check in DETERMINISTIC_CHECK_IDS:
+        n = agree = 0
+        for row in rows:
+            n += 1
+            agree += _status(preds.get(row["id"]), "after", check) == row["expected_final"][check]
+        out[check] = {"n": n, "agree": agree, "rate": _rate(agree, n)}
+    return out
+
+
+def summarize(rows, preds, th: Thresholds, run_info: dict[str, Any] | None, split: str) -> dict[str, Any]:
+    checks = {c: check_metrics(rows, preds, c) for c in DETERMINISTIC_CHECK_IDS}
+    heat = [{"check": c, "expected": r, "predicted": col, "count": m["matrix"]["counts"][i][j]}
+            for c, m in checks.items()
+            for i, r in enumerate(m["matrix"]["rows"]) for j, col in enumerate(m["matrix"]["cols"])]
+    clean = [r for r in rows if r["family"] == "clean"]
+    clean_flagged = [r["id"] for r in clean
+                     if any(_status(preds.get(r["id"]), "before", c) != "pass" for c in DETERMINISTIC_CHECK_IDS)]
+    dis = disagreements(rows, preds, th)
+    for c in checks:
+        checks[c]["disagreements"] = sum(d["check"] == c for d in dis)
+    return {
+        "split": split,
+        "n": len(rows),
+        "predicted": sum(1 for r in rows if r["id"] in preds),
+        "errors": sum(1 for r in rows if (preds.get(r["id"]) or {}).get("errors")),
+        "statuses": list(STATUSES),
+        "checks": checks,
+        "heat": heat,
+        "clean_images": {"n": len(clean), "any_flag": len(clean_flagged),
+                         "rate": _rate(len(clean_flagged), len(clean)), "ids": clean_flagged},
+        "fix_success": fix_success(rows, preds),
+        "outcome": outcome_metrics(rows, preds),
+        "final_agreement": final_agreement(rows, preds),
+        "pipeline_before_disagrees": [r["id"] for r in rows
+                                      if (preds.get(r["id"]) or {}).get("pipeline_before_agrees") is False],
+        "disagreements": dis,
+        "run": run_info,
+        "note": "Deterministic checks only. Vision (text_garbled, text_small) is scored live; "
+                "agent mode is not run on the benchmark.",
+    }
+
+
+# --- writing --------------------------------------------------------------------------------------
+
+
+def _pct(x: float | None) -> str:
+    return "n/a" if x is None else f"{100 * x:.1f}%"
+
+
+def _md_matrix(m: dict[str, Any]) -> list[str]:
+    lines = ["| expected \\ predicted | " + " | ".join(m["cols"]) + " |",
+             "|---|" + "---|" * len(m["cols"])]
+    for r, counts in zip(m["rows"], m["counts"]):
+        cells = [f"**{v}**" if c == r and v else str(v) for c, v in zip(m["cols"], counts)]
+        lines.append(f"| {r} | " + " | ".join(cells) + " |")
+    return lines
+
+
+def markdown(s: dict[str, Any]) -> str:
+    out = [f"# Planted-defect benchmark: `{s['split']}` split", ""]
+    run = s.get("run") or {}
+    out.append(f"{s['n']} samples, {s['predicted']} predicted, {s['errors']} with errors"
+               + (f"; run took {run['seconds']} s with {run['jobs']} workers" if run else "") + ".")
+    out += ["Deterministic checks on the image as given (BEFORE); fix success and outcomes from the whole "
+            "rules pipeline (AFTER). Vision checks are scored live and are not in this report; agent mode is "
+            "not run on the benchmark.", ""]
+
+    out += ["## Headline", "",
+            "| check | expected warn/fail | recall (exact status) | detected (any warn/fail) "
+            "| clean false flags | fixer agreement | disagreements |",
+            "|---|---|---|---|---|---|---|"]
+    for c, m in s["checks"].items():
+        cf = m["clean_false_flags"]
+        fp = m["fixer_pairs"]
+        out.append(f"| {c} | {m['n_expected_flagged']} | {_pct(m['recall'])} | {_pct(m['detected'])} "
+                   f"| {cf['flagged']}/{cf['n']} | "
+                   + (f"{fp['agree']}/{fp['n']}" if fp["n"] else "n/a") + f" | {m['disagreements']} |")
+    fx, oc, cl = s["fix_success"], s["outcome"], s["clean_images"]
+    out += ["",
+            f"- Clean images with any non-pass check: {cl['any_flag']}/{cl['n']} ({_pct(cl['rate'])}).",
+            f"- Fix success on expected-auto samples: {fx['ok']}/{fx['n']} ({_pct(fx['rate'])}).",
+            f"- Outcome agreement: {oc['agree']}/{oc['n']} ({_pct(oc['accuracy'])}).", ""]
+
+    out += ["## Confusion matrices (BEFORE)", ""]
+    for c, m in s["checks"].items():
+        out += [f"### {c}", ""] + _md_matrix(m["matrix"]) + [""]
+        rs = m["recall_by_status"]
+        if rs:
+            out += ["Recall by status: " + ", ".join(f"{k} {v['hit']}/{v['n']}" for k, v in rs.items()), ""]
+
+    out += ["## Fix success (whole rules pipeline, expected-auto samples)", "",
+            f"Success = final deterministic checks all pass, no damaged step, subject IoU >= {FIX_IOU_MIN} "
+            "against ground truth outside a 2 px edge band.", "",
+            "| family | ok / n |", "|---|---|"]
+    for f, v in fx["by_family"].items():
+        out.append(f"| {f} | {v['ok']}/{v['n']} |")
+    failed = [r for r in fx["rows"] if not r["ok"]]
+    if failed:
+        out += ["", "| sample | parameter | steps | why it failed |", "|---|---|---|---|"]
+        out += [f"| {r['id']} | {r['param']} | {', '.join(r['steps']) or 'none'} | {'; '.join(r['reasons'])} |"
+                for r in failed]
+    out.append("")
+
+    out += ["## Outcome (expected from labels vs `outcome()` after the rules pipeline)", ""]
+    out += _md_matrix(oc["matrix"]) + [""]
+    if oc["misses"]:
+        out += ["| sample | parameter | expected | predicted | final non-pass | steps | handoff |",
+                "|---|---|---|---|---|---|---|"]
+        out += [f"| {m['id']} | {m['param']} | {m['expected']} | {m['predicted']} | {m['final']} "
+                f"| {m['steps']} | {m['handoff'] or ''} |" for m in oc["misses"]]
+        out.append("")
+
+    out += ["## Final statuses vs `expected_final`", "", "| check | agree |", "|---|---|"]
+    out += [f"| {c} | {v['agree']}/{v['n']} |" for c, v in s["final_agreement"].items()]
+    out.append("")
+
+    out += ["## Disagreements (BEFORE), by check", ""]
+    if not s["disagreements"]:
+        out += ["None.", ""]
+    by_check: dict[str, list[dict]] = defaultdict(list)
+    for d in s["disagreements"]:
+        by_check[d["check"]].append(d)
+    for c, items in by_check.items():
+        out += [f"### {c} ({len(items)})", "",
+                "| sample | parameter | expected | predicted | ground truth vs threshold | detector measured |",
+                "|---|---|---|---|---|---|"]
+        out += [f"| {d['id']} | {d['param']} | {d['expected']} | {d['predicted']} | {d['ground_truth']} "
+                f"| {d['measured']} |" for d in items]
+        out.append("")
+    if s["pipeline_before_disagrees"]:
+        out += ["Samples where the pipeline's own BEFORE report differed from `run_checks`: "
+                + ", ".join(s["pipeline_before_disagrees"]), ""]
+    return "\n".join(out)
+
+
+# Colours from the dataviz reference palette: one blue ramp (light -> dark) for row share,
+# text in ink tokens, the chart surface for empty cells and the gaps between cells.
+SURFACE = "#fcfcfb"
+INK = "#0b0b0b"
+INK_ON_DARK = "#f0efec"
+MUTED = "#52514e"
+BLUE_RAMP = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5",
+             "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b"]
+
+
+def figure(s: dict[str, Any], path: Path) -> Path:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+
+    cmap = LinearSegmentedColormap.from_list("blue", BLUE_RAMP)
+    panels = [(c, m["matrix"]) for c, m in s["checks"].items()] + [("outcome", s["outcome"]["matrix"])]
+    cols = 4
+    nrows = (len(panels) + cols - 1) // cols
+    fig, axes = plt.subplots(nrows, cols, figsize=(cols * 3.3, nrows * 3.1), facecolor=SURFACE)
+    for ax in axes.flat:
+        ax.set_facecolor(SURFACE)
+        ax.axis("off")
+    for ax, (title, m) in zip(axes.flat, panels):
+        rows, cs, counts = m["rows"], m["cols"], m["counts"]
+        for i, row_counts in enumerate(counts):
+            total = sum(row_counts) or 1
+            for j, v in enumerate(row_counts):
+                share = v / total
+                colour = SURFACE if v == 0 else cmap(0.15 + 0.85 * share)
+                ax.add_patch(plt.Rectangle((j, i), 1, 1, facecolor=colour, edgecolor=SURFACE, linewidth=2))
+                if v:
+                    ax.text(j + 0.5, i + 0.5, str(v), ha="center", va="center", fontsize=10,
+                            color=INK_ON_DARK if share > 0.55 else INK)
+                elif v == 0:
+                    ax.text(j + 0.5, i + 0.5, "0", ha="center", va="center", fontsize=8, color="#c3c2b7")
+        ax.set_xlim(0, len(cs))
+        ax.set_ylim(len(rows), 0)
+        ax.axis("on")
+        ax.set_xticks([j + 0.5 for j in range(len(cs))], cs, fontsize=8, color=MUTED)
+        ax.set_yticks([i + 0.5 for i in range(len(rows))], rows, fontsize=8, color=MUTED)
+        ax.tick_params(length=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.set_title(title, fontsize=11, color=INK, loc="left")
+        ax.set_xlabel("predicted", fontsize=8, color=MUTED)
+        ax.set_ylabel("expected", fontsize=8, color=MUTED)
+        ax.set_aspect("equal")
+        ax.set_anchor("NW")  # panels with fewer rows stay top-aligned under their titles
+    fig.suptitle(f"Planted-defect benchmark, {s['split']} split: expected vs predicted (colour = share of row)",
+                 fontsize=12, color=INK, x=0.01, ha="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=110, facecolor=SURFACE, metadata={"Software": None})
+    plt.close(fig)
+    return path
+
+
+def report_split(
+    split: str,
+    root: Path | str = ".",
+    *,
+    limit: int | None = None,
+    manifest: Path | None = None,
+    profile_path: Path | None = None,
+    log=print,
+) -> dict[str, Any]:
+    root = Path(root)
+    out = results_dir(root, split, limit)
+    pred_path = out / "predictions.jsonl"
+    if not pred_path.exists():
+        raise FileNotFoundError(f"{pred_path} not found; run `printready bench run --split {split}` first")
+    manifest = Path(manifest) if manifest else default_manifest(root, split)
+    rows = limit_rows(read_manifest(manifest), limit)
+    preds = load_predictions(pred_path)
+    run_path = out / "run.json"
+    run_info = json.loads(run_path.read_text(encoding="utf-8")) if run_path.exists() else None
+    if run_info and run_info.get("manifest_sha256") != hashlib.sha256(manifest.read_bytes()).hexdigest():
+        log("warning: predictions were made against a different manifest")
+    th = Thresholds.from_profile(load_profile(profile_path))
+    s = summarize(rows, preds, th, run_info, split)
+    text = json.dumps(s, indent=1, ensure_ascii=False) + "\n"
+    (out / "summary.json").write_text(text, encoding="utf-8")
+    (out / "metrics.json").write_text(text, encoding="utf-8")
+    (out / "report.md").write_text(markdown(s), encoding="utf-8")
+    figure(s, out / "confusion.png")
+    log(f"bench report --split {split}: {out / 'report.md'}")
+    return s

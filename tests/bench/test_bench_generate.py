@@ -10,9 +10,8 @@ from PIL import Image
 
 from printready.bench.bases import make_base, render
 from printready.bench.defects import edge_runs
-from printready.bench.generate import FAMILY_COUNTS, SEEDS, build, plan, read_manifest
+from printready.bench.generate import FAMILY_COUNTS, SEEDS, build, plan
 from printready.bench.labels import Thresholds, near_threshold
-from printready.cli import main
 from printready.profile import load_profile
 from printready.types import (
     DETERMINISTIC_CHECK_IDS,
@@ -25,11 +24,9 @@ from printready.types import (
 
 
 @pytest.fixture(scope="module")
-def run(tmp_path_factory):
-    root = tmp_path_factory.mktemp("bench")
-    code = main(["bench", "generate", "--split", "dev", "--limit", "1", "--jobs", "1", "--root", str(root)])
-    assert code == 0
-    return root, read_manifest(root / "data" / "bench" / "manifest-dev-limit1.jsonl")
+def run(generated):
+    root, _, rows = generated
+    return root, rows
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +52,7 @@ def test_one_sample_per_family_and_files_match_hashes(run):
             assert _sha(root / row["mask"]) == row["mask_sha256"]
         else:
             assert row["mask_sha256"] is None
-    assert not (root / "results").exists()  # limited runs write no contact sheet
+    assert not (root / "results" / "bench" / "dev" / "contact-sheet.png").exists()  # not for --limit
 
 
 def test_rerun_is_byte_identical(run, th):

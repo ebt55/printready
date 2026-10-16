@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from printready.commands import not_implemented, positive_int
+from printready.commands import positive_int
 
 SPLITS = ("dev", "test")
 
@@ -35,15 +35,35 @@ def register(subparsers: argparse._SubParsersAction) -> None:
                      help="profile YAML (default: shipped die-cut profile)")
     gen.set_defaults(func=run_generate)
 
-    runp = actions.add_parser("run", help="run a mode over a split")
+    runp = actions.add_parser(
+        "run",
+        help="run the detectors and the rules pipeline over a split",
+        description="Run the deterministic checks (BEFORE) and the whole rules pipeline (AFTER) on every "
+        "sample of a split; write results/bench/<split>/predictions.jsonl. Offline: no vision, no agent.",
+    )
     runp.add_argument("--split", choices=SPLITS, default="dev")
-    runp.add_argument("--mode", choices=("rules", "agent"), default="rules")
-    runp.add_argument("--model", default=None, help="agent/vision model, e.g. openrouter:x-ai/grok-4.7")
-    runp.add_argument("--env-file", type=Path, default=None, help="dotenv file to load API keys from")
+    runp.add_argument("--limit", type=positive_int, default=None,
+                      help="only the first N samples of each family (writes results/bench/<split>/limitN/)")
+    runp.add_argument("--jobs", type=positive_int, default=None, help="worker processes (default: up to 8)")
+    runp.add_argument("--root", type=Path, default=Path("."), help="repo root (default: .)")
+    runp.add_argument("--manifest", type=Path, default=None,
+                      help="manifest to run (default: data/bench/manifest-<split>.jsonl)")
+    runp.add_argument("--profile", type=Path, default=None,
+                      help="profile YAML (default: shipped die-cut profile)")
     runp.set_defaults(func=run_run)
 
-    rep = actions.add_parser("report", help="write confusion matrices and a figure")
+    rep = actions.add_parser(
+        "report",
+        help="write confusion matrices and a figure",
+        description="Score predictions.jsonl against the manifest: report.md, summary.json, confusion.png.",
+    )
     rep.add_argument("--split", choices=SPLITS, default="dev")
+    rep.add_argument("--limit", type=positive_int, default=None, help="score a --limit N run")
+    rep.add_argument("--root", type=Path, default=Path("."), help="repo root (default: .)")
+    rep.add_argument("--manifest", type=Path, default=None,
+                     help="manifest the run used (default: data/bench/manifest-<split>.jsonl)")
+    rep.add_argument("--profile", type=Path, default=None,
+                     help="profile YAML (default: shipped die-cut profile)")
     rep.set_defaults(func=run_report)
 
 
@@ -59,8 +79,23 @@ def run_generate(args: argparse.Namespace) -> int:
 
 
 def run_run(args: argparse.Namespace) -> int:
-    return not_implemented("bench", "K2b")
+    from printready.bench.run import BenchDataError, run_split
+
+    try:
+        run_split(args.split, args.root, limit=args.limit, jobs=args.jobs, manifest=args.manifest,
+                  profile_path=args.profile)
+    except BenchDataError as exc:
+        print(f"bench run: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def run_report(args: argparse.Namespace) -> int:
-    return not_implemented("bench", "K2b")
+    from printready.bench.report import report_split
+
+    try:
+        report_split(args.split, args.root, limit=args.limit, manifest=args.manifest, profile_path=args.profile)
+    except FileNotFoundError as exc:
+        print(f"bench report: {exc}", file=sys.stderr)
+        return 1
+    return 0

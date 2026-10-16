@@ -248,7 +248,7 @@ def build(item: PlanItem, seed: int, th: Thresholds) -> Built:
     raise RuntimeError(f"{item.id}: no valid sample in {MAX_DRAWS} draws; last: {reasons[-3:]}")
 
 
-def _rounded(value: Any, ndigits: int = 4) -> Any:
+def rounded_json(value: Any, ndigits: int = 4) -> Any:
     if isinstance(value, (float, np.floating)):
         return round(float(value), ndigits)
     if isinstance(value, (bool, np.bool_)):
@@ -256,9 +256,9 @@ def _rounded(value: Any, ndigits: int = 4) -> Any:
     if isinstance(value, (int, np.integer)):
         return int(value)
     if isinstance(value, dict):
-        return {k: _rounded(v, ndigits) for k, v in value.items()}
+        return {k: rounded_json(v, ndigits) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
-        return [_rounded(v, ndigits) for v in value]
+        return [rounded_json(v, ndigits) for v in value]
     return value
 
 
@@ -291,7 +291,7 @@ def manifest_row(item: PlanItem, split: str, built: Built, th: Thresholds) -> di
     row["gt"] = gt
     row["resamples"] = len(built.reasons)
     row["resample_reasons"] = built.reasons
-    return _rounded(row)
+    return rounded_json(row)
 
 
 def _generate_one(args: tuple[PlanItem, str, Thresholds, str]) -> dict[str, Any]:
