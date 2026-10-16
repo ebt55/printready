@@ -2,17 +2,30 @@
 
 By Ebin Babu Thomas.
 
-Checks sticker artwork against a printer's published rules at the ordered size and fixes the mechanical problems. It draws the cut line and sends what it cannot fix to a person. Built and scored on AI-generated art. Not affiliated with Sticker Mule; the rules are paraphrased from their public FAQ pages and linked per rule.
+## What it does
+
+- You give it an image and a sticker size. It checks the image against Sticker Mule's published artwork rules at that size. The rules cover sharpness, a plain background, art cut off at the edge, and one piece or several. It also asks a vision model to read the lettering, and code flags misspelled words.
+- It fixes what it can without changing the art. It removes a plain background, adds the white border and draws the cut line. A full scene gets a rounded-rectangle sticker suggestion instead.
+- It returns a proof, the cut-line file, a short note for the customer, and one of ready, fixable, or needs a person.
+- An agent mode lets the model choose the fixes. Measured, it did no better than the fixed order at about four times the cost, so it is off by default.
+
+printready is not affiliated with Sticker Mule. The rules are paraphrased from their public FAQ pages and linked per rule ([docs/rules.md](docs/rules.md)).
 
 ![Before and after: a Grok image, the fixed die-cut proof with its cut line, and the findings](docs/img/hero.png)
 
-## What it found
+## What was measured
 
-50 sticker prompts, each sent to two xAI image models (100 images), went in as a customer would type them, without a sticker style prefix. The tool found no flat background to cut around in 39 of 50 images from `grok-imagine-image` and 22 of 50 from `grok-imagine-image-2.0`. One fixed prefix, tried after the fact on the first model, cut that to 3 of 50. That moved more images than any fixer in this repo, and it is one line a sticker shop controls ([below](#prompt-prefix-experiment-exploratory)).
+50 sticker prompts went to two xAI image models, 100 images, each judged as a 3 in die-cut order. Ebin, the author, labelled 50 of them blind before any tool ran, and later judged every proof with the mode hidden. There is no second labeller.
+
+Both modes on those 50 images produced 55 distinct proofs. Ebin would send 53 of them to a customer. Rules mode took 8.2 s and $0.0028 per image (rerun); the cost is one vision call.
+
+The tool found no flat background to cut around in 39 of 50 images from `grok-imagine-image` and 22 of 50 from `grok-imagine-image-2.0`. The prompts went in as a customer would type them. One fixed prefix, tried after the fact on the first model, cut that to 3 of 50. The same checks measured what the prefix cost. At 3 in, resolution passes went from 44 to 9 and warnings from 5 to 40, because the subject sits smaller on the canvas ([details](#prompt-prefix-experiment-exploratory)).
 
 ![Same prompts, without and with the prefix: scenes become single subjects on white](docs/img/prefix-strip.png)
 
-On the unprefixed images, rules mode made 38 die-cut proofs with a border and cut line, 60 rounded-rectangle proposals for the scenes, and sent 2 to a person (rerun). The preregistered run, hit by a vision outage, gave 30, 52 and 18. Ebin, the author, labelled 50 of the images blind before any tool ran. Both modes on those 50 produced 55 distinct proofs, and Ebin would send 53 of them to a customer. Rules mode matched 34 of the 50 labels (rerun; 29 in the preregistered run), and 34 is the most any mode could score. 16 images were labelled "ready". Every generated image is an opaque JPEG, so the tool always has to remove a background or change the product and calls that "fixable". An agent with the same tools and no decision of its own also scored 34 (rerun), at about four times the cost. The [rule written before the run](PREREG.md) removed it; rules mode is the default. Version 2 gives the agent one decision ([below](#where-an-agent-would-earn-its-place)).
+An agent with the same tools matched Ebin's labels on 34 of 50 (rerun), the same as rules mode. It cost $0.011 and 20.0 s per image (rerun). The [rule written before the run](PREREG.md) removed it, and rules mode is the default. Version 2 gives the agent one decision ([below](#version-2-of-the-agent)).
+
+The images came from the xAI API with these prompts. How Sticker Mule's own uploader wraps prompts or processes images is unknown, and nothing here describes their setup.
 
 ## Why it exists
 
@@ -49,7 +62,7 @@ The preregistered run hit two outages after [PREREG.md](PREREG.md) was committed
 | cost and time per image, agent | $0, 1.0 s | $0.011, 20.0 s |
 | verdict by the preregistered rule | keep rules | keep rules |
 
-Of the 18 hand-offs in the preregistered run, 16 were the vision outage. The tool sent those to a person rather than guess. The tool shaped 61 images as a rectangle. One of them, p12, went to a person for a garbled word, which is why the product row says 60. On which product to make (die-cut, rounded rectangle, or a person), rules mode matched Ebin on 43 of 50 (rerun, post hoc). On the same 50 images rules mode averaged 6.6 s, so the agent took about three times the time. Pass 2 was done once, after the rerun, on the 55 distinct proofs from both runs, identical files shown once. Ebin would send 53. The two rejected were the same image, p46, one from each mode; no fix was damaged. Labels were made by Ebin alone; there is no second labeller yet. Full tables in [eval.md](results/realset/test/eval.md); post-hoc views, including product agreement and three customer messages from each mode side by side, in [posthoc.md](results/realset/test/posthoc.md).
+34 of 50 is the most any mode could score. 16 images were labelled "ready", and every generated image is an opaque JPEG, so the tool always has to remove a background or change the product and calls that "fixable". Of the 18 hand-offs in the preregistered run, 16 were the vision outage. The tool sent those to a person rather than guess. The tool shaped 61 images as a rectangle. One of them, p12, went to a person for a garbled word, which is why the product row says 60. On which product to make (die-cut, rounded rectangle, or a person), rules mode matched Ebin on 43 of 50 (rerun, post hoc). On the same 50 images rules mode averaged 6.6 s, so the agent took about three times the time. Pass 2 was done once, after the rerun, on the 55 distinct proofs from both runs, identical files shown once. Ebin would send 53. The two rejected were the same image, p46, one from each mode; no fix was damaged. Labels were made by Ebin alone; there is no second labeller yet. Full tables in [eval.md](results/realset/test/eval.md); post-hoc views, including product agreement and three customer messages from each mode side by side, in [posthoc.md](results/realset/test/posthoc.md).
 
 **Why the agent tied.** Its prompt restates the rules flowchart, it has the same tools, and the same function decides its outcome. It can tie or lose. Its customer messages were more specific, naming the subject and stating the PPI; that was not scored.
 
@@ -67,15 +80,15 @@ Post hoc, decided after the test results were in, and not preregistered. One mod
 | rounded-rectangle proposal (a scene) | 39 | 3 |
 | to a person | 1 | 0 |
 
-The scene count partly measures prompt compliance, since the prefix asks for exactly what the detector checks. The contact sheet is the real evidence. Of the 3 leftovers, p13 and p33 are white-on-white art where background removal is refused, the tool's known limit. p01 is a subject so small that removal would erase 96 % of the image, so it was refused too. The p01 proof is one nobody would send.
+The scene count partly measures prompt compliance, since the prefix asks for what the detector checks. The contact sheet shows every image. Of the 3 leftovers, p13 and p33 are white-on-white art where background removal is refused, the tool's known limit. p01 is a subject so small that removal would erase 96 % of the image, so it was refused too. The p01 proof is mostly empty space.
 
-The trade-off is size. With the prefix the subject sits smaller on more white space. At a 3 in order the resolution check goes from 44 pass, 5 warn, 1 fail to 9 pass, 40 warn, 1 fail. A warning asks the customer to pick a smaller size; nothing is upscaled. Part of that gap is arithmetic, since a whole-image rectangle uses the full canvas and a cut-out subject does not. At 1k output, a 3 in die-cut needs the subject to span about 840 px for 300 PPI. So the prefix wants 2k output or an upscaler.
+The trade-off is size. With the prefix the subject sits smaller on more white space. At a 3 in order the resolution check goes from 44 pass, 5 warn, 1 fail to 9 pass, 40 warn, 1 fail. A warning asks the customer to pick a smaller size; nothing is upscaled. Part of that gap is arithmetic, since a whole-image rectangle uses the full canvas and a cut-out subject does not. At 1k output, a 3 in die-cut needs the subject to span about 840 px for 300 PPI. Keeping that with the prefix would take 2k output or an upscaler.
 
-This matters to a sticker shop. The prompt wrapper is one line the shop controls, and on this model it moved more images than any fixer in this repo. Whether Sticker Mule's uploader already adds one is unknown, and nothing here says anything about their setup. Tables in [prefix.md](results/realset/prefix/prefix.md); every original and its proof in [contact-sheet.jpg](results/realset/prefix/contact-sheet.jpg).
+The prefix is one line in the prompt. Whether Sticker Mule's uploader already adds one is unknown, and nothing here describes their setup. Tables in [prefix.md](results/realset/prefix/prefix.md); every original and its proof in [contact-sheet.jpg](results/realset/prefix/contact-sheet.jpg).
 
-## Where an agent would earn its place
+## Version 2 of the agent
 
-The agent had no judgement to make that the rules could not. Version 2 gives it one. On a textured or vignette background, where flood fill is refused today, the model points to a box around the subject. Code segments inside the box. The guard checks the cutout the same way, and Ebin's pass-2 acceptability is the score. New preregistration, new split, and a second labeller.
+The agent had no judgement to make that the rules could not. Version 2 gives it one. On a textured or vignette background, where flood fill is refused today, the model points to a box around the subject. Code segments inside the box. The guard checks the cutout the same way, and Ebin's pass-2 acceptability is the score. It would need a new preregistration, a new split and a second labeller.
 
 ## Run it
 
@@ -107,7 +120,7 @@ In agent mode the trace tab streams every turn, with the tool calls, the image t
 
 ## What this does not show
 
-- It says nothing about Sticker Mule's real uploads, their uploader's prompt wrapping or post-processing, their proofing, or their own artwork scan. The images came from the xAI image API with our prompts, not from their uploader.
+- It says nothing about Sticker Mule's real uploads, their uploader's prompt wrapping or post-processing, their proofing, or their own artwork scan. The images came from the xAI image API with our prompts; their uploader was never used.
 - It says nothing about print results on paper. Nothing was printed. "Passes" means passes the rules in `docs/rules.md`.
 - It covers no art other than these two image models and these 50 prompts.
 - It has no second labeller. The labels are the author's.
