@@ -1,6 +1,6 @@
 # Planted-defect benchmark: `dev` split
 
-258 samples, 258 predicted, 0 with errors; run took 34.9 s with 8 workers.
+258 samples, 258 predicted, 0 with errors; run took 32.4 s with 8 workers.
 Deterministic checks on the image as given (BEFORE); fix success and outcomes from the whole rules pipeline (AFTER). Vision checks are scored live and are not in this report; agent mode is not run on the benchmark.
 
 ## Headline

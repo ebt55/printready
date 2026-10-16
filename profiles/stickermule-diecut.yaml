@@ -69,3 +69,11 @@ rules:
     value: 0.02
     source: convention
     why: Background removal is damaged if it erased more than this share of real subject colour.
+  max_pieces:
+    value: 8
+    source: convention
+    why: More separate parts than this (at the standard border) is scattered detail, not one sticker; a person decides the cut.
+  max_specks:
+    value: 250
+    source: convention
+    why: A cut-out leaving more stray bits than this means the background was not flat (stars, texture); tuned on dev Grok images (clean at most 85, starry sky 2,326).

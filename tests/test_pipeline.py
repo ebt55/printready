@@ -189,3 +189,17 @@ def test_soft_shadow_still_needs_person_after_border(tmp_path):
     assert (soft.status, soft.fixer) == ("warn", "person")
     assert soft.measured == result.before.by_check("soft_alpha").measured
     assert result.outcome == "needs_person"
+
+
+def test_starry_background_needs_person(tmp_path):
+    rng = np.random.default_rng(5)
+    rgb = flatten(DISC, (20, 25, 60))
+    for y, x in zip(rng.integers(12, 308, 600), rng.integers(12, 308, 600)):
+        if np.hypot(x - 160, y - 160) > 110:
+            rgb[y:y + 2, x:x + 2] = 250
+    result, _ = run(tmp_path, "stars.png", rgb, spec=Spec("die_cut", 3.0))
+    assert result.outcome == "needs_person"
+    step = result.art.history[0]
+    assert (step.fix, step.ok) == ("remove_background", False) and step.measured["specks"] > 250
+    bg = result.after.by_check("background")
+    assert bg.fixer == "person" and "not one flat colour" in bg.message

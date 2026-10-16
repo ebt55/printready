@@ -67,6 +67,13 @@ def bridge_islands(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
     n_start = _pieces(standard, art, profile)
     if n_start <= 1:
         return refuse(art, "The art is already one piece; no bridge needed.", pieces=n_start)
+    if n_start > profile.max_pieces:
+        return refuse(
+            art,
+            f"The art is in {n_start} separate pieces, too many to join with one border, so a person needs to decide how to cut it.",
+            pieces=n_start,
+            max_pieces=int(profile.max_pieces),
+        )
 
     lo = max(profile.border_in, art.border_in or 0.0)
     hi = profile.max_bridge_border_in

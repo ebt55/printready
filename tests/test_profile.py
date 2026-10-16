@@ -10,7 +10,7 @@ EXPECTED = {
     "min_line_pt": 1.0, "min_text_pt": 6.0, "cap_height_ratio": 0.7, "min_neck_in": 0.125,
     "max_upload_mb": 20, "soft_alpha_max_in": 0.03, "max_bridge_border_in": 0.25,
     "bg_delta_e": 8.0, "bg_ring_uniform_frac": 0.95, "edge_cut_min_run_in": 0.1,
-    "speck_max_in2": 0.0004, "damage_max_frac": 0.02,
+    "speck_max_in2": 0.0004, "damage_max_frac": 0.02, "max_pieces": 8, "max_specks": 250,
 }
 
 

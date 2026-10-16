@@ -5,7 +5,7 @@
   "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
   "cost_usd": 0.0,
-  "elapsed_s": 0.464,
+  "elapsed_s": 0.451,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -37,6 +37,10 @@
             239
           ],
           "ring_uniform_frac": 1.0,
+          "pieces": 1,
+          "max_pieces": 8,
+          "specks": 0,
+          "max_specks": 250,
           "removed_frac": 0.588,
           "specks_dropped": 0,
           "ppi": 315.36
@@ -93,6 +97,10 @@
           239
         ],
         "ring_uniform_frac": 1.0,
+        "pieces": 1,
+        "max_pieces": 8,
+        "specks": 0,
+        "max_specks": 250,
         "removed_frac": 0.588,
         "specks_dropped": 0,
         "ppi": 315.36

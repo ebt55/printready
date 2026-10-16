@@ -47,8 +47,11 @@ def check_islands(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     kept = subject & np.logical_or.reduce(found.masks)
     joined = components(fill_holes(dilate(kept, profile.max_bridge_border_in * ppi)), speck_px, area_of=kept)
     joins = len(joined.masks) == 1
-    measured["joins_at_max_bridge"] = joins
+    measured.update(joins_at_max_bridge=joins, max_pieces=int(profile.max_pieces))
     boxes = [b for m in found.masks if (b := bbox(m & subject)) is not None]
+    if n > profile.max_pieces:
+        msg = f"The art is in {n} separate pieces, too many to join with one border, so a person needs to decide how to cut it."
+        return Finding("islands", "fail", msg, measured, "person", boxes)
     if joins:
         msg = (
             f"The art is in {n} separate pieces; a wider border (up to {profile.max_bridge_border_in:g} in) "

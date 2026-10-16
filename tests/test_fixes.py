@@ -192,3 +192,38 @@ def test_recommend_size():
     rec = recommend_size(art, spec, P)
     assert rec["max_size_in_at_target"] == pytest.approx(200 / 300 + 0.2, abs=0.01)
     assert rec["max_size_in_at_floor"] == pytest.approx(200 / 150 + 0.2, abs=0.01)
+
+
+# ---------------------------------------------------------------- scattered art (dev realset d07)
+
+def starry(n_stars=400, seed=3):
+    """A disc on a flat navy sky with many 1-2 px stars: the ring is one colour, the result is not."""
+    rng = np.random.default_rng(seed)
+    rgba = flatten(discs(400, 400, [(200, 200, 90)], colour=(240, 170, 60)), (20, 25, 60))
+    yy, xx = np.indices((400, 400))
+    outside = np.hypot(xx - 200, yy - 200) > 110
+    ys, xs = np.nonzero(outside[12:-12, 12:-12])
+    pick = rng.choice(len(ys), n_stars, replace=False)
+    for y, x in zip(ys[pick] + 12, xs[pick] + 12):
+        rgba[y:y + rng.integers(1, 3), x:x + rng.integers(1, 3), :3] = 250
+    return rgba
+
+
+def test_remove_background_refuses_scattered_specks():
+    spec = Spec("die_cut", 3.0)
+    res = remove_background(artwork_from_rgba(starry(), spec, P), spec, P)
+    assert not res.ok and "not one flat colour" in res.note
+    assert res.measured["specks"] > res.measured["max_specks"] == 250
+    calm = remove_background(artwork_from_rgba(starry(n_stars=30), spec, P), spec, P)
+    assert calm.ok and calm.measured["specks"] <= 250  # a few stars are just specks to drop
+
+
+def test_scattered_pieces_are_refused():
+    centres = [(60 + 140 * i, 60 + 140 * j, 22) for i in range(3) for j in range(3)]  # 9 parts, far apart
+    rgba = discs(400, 400, centres)
+    spec = Spec("die_cut", 3.0)
+    res = remove_background(artwork_from_rgba(flatten(rgba, (255, 255, 255)), spec, P), spec, P)
+    assert not res.ok and res.measured["pieces"] == 9 > res.measured["max_pieces"]
+    art = artwork_from_rgba(rgba, spec, P)
+    bridged = bridge_islands(art, spec, P)
+    assert not bridged.ok and "too many" in bridged.note and bridged.measured["pieces"] == 9

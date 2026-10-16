@@ -1405,7 +1405,7 @@
   "split": "dev",
   "samples": 258,
   "jobs": 8,
-  "seconds": 34.9,
+  "seconds": 32.4,
   "manifest": "manifest-dev.jsonl",
   "manifest_sha256": "3ceb160d4500066a44a6c02b33d7de9cc07943bce5e89e18e2fc7ab70be7850a",
   "errors": 0

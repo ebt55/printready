@@ -14,6 +14,7 @@ import numpy as np
 from printready.fixes._common import evolve, refuse
 from printready.geometry import (
     components,
+    count_pieces,
     delta_e_to,
     dilate,
     fill_holes,
@@ -91,7 +92,16 @@ def remove_background(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
         return refuse(art, "Removing the background would leave nothing.", removed_frac=1.0, **measured)
     ppi0 = ppi_for_long_side(long_side_px(keep), spec, profile)
     region = fill_holes(dilate(keep, profile.border_in * ppi0))
-    found = components(region, profile.speck_max_in2 * ppi0**2, area_of=keep)
+    speck_px = profile.speck_max_in2 * ppi0**2
+    found = components(region, speck_px, area_of=keep)
+    pieces, specks = len(found.masks), count_pieces(keep, speck_px)[1]
+    measured.update(pieces=pieces, max_pieces=int(profile.max_pieces), specks=specks, max_specks=int(profile.max_specks))
+    if pieces > profile.max_pieces or specks > profile.max_specks:
+        return refuse(
+            art,
+            "The background is not one flat colour (stars, texture or scattered detail), so the cut line needs a person.",
+            **measured,
+        )
     if found.masks:
         keep &= np.logical_or.reduce(found.masks)
     removed_frac = 1.0 - float(keep.mean())

@@ -44,6 +44,8 @@ class Profile:
     edge_cut_min_run_in: float
     speck_max_in2: float
     damage_max_frac: float
+    max_pieces: float
+    max_specks: float
     sources: dict[str, str] = field(default_factory=dict, compare=False, repr=False)  # key -> URL | "convention"
     whys: dict[str, str] = field(default_factory=dict, compare=False, repr=False)  # key -> one-line reason
 

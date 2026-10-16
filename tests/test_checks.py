@@ -252,3 +252,10 @@ def test_islands_uses_built_cut():
     art.cut = cut_mask(art.subject, art.ppi, art.border_in)
     f = check_islands(art, spec, P)
     assert (f.status, f.measured["basis"], f.measured["border_in"]) == ("pass", "cut", 0.25)
+
+
+def test_islands_too_many_pieces_is_person():
+    centres = [(60 + 140 * i, 60 + 140 * j, 22) for i in range(3) for j in range(3)]
+    art, spec = at_ppi(discs(400, 400, centres), PPI)
+    f = check_islands(art, spec, P)
+    assert (f.status, f.fixer, f.measured["components"]) == ("fail", "person", 9)

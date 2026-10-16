@@ -138,6 +138,14 @@ def components(mask: np.ndarray, min_area_px: float, area_of: np.ndarray | None 
     )
 
 
+def count_pieces(mask: np.ndarray, min_area_px: float) -> tuple[int, int]:
+    """(pieces, specks): 8-connected components of `mask` with area at or above / below
+    `min_area_px`. Counts only, so scattered noise cannot cost one mask per component."""
+    _, _, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    return int((areas >= min_area_px).sum()), int((areas < min_area_px).sum())
+
+
 def cut_mask(
     subject: np.ndarray,
     ppi: float,
