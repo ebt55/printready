@@ -1,0 +1,285 @@
+{
+  "mode": "rules",
+  "outcome": "fixable",
+  "handoff_reason": null,
+  "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.",
+  "person_notes": [],
+  "cost_usd": 0.002271,
+  "elapsed_s": 4.623,
+  "spec": {
+    "product": "die_cut",
+    "size_in": 3.0,
+    "prompt": "an octopus playing four drums at once"
+  },
+  "profile": "stickermule-diecut",
+  "art": {
+    "width": 1024,
+    "height": 1024,
+    "ppi": 327.68,
+    "offset": [
+      0,
+      0
+    ],
+    "subject_px": null,
+    "border_in": null,
+    "cut_px": 966628,
+    "history": [
+      {
+        "fix": "fit_shape",
+        "ok": true,
+        "damaged": false,
+        "note": "Changed the order to a rounded-rectangle sticker of the whole image (3.00 x 3.00 in).",
+        "measured": {
+          "product": "rounded_rect",
+          "ppi": 327.68,
+          "finished_w_in": 3.0,
+          "finished_h_in": 3.0,
+          "bleed_in": 0.0625,
+          "corner_radius_in": 0.125
+        },
+        "guard": {
+          "metric": "image_px_changed",
+          "label": "image pixels changed",
+          "value": 0,
+          "limit": 0,
+          "passed": true
+        }
+      }
+    ],
+    "meta": {
+      "path": "C:\\Users\\ebin\\claude-ground\\printready\\data\\realset\\test\\images\\90c243fd1893c8c9ad3343ea07c82c9e217e9752abd37c0cc3361373e2592b13.jpg",
+      "bytes": 442541,
+      "format": "JPEG",
+      "real_alpha": false,
+      "width": 1024,
+      "height": 1024
+    },
+    "shape": "rounded_rect"
+  },
+  "history": [
+    {
+      "fix": "fit_shape",
+      "ok": true,
+      "damaged": false,
+      "note": "Changed the order to a rounded-rectangle sticker of the whole image (3.00 x 3.00 in).",
+      "measured": {
+        "product": "rounded_rect",
+        "ppi": 327.68,
+        "finished_w_in": 3.0,
+        "finished_h_in": 3.0,
+        "bleed_in": 0.0625,
+        "corner_radius_in": 0.125
+      },
+      "guard": {
+        "metric": "image_px_changed",
+        "label": "image pixels changed",
+        "value": 0,
+        "limit": 0,
+        "passed": true
+      }
+    }
+  ],
+  "before": {
+    "status": "fail",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 442541,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "measured": {
+          "ppi": 365.71,
+          "basis": "canvas",
+          "max_size_in_at_target": 3.613,
+          "max_size_in_at_floor": 7.027,
+          "one_pt_px": 5.08
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "fail",
+        "message": "The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
+        "measured": {
+          "real_alpha": false,
+          "colour_rgb": [
+            12,
+            13,
+            16
+          ],
+          "colour_hex": "#0c0d10",
+          "colour_lab": [
+            3.7,
+            0.39,
+            -1.41
+          ],
+          "ring_uniform_frac": 0.6177,
+          "ring_band_px": 20
+        },
+        "fixer": "person",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "after": {
+    "status": "warn",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 442541,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 328 PPI, meeting the 300 PPI target; lines thinner than 4.6 px print under 1 pt.",
+        "measured": {
+          "ppi": 327.68,
+          "basis": "image",
+          "max_size_in_at_target": 3.288,
+          "max_size_in_at_floor": 6.702,
+          "one_pt_px": 4.55
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
+        "measured": {
+          "applies": false
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
+        "measured": {
+          "applies": false
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
+        "measured": {
+          "applies": false
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "pass",
+        "message": "Not applicable to a whole-image sticker.",
+        "measured": {
+          "applies": false
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "product_fit",
+        "status": "warn",
+        "message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art.",
+        "measured": {
+          "applies": true,
+          "product": "rounded_rect",
+          "finished_w_in": 3.0,
+          "finished_h_in": 3.0,
+          "bleed_in": 0.0625,
+          "corner_radius_in": 0.125
+        },
+        "fixer": "customer",
+        "boxes": []
+      },
+      {
+        "check": "text_garbled",
+        "status": "pass",
+        "message": "No text was found in the art.",
+        "measured": {
+          "items": [],
+          "notes": "no text",
+          "model": "grok-4.3",
+          "request_sha256": "b021c38a571e60fcbdfaa62f80627495e83f62832cc33e052f2665a6b98e5d06",
+          "crop": [
+            0,
+            0,
+            1024,
+            1024
+          ]
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "outputs": {
+    "step-1": "step-1-fit_shape.png",
+    "fixed": "fixed.png",
+    "cutline": "cutline.svg",
+    "proof": "proof.png",
+    "overlay": "overlay.png",
+    "customer_message": "customer_message.md",
+    "report": "report.json",
+    "html": "report.html"
+  }
+}

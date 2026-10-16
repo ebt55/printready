@@ -1,0 +1,1 @@
+This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. Before printing, a person on our team will check this: something could not be checked automatically. We will send you an updated proof.

@@ -1,0 +1,1 @@
+We removed the plain background and added a 0.1 in white border with a cut line. Before printing, a person on our team will check this: something could not be checked automatically. We will send you an updated proof.

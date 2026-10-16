@@ -1,0 +1,1 @@
+We removed the plain background and added a 0.1 in white border with a cut line. At 3 in it prints at 297 PPI; at 3.0 in or smaller it is fully sharp. Keep 3 in or choose a smaller size. If the proof looks right, approve it to print your 3 in die-cut sticker.

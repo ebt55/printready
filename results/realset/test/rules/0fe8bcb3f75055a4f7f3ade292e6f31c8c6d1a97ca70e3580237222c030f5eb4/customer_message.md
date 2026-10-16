@@ -1,0 +1,1 @@
+We removed the plain background and added a 0.1 in white border with a cut line. Before printing, a person on our team will check this: the art runs off the bottom edge of the image for 0.16 in, so part of it is cut off; a person needs to check it. We will send you an updated proof.

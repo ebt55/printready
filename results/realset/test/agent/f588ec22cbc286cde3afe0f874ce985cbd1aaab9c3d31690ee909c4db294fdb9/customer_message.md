@@ -1,0 +1,1 @@
+Before printing, a person on our team will check this: the art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out. We will send you an updated proof.

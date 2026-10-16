@@ -1,0 +1,226 @@
+{
+  "mode": "agent",
+  "outcome": "needs_person",
+  "handoff_reason": "error",
+  "customer_message": "Before printing, a person on our team will check this: the art sits on a solid #f5edd9 background, which we can remove so the sticker is cut to the art's shape. We will send you an updated proof.",
+  "person_notes": [
+    "The agent run stopped (error): HTTP 403: Your team 3972890f-771d-4301-9140-3c2f639d2bfd has either used all available credits or reached its monthly spending limit. To continue making API requests, please purchase more credits or raise your spending limit.",
+    "background fail (auto): The art sits on a solid #f5edd9 background, which we can remove so the sticker is cut to the art's shape.",
+    "soft_alpha not verified: needs background removal first",
+    "edge_crop not verified: needs background removal first",
+    "islands not verified: needs background removal first"
+  ],
+  "cost_usd": 0.0,
+  "elapsed_s": 0.788,
+  "spec": {
+    "product": "die_cut",
+    "size_in": 3.0,
+    "prompt": "a candle shop label with a flame and the words \"EMBER & WICK\""
+  },
+  "profile": "stickermule-diecut",
+  "art": {
+    "width": 1024,
+    "height": 1024,
+    "ppi": 365.7142857142857,
+    "offset": [
+      0,
+      0
+    ],
+    "subject_px": null,
+    "border_in": null,
+    "cut_px": null,
+    "history": [],
+    "meta": {
+      "path": "C:\\Users\\ebin\\claude-ground\\printready\\data\\realset\\test\\images\\be61375e022f7f5efaf6678f22a0ba60c9cbe79748ba6167d03445273d833b9a.jpg",
+      "bytes": 388824,
+      "format": "JPEG",
+      "real_alpha": false,
+      "width": 1024,
+      "height": 1024
+    },
+    "shape": "die_cut"
+  },
+  "history": [],
+  "before": {
+    "status": "fail",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 388824,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "measured": {
+          "ppi": 365.71,
+          "basis": "canvas",
+          "max_size_in_at_target": 3.613,
+          "max_size_in_at_floor": 7.027,
+          "one_pt_px": 5.08
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "fail",
+        "message": "The art sits on a solid #f5edd9 background, which we can remove so the sticker is cut to the art's shape.",
+        "measured": {
+          "real_alpha": false,
+          "colour_rgb": [
+            245,
+            237,
+            217
+          ],
+          "colour_hex": "#f5edd9",
+          "colour_lab": [
+            93.9,
+            -0.78,
+            11.12
+          ],
+          "ring_uniform_frac": 0.9998,
+          "ring_band_px": 20
+        },
+        "fixer": "auto",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "after": {
+    "status": "fail",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 388824,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "measured": {
+          "ppi": 365.71,
+          "basis": "canvas",
+          "max_size_in_at_target": 3.613,
+          "max_size_in_at_floor": 7.027,
+          "one_pt_px": 5.08
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "fail",
+        "message": "The art sits on a solid #f5edd9 background, which we can remove so the sticker is cut to the art's shape.",
+        "measured": {
+          "real_alpha": false,
+          "colour_rgb": [
+            245,
+            237,
+            217
+          ],
+          "colour_hex": "#f5edd9",
+          "colour_lab": [
+            93.9,
+            -0.78,
+            11.12
+          ],
+          "ring_uniform_frac": 0.9998,
+          "ring_band_px": 20
+        },
+        "fixer": "auto",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "outputs": {
+    "log": "log.jsonl",
+    "look-0": "look-0-upload.png",
+    "fixed": "fixed.png",
+    "proof": "proof.png",
+    "overlay": "overlay.png",
+    "customer_message": "customer_message.md",
+    "report": "report.json",
+    "html": "report.html"
+  }
+}

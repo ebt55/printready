@@ -1,0 +1,1 @@
+We removed the plain background, added a 0.1 in white border with a cut line and widened the border to 0.10 in so the pieces cut as one sticker. At 3 in it prints at only 132 PPI and will look soft; it is sharp at 1.4 in and acceptable up to 2.7 in. Please choose a smaller size. If the proof looks right, approve it to print your 3 in die-cut sticker.
