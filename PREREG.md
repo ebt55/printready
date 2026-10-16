@@ -136,9 +136,9 @@ Written by `printready prereg freeze`, checked by `printready prereg verify`. Do
   }
  },
  "source": {
-  "src/printready/**/*.py (excluding web/)": {
-   "sha256": "3860300607dd08543d174647f797d759dfc3a061d7aed1fb8fe2e574d863772d",
-   "count": 60,
+  "src/printready/**/*.py (excluding web/, commands/serve.py, commands/site.py)": {
+   "sha256": "91b3c2e30cee18ee501dc27dcb9978015fe6ca1cb78e30d5e49747942eaa18b0",
+   "count": 59,
    "files": {
     "src/printready/__init__.py": "090233e838b71ad7d599c024567b45bc921f0500ddbca1b067399ca2737781d0",
     "src/printready/agent.py": "8ede8afbc1a37fb9b7e6ce4a5dd0449b6604472339321c67191529c025a94d19",
@@ -169,10 +169,8 @@ Written by `printready prereg freeze`, checked by `printready prereg verify`. Do
     "src/printready/commands/fix.py": "afed248a3ceb6556026332ab740fd0d2eb0a274da9091fa4bc085b169b494b89",
     "src/printready/commands/mcp.py": "cd9743d85df92fbffd4a4f2fd2ec3b9fa8112f1a926671c77d2b0cd988674d96",
     "src/printready/commands/prereg.py": "4d55f3e76acba67143e2e125cc2f6c9745e878b27499e791df0c9c029bc20332",
-    "src/printready/commands/realset.py": "b3be2058e0ee4c4761f38a0ad574c1b42f755379f0abd5895823b42eeb0d4f3f",
+    "src/printready/commands/realset.py": "2db55478818cf681f613f6ed1636a75d094bc4c3e0a27a285e595aa4b816227f",
     "src/printready/commands/rules.py": "86d2b573b4802d52ca9f7ccde5f8f4c0c061b28e70f7bb0f37b85248a4f35cab",
-    "src/printready/commands/serve.py": "fc2da3f25d1510bca012f5396fdf72d1e7557657338a03d6fb16a753a155d585",
-    "src/printready/commands/site.py": "79b1923adf797c1dda40a20686f34b311fe3f8c000cb5d9c2d66c1dae3ed9c26",
     "src/printready/cutline.py": "0b49f9f17e1c5f5349eb157f4bf486c43c8110279d8c58bf8b711cf17cb6662f",
     "src/printready/figures.py": "cbc62b71c72ec3780470d4f3b3ea29591fb64c48d90723f52fd6eb03afbba238",
     "src/printready/fixes/__init__.py": "1f08ad0a14d724b0f41f3af5a453f933a1b317ec63239bcd0268a3aead762cd1",
@@ -187,12 +185,13 @@ Written by `printready prereg freeze`, checked by `printready prereg verify`. Do
     "src/printready/llm.py": "27e2aebcd201660b6d832926622d5b5f652eb1c1816608fa22621ba1d51a585a",
     "src/printready/mcp_server.py": "28c406d280ce7328ba781cd2772d11c348efa2b9791cf525fd150631abb444e9",
     "src/printready/pipeline.py": "62768437133c90ee1773c7c5fe7ff280292da5ae9cc987d95bbaa15585ceda16",
-    "src/printready/prereg.py": "1329914daa2e815a935ad1a07570e2b8ce42e11ce3cb1c96a63ef8d700482f29",
+    "src/printready/prereg.py": "af38a427d724684b50f61a9162e5259866d50b225f77928629414d658dbba250",
     "src/printready/profile.py": "72c2540bc26784dd32719d290cf17d131f2f8f9ac241a17bbcbb436018a4ef5d",
     "src/printready/realset/__init__.py": "ff4dbd1db2d40240d3c46e86f62afac021c2e4d242172267f9def3444878f0f5",
-    "src/printready/realset/evaluate.py": "7c7a8ad9006db10b16e5dc850e725930304ccd9e55dfae250ca9d05de244b37f",
+    "src/printready/realset/evaluate.py": "187067ad28b4a4e6aefb7dc0c4cf26f77d789363f02595d02eb14fc34ed68f96",
     "src/printready/realset/gen.py": "573bd92a14f537bb600414262a371b657b38fcece5a775040b6690dd06f00223",
-    "src/printready/realset/label.py": "30ac2127e8d53bd3851316c0fbf3fb9fb781e3685f712e205c484081a6bdfa65",
+    "src/printready/realset/label.py": "401b829f642258f28d1c3d0c6c2d8efa4acdec763ade4fea2a73193d5d4c0398",
+    "src/printready/realset/rerun.py": "dc1ba2adb215ed1bf4a00c538ff79e307e38ee89ae233805bc8cbee7132b9452",
     "src/printready/realset/runs.py": "e661fc745c99956f98df5cb551b53fe2e7e59c2c56b8268d35cbcad1cf86c955",
     "src/printready/realset/sheet.py": "964adde9d65dca6005d1876b17ec3e964e9ceac0bcafcc028e793d5b0c3d338e",
     "src/printready/render.py": "2f86dc011f640335c3628391bf5ce07a3c86b249f4229211384cba89c96b7ead",
