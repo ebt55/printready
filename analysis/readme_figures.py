@@ -5,10 +5,13 @@ drawing helpers of the frozen `printready.figures` and adds what the test figure
 - the runs with the PREREG addendum 1 reruns in place (results/realset/<split>-rerun/),
 - Ebin's pass-2 verdict per proof (labels.jsonl pass 2 + label-pass2-mapping.json),
 - rounded-rectangle products (the cut line is an SVG <rect>),
-- results.png: agreement with the ceiling, pass-2 acceptance, cost per image.
+- results.png: agreement with the ceiling, pass-2 acceptance, cost per image;
+- prefix-strip.png: the same prompt as typed vs with a sticker-style prefix (exploratory run in
+  data/realset/prefix and results/realset/prefix).
 
     uv run python analysis/readme_figures.py --realset-split test --bench-split test -o docs/img/ \\
-        --hero bfeeafce --gallery 41e5d915 0dbb18b1 be61375e 49cac149 7fd718ba 0fe8bcb3
+        --hero bfeeafce --gallery 41e5d915 0dbb18b1 be61375e 49cac149 7fd718ba 0fe8bcb3 \
+        --prefix p03 p05 p09 p19 p29 p36
 
 Reads committed results and labels only (no API calls).
 """
@@ -380,6 +383,99 @@ def results(root: Path, split: str) -> Image.Image:
     return canvas
 
 
+# --- prefix strip ----------------------------------------------------------------------------------
+
+PREFIX_MODEL = "xai:grok-imagine-image"
+
+
+def prefix_runs(root: Path) -> tuple[dict[str, F.RealImage], str]:
+    """Prefixed runs by prompt id (results/realset/prefix), and the prefix text itself."""
+    data = root / "data" / "realset" / "prefix"
+    manifest = {m["sha256"]: m for m in read_jsonl(data / "manifest.jsonl")}
+    out, prefix = {}, ""
+    for sha, row in last_by(read_jsonl(root / "results" / "realset" / "prefix" / "runs.jsonl"), "image").items():
+        m = manifest[sha]
+        if row["image_model"] != PREFIX_MODEL:
+            continue
+        out[row["prompt_id"]] = F.RealImage(sha, row["prompt_id"], m["prompt"], row["image_model"], data / m["file"],
+                                            row, root / row["out_dir"])
+        if m.get("full_prompt", "").endswith(m["prompt"]):
+            prefix = m["full_prompt"][: -len(m["prompt"])].strip()
+    return out, prefix
+
+
+def prefix_pairs(root: Path, split: str = "test") -> list[tuple[F.RealImage, F.RealImage]]:
+    """(as typed, with prefix) for every prompt where the typed prompt gave a scene that rules mode
+    made a rounded rectangle, and the prefixed prompt gave a die-cut that rules mode could fix."""
+    typed = {im.prompt_id: im for im in final_runs(root, split, "rules").values() if im.image_model == PREFIX_MODEL}
+    prefixed, _ = prefix_runs(root)
+    pairs = []
+    for pid, a in sorted(typed.items()):
+        b = prefixed.get(pid)
+        if (b and a.run.get("shape") == "rounded_rect" and a.run["outcome"] == "fixable"
+                and b.run.get("shape") == "die_cut" and b.run["outcome"] == "fixable"):
+            pairs.append((a, b))
+    return pairs
+
+
+def _resolution(im: F.RealImage) -> tuple[float | None, str]:
+    """The final resolution finding of a run: (PPI of the subject at the order size, status)."""
+    for f in im.report()["after"]["findings"]:
+        if f["check"] == "resolution":
+            return (f.get("measured") or {}).get("ppi"), f["status"]
+    return None, "skip"
+
+
+def prefix_strip(root: Path, ids: list[str], split: str = "test", size_in: float = 3.0) -> Image.Image:
+    pairs = {a.prompt_id: (a, b) for a, b in prefix_pairs(root, split)}
+    missing = [i for i in ids if i not in pairs]
+    if missing:
+        raise SystemExit(f"prefix strip: {missing} do not qualify (scene as typed, die-cut with the prefix)")
+    _, prefix = prefix_runs(root)
+    n, gap = len(ids), 20
+    cell = (F.WIDTH - 2 * F.MARGIN - (n - 1) * gap) // n
+    head = F.MARGIN + 96
+    row_title, chip_h = 34, 40
+    row2 = head + row_title + cell + chip_h + 18
+    caption_y = row2 + row_title + cell + chip_h + 6
+    height = caption_y + 62 + 64 + F.MARGIN - 16
+    canvas = Image.new("RGB", (F.WIDTH, height), F.PAPER)
+    draw = ImageDraw.Draw(canvas)
+    draw.text((F.MARGIN, F.MARGIN), "Same prompt, same model (grok-imagine-image): as typed vs with a sticker-style "
+              "prefix", font=F.font(26, True), fill=F.INK)
+    sub_text = f"Prefix: \u201c{prefix}\u201d" if prefix else "With a fixed sticker-style prefix."
+    draw.text((F.MARGIN, F.MARGIN + 40), F.ellipsize(sub_text, F.font(16), F.WIDTH - 2 * F.MARGIN), font=F.font(16),
+              fill=F.INK_3)
+    for y, label in ((head, "As typed"), (row2, "With the sticker prefix")):
+        draw.text((F.MARGIN, y), label, font=F.font(18, True), fill=F.INK)
+    for k, pid in enumerate(ids):
+        a, b = pairs[pid]
+        x = F.MARGIN + k * (cell + gap)
+        # as typed: the generated image, and what rules mode made of it
+        F.card(canvas, (x, head + row_title, x + cell, head + row_title + cell), Image.open(a.original).convert("RGB"))
+        F.chip(draw, x, head + row_title + cell + 8, "scene \u2192 rounded rectangle", F.SURFACE, F.INK_2, size=13,
+               bold=False)
+        # with the prefix: the die-cut proof and its cut line
+        top = row2 + row_title
+        px, py, pk = F.card(canvas, (x, top, x + cell, top + cell), F.proof_image(b))
+        paths = F.cut_paths(b.out_dir)
+        if paths:
+            F.draw_cut(canvas, paths, px, py, pk, width=1.8)
+        ppi, status = _resolution(b)
+        label = f"die-cut, {ppi:.0f} PPI at {size_in:g} in" if ppi else "die-cut"
+        s_bg, s_ink, s_dot = F.STATUS.get(status, F.STATUS["skip"])
+        F.chip(draw, x, top + cell + 8, label, s_bg, s_ink, size=13, dot=s_dot)
+        # the prompt, under its column
+        for i, line in enumerate(F.wrap(f"{pid}  {a.prompt}", F.font(13), cell, max_lines=3)):
+            draw.text((x, caption_y + 18 * i), line, font=F.font(13), fill=F.INK_2)
+    foot = caption_y + 72
+    draw.text((F.MARGIN, foot), "Exploratory, post hoc: one model, one fixed prefix, not preregistered.",
+              font=F.font(14), fill=F.INK_3)
+    draw.text((F.MARGIN, foot + 22), "PPI is the cut-out subject's at a 3 in order; amber = under the 300 PPI target "
+              "(the prefixed subjects are often smaller in the frame).", font=F.font(14), fill=F.INK_3)
+    return canvas
+
+
 # --- main ------------------------------------------------------------------------------------------
 
 
@@ -394,6 +490,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-o", "--out", type=Path, default=Path("docs/img"))
     ap.add_argument("--hero", required=True, help="sha256 prefix of a die-cut image whose rules proof was accepted")
     ap.add_argument("--gallery", nargs=6, required=True, metavar="ID")
+    ap.add_argument("--prefix", nargs="+", default=None, metavar="PROMPT_ID",
+                    help="prompt ids for prefix-strip.png (scene as typed, die-cut with the prefix)")
     ap.add_argument("--root", type=Path, default=Path("."))
     args = ap.parse_args(argv)
     root, out = args.root, args.out
@@ -409,6 +507,8 @@ def main(argv: list[str] | None = None) -> int:
     metrics = json.loads((root / "results" / "bench" / args.bench_split / "metrics.json").read_text(encoding="utf-8"))
     written.append(F.save(F.bench_heat(metrics), out / "bench-heat.png"))
     written.append(F.save(results(root, args.realset_split), out / "results.png"))
+    if args.prefix:
+        written.append(F.save(prefix_strip(root, args.prefix, args.realset_split), out / "prefix-strip.png"))
     print(f"hero: {hero_im.prompt_id} {hero_im.model_short} {hero_im.sha[:12]}")
     print("gallery: " + ", ".join(f"{p.prompt_id}/{p.model_short} {p.sha[:8]} ({verdict_for(p, verdicts)})"
                                   for p in picks))
