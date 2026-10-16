@@ -14,3 +14,7 @@ data/realset/**/label-images/
 results/realset/**/*.png
 results/realset/**/*.html
 !results/realset/*/contact-sheet*.png
+
+# workbench demo output (rebuild: printready serve --rebuild-demo)
+examples/samples/demo/
+site/

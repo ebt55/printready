@@ -5,9 +5,9 @@ from __future__ import annotations
 import argparse
 
 from printready import __version__
-from printready.commands import bench, check, fix, realset
+from printready.commands import bench, check, figures, fix, mcp, prereg, realset, rules, serve, site
 
-GROUPS = (check, fix, bench, realset)
+GROUPS = (check, fix, rules, bench, realset, prereg, figures, mcp, serve, site)
 
 
 def build_parser() -> argparse.ArgumentParser:

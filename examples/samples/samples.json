@@ -1,0 +1,156 @@
+[
+  {
+    "id": "mascot",
+    "title": "Blob mascot",
+    "blurb": "Solid white background, like most image-model output.",
+    "file": "mascot.png",
+    "size_in": 3.0,
+    "width": 1200,
+    "height": 1200,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  },
+  {
+    "id": "badge",
+    "title": "Coffee club badge",
+    "blurb": "Clean edge, but the words are misspelled.",
+    "file": "badge.png",
+    "size_in": 3.0,
+    "width": 1100,
+    "height": 1100,
+    "vision": {
+      "text": [
+        {
+          "letters": "C O F E E",
+          "seen": "COFEE",
+          "intended": "COFFEE",
+          "misspelled": true,
+          "broken": false,
+          "box": [
+            0.225,
+            0.569,
+            0.775,
+            0.685
+          ]
+        },
+        {
+          "letters": "C L U B B",
+          "seen": "CLUBB",
+          "intended": "CLUB",
+          "misspelled": true,
+          "broken": false,
+          "box": [
+            0.373,
+            0.717,
+            0.627,
+            0.78
+          ]
+        },
+        {
+          "letters": "E S T / 2 0 2 6",
+          "seen": "EST 2026",
+          "intended": "EST 2026",
+          "misspelled": false,
+          "broken": false,
+          "box": [
+            0.415,
+            0.146,
+            0.584,
+            0.178
+          ]
+        }
+      ],
+      "notes": "Two of three lines look misspelled; the small date line is legible."
+    },
+    "agent": {}
+  },
+  {
+    "id": "bolt",
+    "title": "Bolt logo, 300 px",
+    "blurb": "Too few pixels to print sharp at 3 in.",
+    "file": "bolt.png",
+    "size_in": 3.0,
+    "width": 300,
+    "height": 300,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  },
+  {
+    "id": "cloud",
+    "title": "Cloud and raindrop",
+    "blurb": "Two parts with a gap; one die-cut needs one outline.",
+    "file": "cloud.png",
+    "size_in": 3.0,
+    "width": 1200,
+    "height": 1160,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  },
+  {
+    "id": "ghost",
+    "title": "Glowing ghost",
+    "blurb": "A soft glow leaves the cut position ambiguous.",
+    "file": "ghost.png",
+    "size_in": 3.0,
+    "width": 1400,
+    "height": 1400,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {
+      "look_note": "The glow fades over about 0.08 in, so any cut line either clips the glow or leaves a hazy edge. That is a design decision for a person."
+    }
+  },
+  {
+    "id": "planet",
+    "title": "Ringed planet",
+    "blurb": "Transparent, sharp, one part: ready as is.",
+    "file": "planet.png",
+    "size_in": 3.0,
+    "width": 1200,
+    "height": 1200,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  },
+  {
+    "id": "cat",
+    "title": "Cat with cropped tail",
+    "blurb": "The tail runs off the edge of the canvas.",
+    "file": "cat.png",
+    "size_in": 3.0,
+    "width": 1000,
+    "height": 1000,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  },
+  {
+    "id": "scene",
+    "title": "Sunset scene",
+    "blurb": "A full-bleed scene: no edge to cut around.",
+    "file": "scene.png",
+    "size_in": 3.0,
+    "width": 1100,
+    "height": 1100,
+    "vision": {
+      "text": [],
+      "notes": "No text in the artwork."
+    },
+    "agent": {}
+  }
+]

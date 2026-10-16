@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="printready-mode" content="app" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="printready: check and fix die-cut sticker artwork against a printer's paraphrased rules." />
+    <title>printready</title>
+    <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="static/css/tokens.css" />
+    <link rel="stylesheet" href="static/css/base.css" />
+    <link rel="stylesheet" href="static/css/components.css" />
+    <link rel="stylesheet" href="static/css/screens.css" />
+    <script>
+      // Apply the saved theme before first paint (no flash of the wrong theme).
+      try {
+        var t = JSON.parse(localStorage.getItem("printready.theme") || '"auto"');
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
+    <!--printready:static-data-->
+  </head>
+  <body>
+    <div id="app" class="app">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <header class="topbar" id="topbar"></header>
+      <main id="main" tabindex="-1">
+        <div class="boot" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading the workbench</span>
+        </div>
+      </main>
+      <footer class="footbar" id="footbar"></footer>
+    </div>
+    <noscript>printready's workbench needs JavaScript.</noscript>
+    <!--printready:app-script--><script type="module" src="static/js/app.js"></script><!--/printready:app-script-->
+  </body>
+</html>

@@ -1,0 +1,252 @@
+/* Design tokens for the "proof room" look. Every colour, size and timing used by the other
+   stylesheets comes from here, so a design pass edits this file first.
+   Light theme = paper. Dark theme = deep ink. Follows the OS unless data-theme is set. */
+
+:root {
+  /* type */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", "Helvetica Neue", Inter, Roboto, system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "SF Pro Display", "Helvetica Neue", Inter, Roboto, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-28: 28px;
+  --fs-36: 36px;
+  --lh-tight: 1.25;
+  --lh: 1.5;
+  --tracking-caps: 0.06em;
+
+  /* 8 px grid (4 px half steps) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* shape and motion */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-pill: 999px;
+  --dur: 160ms;
+  --dur-slow: 220ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* layout */
+  --header-h: 56px;
+  --footer-h: 30px;
+  --rail-w: clamp(256px, 19vw, 296px);
+  --panel-w: clamp(340px, 27vw, 420px);
+  --control-h: 32px;
+  --control-h-lg: 40px;
+
+  /* light theme: paper */
+  --bg: #f4f2ed;
+  --surface: #ffffff;
+  --surface-2: #faf9f6;
+  --surface-hover: #f6f4f0;
+  --sunken: #ebe8e1;
+  --desk: #e7e4dc;
+  --line: #e3dfd6;
+  --line-strong: #cec8bc;
+  --ink: #17171c;
+  --ink-2: #45454d;
+  --ink-3: #66656d;
+  --ink-4: #9a98a0;
+
+  --accent: #d4007a;
+  --accent-hover: #b8006a;
+  --accent-ink: #b0006a;
+  --accent-soft: #fce8f3;
+  --accent-soft-2: #fdf3f8;
+  --accent-line: #f3b5d6;
+  --on-accent: #ffffff;
+  --cut: #e4007c;
+  --cut-halo: rgba(255, 255, 255, 0.75);
+  --border-band: rgba(228, 0, 124, 0.2);
+
+  --pass-bg: #e2f3e8;
+  --pass-ink: #13693a;
+  --pass-dot: #1f9d57;
+  --warn-bg: #fbefd6;
+  --warn-ink: #874e00;
+  --warn-dot: #d98e04;
+  --fail-bg: #fbe4e1;
+  --fail-ink: #b42318;
+  --fail-dot: #e0402f;
+  --skip-bg: #eeede9;
+  --skip-ink: #56555d;
+  --skip-dot: #a19fa6;
+
+  --ready-bg: #e5f4eb;
+  --ready-ink: #0f5c32;
+  --ready-line: #b6dfc6;
+  --fixable-bg: #fce8f3;
+  --fixable-ink: #9a0059;
+  --fixable-line: #f3b5d6;
+  --person-bg: #fcf0d9;
+  --person-ink: #774400;
+  --person-line: #eed095;
+
+  --shadow-1: 0 1px 2px rgba(23, 23, 28, 0.05), 0 1px 1px rgba(23, 23, 28, 0.03);
+  --shadow-2: 0 6px 18px rgba(23, 23, 28, 0.07), 0 1px 3px rgba(23, 23, 28, 0.05);
+  --shadow-3: 0 24px 64px rgba(23, 23, 28, 0.18), 0 6px 16px rgba(23, 23, 28, 0.08);
+  --shadow-art: 0 1px 2px rgba(23, 23, 28, 0.08), 0 12px 32px rgba(23, 23, 28, 0.1);
+
+  --checker-a: #ffffff;
+  --checker-b: #eae7e0;
+  --kraft: #c9a679;
+  --kraft-2: #bf9b6d;
+  --board-dark: #1c1d23;
+  --scrim: rgba(18, 18, 22, 0.38);
+  --heat-rgb: 212, 0, 122;
+  --code-bg: #f6f4ef;
+  --code-key: #8a2d6a;
+  --code-str: #1d6b48;
+  --code-num: #8a5000;
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+  color-scheme: light;
+}
+
+/* dark theme: deep ink. Two selectors: explicit choice, and OS preference when not forced light. */
+:root[data-theme="dark"] {
+  --bg: #101116;
+  --surface: #17191f;
+  --surface-2: #1b1d24;
+  --surface-hover: #1f222a;
+  --sunken: #0c0d11;
+  --desk: #0d0e12;
+  --line: #292c35;
+  --line-strong: #3a3e4a;
+  --ink: #eeece6;
+  --ink-2: #c6c4be;
+  --ink-3: #9d9ba3;
+  --ink-4: #6e6d75;
+  --accent: #d4007a;
+  --accent-hover: #e8168c;
+  --accent-ink: #ff74b8;
+  --accent-soft: rgba(228, 0, 124, 0.16);
+  --accent-soft-2: rgba(228, 0, 124, 0.09);
+  --accent-line: rgba(255, 116, 184, 0.36);
+  --cut: #ff2e97;
+  --cut-halo: rgba(0, 0, 0, 0.45);
+  --border-band: rgba(255, 46, 151, 0.24);
+  --pass-bg: rgba(52, 199, 123, 0.14);
+  --pass-ink: #7fdfa8;
+  --pass-dot: #3cc47e;
+  --warn-bg: rgba(240, 170, 40, 0.15);
+  --warn-ink: #f4c46a;
+  --warn-dot: #f0aa28;
+  --fail-bg: rgba(240, 80, 64, 0.16);
+  --fail-ink: #ff8e82;
+  --fail-dot: #f05040;
+  --skip-bg: rgba(160, 160, 170, 0.13);
+  --skip-ink: #b6b5bc;
+  --skip-dot: #77767e;
+  --ready-bg: rgba(52, 199, 123, 0.11);
+  --ready-ink: #8fe5b4;
+  --ready-line: rgba(52, 199, 123, 0.3);
+  --fixable-bg: rgba(228, 0, 124, 0.13);
+  --fixable-ink: #ff8cc4;
+  --fixable-line: rgba(255, 116, 184, 0.34);
+  --person-bg: rgba(240, 170, 40, 0.11);
+  --person-ink: #f6c978;
+  --person-line: rgba(240, 170, 40, 0.32);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 8px 22px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.55), 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-art: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 36px rgba(0, 0, 0, 0.45);
+  --checker-a: #2a2c33;
+  --checker-b: #23252b;
+  --board-dark: #08090c;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --heat-rgb: 255, 70, 160;
+  --code-bg: #121419;
+  --code-key: #ff9fd0;
+  --code-str: #8fe5b4;
+  --code-num: #f4c46a;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101116;
+    --surface: #17191f;
+    --surface-2: #1b1d24;
+    --surface-hover: #1f222a;
+    --sunken: #0c0d11;
+    --desk: #0d0e12;
+    --line: #292c35;
+    --line-strong: #3a3e4a;
+    --ink: #eeece6;
+    --ink-2: #c6c4be;
+    --ink-3: #9d9ba3;
+    --ink-4: #6e6d75;
+    --accent: #d4007a;
+    --accent-hover: #e8168c;
+    --accent-ink: #ff74b8;
+    --accent-soft: rgba(228, 0, 124, 0.16);
+    --accent-soft-2: rgba(228, 0, 124, 0.09);
+    --accent-line: rgba(255, 116, 184, 0.36);
+    --cut: #ff2e97;
+    --cut-halo: rgba(0, 0, 0, 0.45);
+    --border-band: rgba(255, 46, 151, 0.24);
+    --pass-bg: rgba(52, 199, 123, 0.14);
+    --pass-ink: #7fdfa8;
+    --pass-dot: #3cc47e;
+    --warn-bg: rgba(240, 170, 40, 0.15);
+    --warn-ink: #f4c46a;
+    --warn-dot: #f0aa28;
+    --fail-bg: rgba(240, 80, 64, 0.16);
+    --fail-ink: #ff8e82;
+    --fail-dot: #f05040;
+    --skip-bg: rgba(160, 160, 170, 0.13);
+    --skip-ink: #b6b5bc;
+    --skip-dot: #77767e;
+    --ready-bg: rgba(52, 199, 123, 0.11);
+    --ready-ink: #8fe5b4;
+    --ready-line: rgba(52, 199, 123, 0.3);
+    --fixable-bg: rgba(228, 0, 124, 0.13);
+    --fixable-ink: #ff8cc4;
+    --fixable-line: rgba(255, 116, 184, 0.34);
+    --person-bg: rgba(240, 170, 40, 0.11);
+    --person-ink: #f6c978;
+    --person-line: rgba(240, 170, 40, 0.32);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-2: 0 8px 22px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.55), 0 6px 16px rgba(0, 0, 0, 0.35);
+    --shadow-art: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 36px rgba(0, 0, 0, 0.45);
+    --checker-a: #2a2c33;
+    --checker-b: #23252b;
+    --board-dark: #08090c;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --heat-rgb: 255, 70, 160;
+    --code-bg: #121419;
+    --code-key: #ff9fd0;
+    --code-str: #8fe5b4;
+    --code-num: #f4c46a;
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+    --dur-slow: 0ms;
+  }
+}
