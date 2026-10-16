@@ -286,7 +286,7 @@ def run_vision(
     from printready import spend
     from printready.imageio import load_artwork
     from printready.llm import make_client
-    from printready.vision import check_text
+    from printready.vision import check_text, text_small_enabled
 
     root = Path(root)
     manifest = Path(manifest) if manifest else default_manifest(root, split)
@@ -309,7 +309,8 @@ def run_vision(
         f"estimated ${estimate_usd:.4f} (${per_call:.5f} per call; {basis}; "
         f"+{RETRY_MARGIN - 1:.0%} for retries); budget ${max_usd:.2f} for this run")
     info: dict[str, Any] = {"split": split, "model": model, "samples": len(rows), "kept": len(kept),
-                            "estimate_usd": estimate_usd, "estimate_basis": basis, "max_usd": max_usd, "ran": False}
+                            "estimate_usd": estimate_usd, "estimate_basis": basis, "max_usd": max_usd, "ran": False,
+                            "text_small_enabled": text_small_enabled()}
     if estimate_usd > max_usd:
         log("  estimate is above the budget: nothing was called")
         return info

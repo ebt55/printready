@@ -267,6 +267,7 @@ def final_agreement(rows, preds) -> dict[str, dict[str, Any]]:
 
 
 VISION_POSITIVE = {"text_garbled": "fail", "text_small": "warn"}
+DISABLED_NOTE = "disabled by default (see docs/vision-notes.md)"
 
 
 def _vision_items(entry: dict | None) -> list[dict[str, Any]]:
@@ -289,11 +290,18 @@ def vision_metrics(rows, preds, vision: dict[str, dict], run_info: dict | None) 
     text_rows = [r for r in rows if r["family"] == "text"]
     out: dict[str, Any] = {"model": (run_info or {}).get("model"), "cost_usd": (run_info or {}).get("cost_usd"),
                            "n": len(text_rows)}
+    answered = [v["findings"] for v in vision.values() if v.get("findings")]
+    disabled = {check for check in VISION_POSITIVE
+                if (check == "text_small" and (run_info or {}).get("text_small_enabled") is False)
+                or (answered and not any(check in f for f in answered))}
     for check, positive in VISION_POSITIVE.items():
+        if check in disabled:
+            out[check] = {"disabled": True, "note": DISABLED_NOTE, "precision": None, "recall": None, "n": 0}
+            continue
         c: Counter = Counter()
         for row in text_rows:
             findings = (vision.get(row["id"]) or {}).get("findings")
-            if not findings:
+            if not findings or check not in findings:
                 c["not_run"] += 1
                 continue
             got = findings[check]["status"]
@@ -310,8 +318,11 @@ def vision_metrics(rows, preds, vision: dict[str, dict], run_info: dict | None) 
         if not findings:
             continue
         items = _vision_items(findings.get("text_small")) or _vision_items(findings.get("text_garbled"))
-        threshold_pt = threshold_pt or (findings["text_small"].get("measured") or {}).get("threshold_cap_pt")
+        threshold_pt = threshold_pt or ((findings.get("text_small") or {}).get("measured") or {}).get(
+            "threshold_cap_pt")
         for check in VISION_POSITIVE:
+            if check in disabled or check not in findings:
+                continue
             exp, got = row["expected"][check], findings[check]
             if got["status"] == exp["status"]:
                 continue
@@ -471,12 +482,17 @@ def markdown(s: dict[str, Any]) -> str:
                 "|---|---|---|---|---|---|---|---|---|"]
         for check in VISION_POSITIVE:
             m = v[check]
+            if m.get("disabled"):
+                out.append(f"| {check} | {m['note']} | | | | | | | |")
+                continue
             out.append(f"| {check} | {_pct(m['precision'])} | {_pct(m['recall'])} | {m['tp']} | {m['fp']} "
                        f"| {m['fn']} | {m['tn']} | {m['skip']} | {m['not_run']} |")
         ov = v["outcome_vision"]
         out += ["", f"Outcome with the vision findings: {ov['agree']}/{ov['n']} agree with `outcome_vision`.", ""]
         if v["disagreements"]:
-            out += [f"Text is small below a cap height of {v['threshold_cap_pt']} pt.", "",
+            if v.get("threshold_cap_pt"):
+                out += [f"Text is small below a cap height of {v['threshold_cap_pt']} pt.", ""]
+            out += [
                     "| sample | variant | check | planted (intended) | expected | predicted | model read "
                     "| cap height (model frac -> pt, or measured) | true cap pt |",
                     "|---|---|---|---|---|---|---|---|---|"]

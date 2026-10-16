@@ -41,6 +41,9 @@ def test_freeze_creates_prereg_and_verify_passes(repo):
     assert "src/printready/bench/run.py" in source and "src/printready/web/server.py" not in source
     assert snap["settings"]["agent_max_turns"] == agent.MAX_TURNS
     assert snap["settings"]["temperature"] == 0
+    assert snap["settings"]["text_small_env"] == "PRINTREADY_TEXT_SMALL"
+    assert snap["settings"]["text_small_default"] is False
+    assert {"remove_background", "fit_shape", "finish", "handoff"} <= set(snap["settings"]["agent_tools"])
     assert prereg.verify(repo) == []
 
 

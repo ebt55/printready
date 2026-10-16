@@ -69,10 +69,9 @@ def test_metrics_on_synthetic_predictions(generated):
     assert [r["id"] for r in fx["rows"] if not r["ok"]] == [edge["id"]]
 
 
-def test_run_and_report_end_to_end(generated):
-    root, manifest, rows = generated
+def test_run_and_report_end_to_end(bench_ran):
+    root, manifest, rows = bench_ran
     common = ["--split", "dev", "--limit", "1", "--root", str(root), "--manifest", str(manifest)]
-    assert main(["bench", "run", *common, "--jobs", "1"]) == 0
     assert main(["bench", "report", *common]) == 0
     out = root / "results" / "bench" / "dev" / "limit1"
     preds = [json.loads(line) for line in (out / "predictions.jsonl").read_text(encoding="utf-8").splitlines()]
@@ -104,13 +103,16 @@ def test_run_and_report_refuse_without_data(tmp_path, capsys):
     assert "bench generate" in err and "bench run" in err
 
 
-def test_vision_run_offline_with_the_fake_provider(generated, tmp_path, monkeypatch):
+def test_vision_run_offline_with_the_fake_provider(bench_ran, tmp_path, monkeypatch):
     """--vision through the public vision API with scripted answers: estimate, dry run, then a run
-    that scores one garbled reading against the planted label."""
-    root, manifest, rows = generated
+    that scores one garbled reading against the planted label. text_small is off by default, so the
+    report says so instead of scoring it."""
+    root, manifest, rows = bench_ran
     text_row = next(r for r in rows if r["family"] == "text")
-    answer = {"text": [{"seen": "XYZ", "intended": text_row["param"]["intended"], "broken": False,
-                        "box": [0.2, 0.4, 0.8, 0.6]}], "notes": ""}  # the vision prompt's answer schema
+    answer = {"text": [{"letters": "X Y Z", "seen": "XYZ", "intended": text_row["param"]["intended"],
+                        "misspelled": True, "broken": False, "box": [0.2, 0.4, 0.8, 0.6]}],
+              "notes": "one line"}  # the answer format in prompts/vision-text.md
+    monkeypatch.delenv("PRINTREADY_TEXT_SMALL", raising=False)
     script = tmp_path / "fake.json"
     script.write_text(json.dumps([{"text": json.dumps(answer), "usage": {"in": 700, "out": 200}}]), encoding="utf-8")
     monkeypatch.setenv("PRINTREADY_SPEND_LEDGER", str(tmp_path / "ledger.jsonl"))
@@ -128,4 +130,6 @@ def test_vision_run_offline_with_the_fake_provider(generated, tmp_path, monkeypa
     garbled = metrics["vision"]["text_garbled"]
     assert garbled["n"] == 1 and garbled["fp"] == 1  # the planted word is spelled right, the fake says garbled
     assert metrics["vision"]["disagreements"][0]["check"] == "text_garbled"
-    assert "## Vision" in (out / "report.md").read_text(encoding="utf-8")
+    assert metrics["vision"]["text_small"]["disabled"] is True
+    report = (out / "report.md").read_text(encoding="utf-8")
+    assert "## Vision" in report and "text_small | disabled by default (see docs/vision-notes.md)" in report

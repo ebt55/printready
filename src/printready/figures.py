@@ -446,7 +446,7 @@ def _bench_rows(metrics: dict[str, Any]) -> list[dict[str, Any]]:
                      "fixer": (m.get("fixer_agreement"), f"{fx.get('agree', 0)}/{fx.get('n', 0)}" if fx.get("n") else "")})
     for check in ("text_garbled", "text_small"):
         v = (metrics.get("vision") or {}).get(check)
-        if not v:
+        if not v or v.get("disabled"):
             continue
         tp, fp, fn, tn = v["tp"], v["fp"], v["fn"], v["tn"]
         rows.append({"check": check, "kind": "vision", "n": tp + fn,
@@ -473,7 +473,7 @@ def bench_heat(metrics: dict[str, Any]) -> Image.Image:
     table_w = label_w + n_w + len(cols) * cell_w
     x0 = (WIDTH - table_w) // 2
     head_y = MARGIN + 76
-    height = head_y + 44 + len(rows) * row_h + 24 + 70 + MARGIN
+    height = head_y + 44 + len(rows) * row_h + 24 + 100 + MARGIN
     canvas = Image.new("RGB", (WIDTH, height), PAPER)
     draw = ImageDraw.Draw(canvas)
     split, n = metrics.get("split", "?"), metrics.get("n", 0)
@@ -528,7 +528,15 @@ def bench_heat(metrics: dict[str, Any]) -> Image.Image:
         lx += chip(draw, lx, y, word, bg_c, ink_c, size=13, dot=dot_c) + 8
     draw.text((lx, y + 12), "below the bar (amber >= 80 %)  ·  false flags: clean images for the deterministic "
               "checks, text samples without the defect for vision", font=font(14), fill=INK_3, anchor="lm")
+    off = [c for c, v in (metrics.get("vision") or {}).items() if isinstance(v, dict) and v.get("disabled")]
+    if off:
+        draw.text((x0, y + 40), f"{', '.join(c.replace('_', ' ') for c in off)}: {v_note(metrics, off[0])}",
+                  font=font(14), fill=INK_3, anchor="lm")
     return canvas
+
+
+def v_note(metrics: dict[str, Any], check: str) -> str:
+    return metrics["vision"][check].get("note", "disabled")
 
 
 # --- outcome bars ---------------------------------------------------------------------------------

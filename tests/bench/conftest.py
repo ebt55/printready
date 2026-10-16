@@ -14,3 +14,12 @@ def generated(tmp_path_factory):
     assert code == 0
     manifest = root / "data" / "bench" / "manifest-dev-limit1.jsonl"
     return root, manifest, read_manifest(manifest)
+
+
+@pytest.fixture(scope="session")
+def bench_ran(generated):
+    """`bench run --limit 1` once on the tiny split (the deterministic predictions)."""
+    root, manifest, rows = generated
+    common = ["--split", "dev", "--limit", "1", "--root", str(root), "--manifest", str(manifest)]
+    assert main(["bench", "run", *common, "--jobs", "1"]) == 0
+    return root, manifest, rows

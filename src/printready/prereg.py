@@ -92,8 +92,9 @@ def observed_temperature() -> float:
 
 
 def settings() -> dict[str, Any]:
-    """Model ids, turn limit and temperature, read from the code."""
-    from printready import agent, llm
+    """Model ids, turn limit, temperature, the text_small switch and the agent's tools, read from
+    the code (the tool names come from the tool schema the agent sends to the model)."""
+    from printready import agent, llm, vision
     from printready.bench.run import DEFAULT_VISION_MODEL
     from printready.realset import IMAGE_MODELS
 
@@ -103,6 +104,10 @@ def settings() -> dict[str, Any]:
         "image_models": list(IMAGE_MODELS),
         "agent_max_turns": agent.MAX_TURNS,
         "temperature": observed_temperature(),
+        "text_small_default": vision.TEXT_SMALL_DEFAULT,
+        "text_small_env": vision.TEXT_SMALL_ENV,
+        "agent_tools": [t["function"]["name"] for t in agent.TOOLS],
+        "fix_tools": list(agent.FIX_TOOLS),
     }
 
 
