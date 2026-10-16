@@ -1,7 +1,7 @@
 """`printready realset gen | run | label | eval | sheet`: the real Grok image set (chunk K5).
 
     realset gen   --split dev|test [--models a,b]         images through the spend guard (resumable)
-    realset run   --split S --mode rules|agent [--model M] [--sample-50] [--yes] [--force]
+    realset run   --split S --mode rules|agent [--model M] [--sample-50] [--only IDS] [--yes] [--force]
     realset label --split S --pass 1|2                    the workbench in label mode
     realset eval  --split S                               eval.md + summary.json, PREREG verdict
     realset sheet --split S [--mode rules]                contact sheet for looking at results
@@ -37,11 +37,14 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     runp = actions.add_parser("run", help="run rules or agent mode over a split (3 in die-cut)")
     split_arg(runp)
     runp.add_argument("--mode", choices=MODES, required=True)
-    runp.add_argument("--model", default=None, help="agent model (default xai:grok-4.3); in rules mode, the vision model")
+    runp.add_argument("--model", default=None,
+                      help="agent model (default llm.DEFAULT_MODEL); in rules mode, the vision model (none: no vision)")
     runp.add_argument("--sample-50", action="store_true", help="only the seeded 50-image labelling sample")
     runp.add_argument("--limit", type=positive_int, default=None, help="at most this many images (smoke runs)")
     runp.add_argument("--yes", action="store_true", help="confirm a paid agent run after reading the estimate")
-    runp.add_argument("--force", action="store_true", help="rules mode only: re-run images already done")
+    runp.add_argument("--only", default=None, help="comma-separated prompt ids or sha256 prefixes, e.g. d01,d07")
+    runp.add_argument("--force", action="store_true",
+                      help="re-run images already done (never agent mode on the test split: PREREG 5)")
     runp.add_argument("--env-file", type=Path, default=None, help="dotenv file to load API keys from")
     runp.set_defaults(func=run_run)
 
@@ -59,6 +62,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     sheet = actions.add_parser("sheet", help="contact sheet: original | proof | outcome per image")
     split_arg(sheet)
     sheet.add_argument("--mode", choices=MODES, default="rules")
+    sheet.add_argument("--compare", action="store_true", help="original | rules proof | agent proof per image")
     sheet.set_defaults(func=run_sheet)
 
 
@@ -78,16 +82,27 @@ def _load_env(env_file: Path | None) -> None:
         llm.load_env_file(path)
 
 
+def _prereg_gate(split: str) -> bool:
+    """Anything that touches the test split needs a verified, committed PREREG.md (printready.prereg)."""
+    if split != "test":
+        return True
+    from printready import prereg
+
+    try:
+        prereg.require_verified()
+    except prereg.PreregError as exc:
+        print(f"realset: refused for the test split: {exc}", file=sys.stderr)
+        return False
+    return True
+
+
 def run_gen(args: argparse.Namespace) -> int:
-    from printready.realset.gen import generate, prereg_committed
+    from printready.realset.gen import generate
     from printready.spend import BudgetExceeded, price_for
 
     paths = Paths.for_split(args.split)
-    if args.split == "test":
-        ok, why = prereg_committed(paths.root)
-        if not ok:
-            print(f"realset gen --split test: refused, {why}. Commit PREREG.md first.", file=sys.stderr)
-            return 2
+    if not _prereg_gate(args.split):
+        return 1
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     _load_env(args.env_file)
     from printready.llm import make_client
@@ -106,22 +121,27 @@ def run_gen(args: argparse.Namespace) -> int:
 
 
 def run_run(args: argparse.Namespace) -> int:
-    from printready.realset.runs import agent_estimate, pass1_missing, run_split, select
+    from printready.realset.runs import agent_estimate, may_rerun, pass1_missing, run_split, select
 
     paths = Paths.for_split(args.split)
+    if not _prereg_gate(args.split):
+        return 1
     if args.split == "test" and (missing := pass1_missing(paths)):
         print(f"realset run --split test: refused, {len(missing)} sampled images still need a pass-1 label "
               "(blinding: no tool output before pass 1).", file=sys.stderr)
         return 2
-    if args.force and args.mode == "agent":
-        print("realset run: --force is rules-only; agent mode never re-runs an image (PREREG 5).", file=sys.stderr)
+    if args.force and not may_rerun(args.split, args.mode):
+        print("realset run: agent mode never re-runs a test image (PREREG 5).", file=sys.stderr)
         return 2
-    items = select(paths, args.sample_50)[: args.limit]
+    only = [o.strip() for o in args.only.split(",") if o.strip()] if args.only else None
+    items = select(paths, args.sample_50, only)[: args.limit]
     if not items:
         print(f"realset run: no images in {paths.manifest}; run `realset gen --split {args.split}` first.", file=sys.stderr)
         return 2
     factory = None
-    model = args.model or ("xai:grok-4.3" if args.mode == "agent" else None)
+    from printready.llm import DEFAULT_MODEL
+
+    model = args.model or (DEFAULT_MODEL if args.mode == "agent" else None)
     if model:
         _load_env(args.env_file)
         from printready.llm import make_client
@@ -180,8 +200,9 @@ def run_eval(args: argparse.Namespace) -> int:
 
 
 def run_sheet(args: argparse.Namespace) -> int:
-    from printready.realset.sheet import contact_sheet
+    from printready.realset.sheet import compare_sheet, contact_sheet
 
-    out = contact_sheet(Paths.for_split(args.split), args.mode)
+    paths = Paths.for_split(args.split)
+    out = compare_sheet(paths) if args.compare else contact_sheet(paths, args.mode)
     print(f"wrote {out}")
     return 0

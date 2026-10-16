@@ -1,1 +1,1 @@
-We removed the plain background, added a little space around the edges and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.
+We removed the plain background, added a little space around the edges and added a 0.1 in white border with a cut line. Before printing, a person on our team will check this: the smallest text ("KINDNESS") prints at about 1.4 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering. We will send you an updated proof.

@@ -40,10 +40,11 @@ MAX_TURNS = 8
 MAX_MESSAGE_WORDS = 80
 LOG_NAME = "log.jsonl"
 PROMPT_PATH = Path(__file__).parent / "prompts" / "agent-system.md"
-FIX_TOOLS = ("remove_background", "pad_canvas", "add_border", "bridge_islands")
+FIX_TOOLS = ("remove_background", "pad_canvas", "add_border", "bridge_islands", "fit_shape")
 NUDGE = "Text replies reach nobody. Call a tool; end the run with finish (with the customer message) or handoff."
 LAST_TURN = "This is your last turn: call finish or handoff now."
-AFTER_IMAGE = "That is the image you asked for. Continue with your next tool call (finish delivers the customer message)."
+AFTER_IMAGE = ("That is the image you asked for. Reply with tool calls only, not text: "
+               "check, a fix, finish (it carries the customer message) or handoff.")
 
 Event = dict[str, Any]
 EventFn = Callable[[Event], None]
@@ -81,11 +82,14 @@ TOOLS: list[dict[str, Any]] = [
     _tool("add_border", "Add the standard white border and build the die-cut line. Required before finish."),
     _tool("bridge_islands", "Grow the border, up to the profile's limit, so separate parts join into one "
                             "sticker (islands fail, fixer auto)."),
+    _tool("fit_shape", "Make the order a whole-image rounded-rectangle sticker with its own cut line (for a scene "
+                       "with no flat background, or when remove_background is refused). No pixel changes; "
+                       "no add_border after it."),
     _tool("read_text", "Read the text in the art with a vision model: is it garbled, and is it big enough "
                        "to print at this size. One extra model call."),
     _tool(
         "finish",
-        "End the run: the proof can go to the customer. Needs the border (add_border) first.",
+        "End the run: the proof can go to the customer. Needs a cut line first (add_border, or fit_shape).",
         {"customer_message": {"type": "string", "description": "Under 80 words, plain, ends with one approve line."}},
     ),
     _tool(
@@ -158,6 +162,8 @@ RULE_LINES: tuple[tuple[str, str], ...] = (
     ("soft_alpha_max_in", "A soft shadow or glow wider than {soft_alpha_max_in:g} in leaves the cut position unclear."),
     ("edge_cut_min_run_in", "Art running along the canvas edge for more than {edge_cut_min_run_in:g} in is cut off."),
     ("max_bridge_border_in", "Separate parts can be joined by growing the border up to {max_bridge_border_in:g} in."),
+    ("bleed_in", "A rounded-rectangle sticker is the whole image, cut {bleed_in:g} in inside its edge."),
+    ("shape_corner_radius_in", "Its corners are rounded with a {shape_corner_radius_in:g} in radius."),
 )
 
 
@@ -177,7 +183,7 @@ def system_prompt(profile: Profile, max_turns: int = MAX_TURNS) -> str:
     )
     template = PROMPT_PATH.read_text(encoding="utf-8")
     return (template.replace("$profile_name", profile.name).replace("$rules", rules)
-            .replace("$max_turns", str(max_turns)))
+            .replace("$border_in", f"{profile.border_in:g}").replace("$max_turns", str(max_turns)))
 
 
 def first_message(path: Path, art: Artwork, spec: Spec, report: Report) -> str:
@@ -366,7 +372,8 @@ class _Run:
         if words > MAX_MESSAGE_WORDS:
             return _error(f"customer_message has {words} words; keep it under {MAX_MESSAGE_WORDS}", "refused: too long")
         if self.art.cut is None:
-            return _error("there is no cut line yet: run add_border first, or hand off", "refused: no border")
+            return _error("there is no cut line yet: run add_border (or fit_shape for a scene) first, or hand off",
+                          "refused: no cut line")
         self.end = End(handoff=False, reason=None, draft_message=message.strip())
         return ToolResult({"ok": True, "note": "Run finished."}, "finished")
 

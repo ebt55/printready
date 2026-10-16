@@ -2,8 +2,10 @@
 
 Blinding (03-EVAL.md): on the test split no tool output may exist before Ebin's pass-1 labels
 are complete, so `run` refuses until all sampled images have a pass-1 label.
-PREREG 5: one agent run per image, no reruns, so agent mode never repeats a finished image.
-Rules mode is deterministic and may be re-run with force; the last runs.jsonl line wins.
+The spend cap stops a batch cleanly: an image whose run would pass the cap is not recorded, so it
+can run later (a "budget" handoff is our limit, not the model's outcome).
+PREREG 5: one agent run per image, no reruns, so on the test split agent mode never repeats a
+finished image. On dev (tuning only) and in rules mode `force` re-runs; the last runs.jsonl line wins.
 """
 
 from __future__ import annotations
@@ -17,11 +19,12 @@ from printready.llm import MAX_TOKENS, ChatClient
 from printready.pipeline import run_rules
 from printready.profile import Profile, load_profile
 from printready.realset import Paths, append_jsonl, last_by, read_jsonl, sample_shas, spec_for
-from printready.spend import estimate, price_for
+from printready.spend import BudgetExceeded, check_cap, estimate, price_for
 from printready.types import RunResult
 
 AGENT_TYPICAL_USD = 0.01  # observed on grok-4.3: 4-5 turns, about $0.008-0.012 per image
 AGENT_TURN_TOKENS_IN = 8000  # generous prompt size per turn for the worst case
+PRECHECK_USD = {"rules": 0.015, "agent": 0.05}  # room needed before an image starts (one vision call / a typical run)
 
 
 def pass1_missing(paths: Paths) -> list[str]:
@@ -30,12 +33,21 @@ def pass1_missing(paths: Paths) -> list[str]:
     return [s for s in sample_shas(read_jsonl(paths.manifest)) if s not in labelled]
 
 
-def select(paths: Paths, sample: bool) -> list[dict[str, Any]]:
+def select(paths: Paths, sample: bool, only: list[str] | None = None) -> list[dict[str, Any]]:
+    """Manifest entries to run: all, the seeded sample, and/or those whose prompt id or sha256
+    prefix is in `only` (e.g. ["d07", "16de6b"])."""
     manifest = list(last_by(read_jsonl(paths.manifest), "sha256").values())
-    if not sample:
-        return manifest
-    chosen = set(sample_shas(manifest))
-    return [e for e in manifest if e["sha256"] in chosen]
+    if sample:
+        chosen = set(sample_shas(manifest))
+        manifest = [e for e in manifest if e["sha256"] in chosen]
+    if only:
+        manifest = [e for e in manifest if any(e["prompt_id"] == o or e["sha256"].startswith(o) for o in only)]
+    return manifest
+
+
+def may_rerun(split: str, mode: str) -> bool:
+    """PREREG 5 binds the test split: one agent run per image there, ever."""
+    return not (split == "test" and mode == "agent")
 
 
 def agent_estimate(model: str, n_images: int) -> tuple[float, float]:
@@ -63,9 +75,11 @@ def run_split(
     rows = []
     for e in items:
         sha = e["sha256"]
-        if sha in done and (mode == "agent" or not force):
+        if sha in done and not (force and may_rerun(paths.split, mode)):
             continue
         out_dir = paths.results / mode / sha
+        if client_factory is not None:
+            check_cap(PRECHECK_USD[mode])  # raises BudgetExceeded: the batch stops before this image
         client = client_factory() if client_factory else None
         image, spec = paths.data / e["file"], spec_for(e["prompt"])
         try:
@@ -76,6 +90,8 @@ def run_split(
         finally:
             if client is not None:
                 client.close()
+        if run.handoff_reason == "budget":
+            raise BudgetExceeded(f"spend cap reached during {e['prompt_id']} {sha[:12]}; it was not recorded")
         row = summarize(run, e, out_dir, paths.root, getattr(client, "model", None))
         append_jsonl(paths.runs(mode), [row])
         rows.append(row)
@@ -99,6 +115,7 @@ def summarize(run: RunResult, entry: dict[str, Any], out_dir: Path, root: Path, 
         "mode": run.mode,
         "model": model,
         "outcome": run.outcome,
+        "shape": run.art.shape if run.art is not None else None,
         "handoff_reason": run.handoff_reason,
         "before": statuses(run.before),
         "after": statuses(run.after),

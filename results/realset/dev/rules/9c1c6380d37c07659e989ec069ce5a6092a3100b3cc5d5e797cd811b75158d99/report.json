@@ -2,10 +2,10 @@
   "mode": "rules",
   "outcome": "fixable",
   "handoff_reason": null,
-  "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.",
+  "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. The smallest text (\"STAY WILD\") prints at about 3.7 pt at 3 in, under the 6 pt minimum; at 4.8 in or larger it is big enough. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
-  "cost_usd": 0.0,
-  "elapsed_s": 0.664,
+  "cost_usd": 0.003324,
+  "elapsed_s": 12.434,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -222,7 +222,7 @@
     ]
   },
   "after": {
-    "status": "pass",
+    "status": "warn",
     "findings": [
       {
         "check": "file",
@@ -304,6 +304,72 @@
           "joins_at_max_bridge": null
         },
         "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "text_garbled",
+        "status": "pass",
+        "message": "The text reads correctly: \"STAY WILD\".",
+        "measured": {
+          "items": [
+            {
+              "seen": "STAY WILD",
+              "intended": "STAY WILD",
+              "letters": "S T A Y / W I L D",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.15,
+                0.72,
+                0.85,
+                0.88
+              ],
+              "cap_height_px": 11.7,
+              "cap_height_pt": 2.56
+            }
+          ],
+          "notes": "text clear and matches request",
+          "model": "grok-4.3",
+          "request_sha256": "5eeed1236162bab3f753bc4b6c2e284638cafa7bd98f6e29792343ed157dadc2"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "text_small",
+        "status": "warn",
+        "message": "The smallest text (\"STAY WILD\") prints at about 3.7 pt at 3 in, under the 6 pt minimum; at 4.8 in or larger it is big enough.",
+        "measured": {
+          "items": [
+            {
+              "seen": "STAY WILD",
+              "intended": "STAY WILD",
+              "letters": "S T A Y / W I L D",
+              "garbled": false,
+              "misspelled": false,
+              "broken": false,
+              "box": [
+                0.15,
+                0.72,
+                0.85,
+                0.88
+              ],
+              "cap_height_px": 11.7,
+              "cap_height_pt": 2.56
+            }
+          ],
+          "notes": "text clear and matches request",
+          "model": "grok-4.3",
+          "request_sha256": "5eeed1236162bab3f753bc4b6c2e284638cafa7bd98f6e29792343ed157dadc2",
+          "min_cap_height_pt": 2.56,
+          "min_text_pt_equiv": 3.66,
+          "threshold_cap_pt": 4.2,
+          "min_size_in_for_text": 4.79,
+          "max_size_in_at_floor": 6.34,
+          "unmeasured": 0
+        },
+        "fixer": "customer",
         "boxes": []
       }
     ]

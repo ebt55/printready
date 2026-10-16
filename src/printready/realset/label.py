@@ -21,8 +21,11 @@ from PIL import Image
 from printready.realset import MODES, Paths, last_by, read_jsonl, sample_shas, shuffled, write_json
 
 CAPTION = "3 in die-cut sticker"
+# Pass-1 keys record a fact, not a policy (03-EVAL.md): ready as a die-cut, fixable as a die-cut,
+# a scene (no clean edge to cut around), or needs a person. evaluate.py maps them to outcomes.
+PASS1_LABELS = ("ready_diecut", "fixable_diecut", "scene", "needs_person")
 PASS_KEYS = {
-    1: {"1": "ready", "2": "fixable", "3": "needs_person"},
+    1: dict(zip("1234", PASS1_LABELS)),
     2: {"y": "acceptable", "n": "unacceptable"},
 }
 

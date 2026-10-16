@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from printready import realset, spend
+from printready import prereg, realset, spend
 from printready.cli import main
 from printready.llm import ChatClient, FakeTransport
 from printready.realset import Paths, read_jsonl, sample_shas
@@ -20,6 +20,11 @@ from printready.spend import BudgetExceeded, Price
 
 REPO = Path(__file__).resolve().parents[1]
 MODELS = ["xai:grok-imagine-image", "xai:grok-imagine-image-2.0"]
+
+
+@pytest.fixture
+def prereg_ok(monkeypatch):
+    monkeypatch.setattr(prereg, "require_verified", lambda root=None: None)
 
 
 @pytest.fixture
@@ -106,10 +111,14 @@ def test_gen_stops_at_the_spend_cap(tree, monkeypatch):
     assert len(read_jsonl(Paths.for_split("dev").manifest)) == 2  # $0.04 spent, the third would pass $0.05
 
 
-def test_gen_test_split_refuses_without_a_committed_prereg(tree, monkeypatch, capsys):
-    monkeypatch.setattr(gen, "prereg_committed", lambda root: (False, "PREREG.md is not committed"))
-    assert main(["realset", "gen", "--split", "test"]) == 2
-    assert "Commit PREREG.md first" in capsys.readouterr().err
+@pytest.mark.parametrize("action", [["gen", "--split", "test"], ["run", "--split", "test", "--mode", "rules"]])
+def test_test_split_needs_a_verified_prereg(tree, monkeypatch, capsys, action):
+    def refuse(root=None):
+        raise prereg.PreregError("preregistration check failed:\n  PREREG.md is not committed")
+
+    monkeypatch.setattr(prereg, "require_verified", refuse)
+    assert main(["realset", *action]) == 1
+    assert "PREREG.md is not committed" in capsys.readouterr().err
     assert not Paths.for_split("test").manifest.exists()
 
 
@@ -121,6 +130,7 @@ def test_rules_run_writes_outputs_and_one_summary_per_image(tree):
     assert len(rows) == 6
     row = rows[0]
     assert row["mode"] == "rules" and row["outcome"] in ("ready", "fixable", "needs_person")
+    assert row["shape"] == "die_cut"
     assert row["before"]["background"] == {"status": "fail", "fixer": "auto"}
     assert row["steps"][0] == {"fix": "remove_background", "ok": True, "damaged": False}
     assert row["fixed_sha256"] and (paths.root / row["out_dir"] / "proof.png").exists()
@@ -139,8 +149,8 @@ def agent_factory(clients):
     return factory
 
 
-def test_agent_run_needs_a_client_and_never_reruns(tree):
-    paths = generated()
+def test_agent_run_needs_a_client_and_never_reruns_on_test(tree):
+    paths = generated("test")
     items = runs.select(paths, sample=False)[:2]
     with pytest.raises(ValueError, match="needs a model client"):
         runs.run_split(paths, "agent", items, log=lambda s: None)
@@ -149,8 +159,35 @@ def test_agent_run_needs_a_client_and_never_reruns(tree):
     assert [r["handoff_reason"] for r in rows] == ["test", "test"] and len(clients) == 2  # one client per image
     assert (paths.root / rows[0]["out_dir"] / "log.jsonl").exists()
     assert runs.run_split(paths, "agent", items, client_factory=agent_factory(clients), force=True,
-                          log=lambda s: None) == []
+                          log=lambda s: None) == []  # PREREG 5: one agent run per test image
     assert len(clients) == 2
+
+
+def test_dev_agent_runs_may_be_repeated_for_tuning(tree):
+    paths = generated("dev")
+    items = runs.select(paths, sample=False, only=["d02"])
+    assert [e["prompt_id"] for e in items] == ["d02", "d02"]  # both image models
+    assert runs.select(paths, sample=False, only=[items[0]["sha256"][:8]]) == items[:1]
+    clients = []
+    runs.run_split(paths, "agent", items, client_factory=agent_factory(clients), log=lambda s: None)
+    again = runs.run_split(paths, "agent", items, client_factory=agent_factory(clients), force=True, log=lambda s: None)
+    assert len(again) == 2 and len(clients) == 4
+
+
+def test_rules_mode_runs_the_vision_check_when_given_a_client(tree):
+    paths = generated()
+    answer = {"text": json.dumps({"text": [{"seen": "SHOP", "intended": "SHOP", "broken": False,
+                                            "box": None}], "notes": ""})}
+    clients = []
+
+    def vision_factory():
+        clients.append(ChatClient("fake:vision", FakeTransport([answer]), price=Price()))
+        return clients[-1]
+
+    (row,) = runs.run_split(paths, "rules", runs.select(paths, sample=False)[:1], client_factory=vision_factory,
+                            log=lambda s: None)
+    assert row["after"]["text_garbled"] == {"status": "pass", "fixer": "none"} and row["model"] == "fake:vision"
+    assert len(clients[0].transport.requests) == 1
 
 
 def test_agent_cli_shows_the_estimate_and_needs_yes(tree, monkeypatch, capsys):
@@ -164,11 +201,11 @@ def test_agent_cli_shows_the_estimate_and_needs_yes(tree, monkeypatch, capsys):
     assert not Paths.for_split("dev").runs("agent").exists()
 
 
-def test_test_split_runs_wait_for_pass_1_labels(tree, capsys):
+def test_test_split_runs_wait_for_pass_1_labels(tree, prereg_ok, capsys):
     paths = generated("test")
     assert main(["realset", "run", "--split", "test", "--mode", "rules"]) == 2
     assert "need a pass-1 label" in capsys.readouterr().err
-    realset.append_jsonl(paths.labels, [{"ts": "t", "pass": 1, "image": s, "proof": None, "label": "fixable"}
+    realset.append_jsonl(paths.labels, [{"ts": "t", "pass": 1, "image": s, "proof": None, "label": "fixable_diecut"}
                                         for s in sample_shas(read_jsonl(paths.manifest))])
     assert main(["realset", "run", "--split", "test", "--mode", "rules", "--limit", "1"]) == 0
 
@@ -185,7 +222,8 @@ def test_sample_is_seeded_and_model_blind():
 def test_pass1_items_are_blind_png_copies_by_hash(tree):
     paths = generated()
     data = label.pass1_items(paths)
-    assert data["pass"] == 1 and data["caption"] == "3 in die-cut sticker" and data["keys"]["3"] == "needs_person"
+    assert data["pass"] == 1 and data["caption"] == "3 in die-cut sticker"
+    assert data["keys"] == {"1": "ready_diecut", "2": "fixable_diecut", "3": "scene", "4": "needs_person"}
     assert len(data["items"]) == 6 and [i["image"] for i in data["items"]] != sorted(i["image"] for i in data["items"])
     for item in data["items"]:
         assert item["file"] == f"label-images/{item['image']}.png" and (paths.data / item["file"]).exists()
@@ -229,12 +267,13 @@ def test_serve_labels_calls_the_workbench_or_explains(tree):
 
 # ---------------------------------------------------------------- eval
 
-def synthetic(paths, n=10, rules_right=4, agent_right=9, unacceptable_agent=0, damaged_rules=0):
-    """n labelled images; Ebin says fixable for all; the modes agree on the first k."""
+def synthetic(paths, n=10, rules_right=4, agent_right=9, unacceptable_agent=0, damaged_rules=0,
+              label="fixable_diecut", shape="die_cut"):
+    """n labelled images, all with `label`; each mode says fixable on its first k images."""
     manifest = [{"prompt_id": f"p{i:02d}", "prompt": "x", "model": MODELS[i % 2], "sha256": f"{i:064x}",
                  "file": f"images/{i:064x}.png"} for i in range(n)]
     realset.append_jsonl(paths.manifest, manifest)
-    realset.append_jsonl(paths.labels, [{"ts": "t", "pass": 1, "image": e["sha256"], "proof": None, "label": "fixable"}
+    realset.append_jsonl(paths.labels, [{"ts": "t", "pass": 1, "image": e["sha256"], "proof": None, "label": label}
                                         for e in manifest])
     mapping = {}
     for mode, right in (("rules", rules_right), ("agent", agent_right)):
@@ -243,7 +282,8 @@ def synthetic(paths, n=10, rules_right=4, agent_right=9, unacceptable_agent=0, d
             outcome = "fixable" if i < right else "needs_person"
             proof = f"{mode}-{i}" if outcome == "fixable" else None
             rows.append({"image": e["sha256"], "prompt_id": e["prompt_id"], "image_model": e["model"], "mode": mode,
-                         "outcome": outcome, "handoff_reason": None, "fixed_sha256": proof, "out_dir": "x",
+                         "outcome": outcome, "shape": shape if outcome == "fixable" else "die_cut",
+                         "handoff_reason": None, "fixed_sha256": proof, "out_dir": "x",
                          "damaged": mode == "rules" and i < damaged_rules, "cost_usd": 0.01 if mode == "agent" else 0,
                          "elapsed_s": 1.0})
             if proof:
@@ -260,7 +300,7 @@ def test_eval_keeps_the_agent_only_past_the_margin(tree):
     synthetic(paths, rules_right=4, agent_right=9)
     s = ev.evaluate(paths)
     assert s["modes"]["rules"]["agree"] == 4 and s["modes"]["agent"]["agree"] == 9
-    assert s["modes"]["agent"]["matrix"]["fixable"] == {"ready": 0, "fixable": 9, "needs_person": 1}
+    assert s["modes"]["agent"]["matrix"]["fixable_diecut"] == {"ready": 0, "fixable": 9, "needs_person": 1}
     assert s["paired"] == {"n": 10, "both_agree": 4, "only_rules_agrees": 0, "only_agent_agrees": 5, "neither": 1}
     assert s["verdict"]["status"] == "keep_agent" and s["verdict"]["agent_minus_rules"] == 5
     assert s["rules_by_image_model"][MODELS[0]] == {"ready": 0, "fixable": 2, "needs_person": 3}
@@ -284,6 +324,21 @@ def test_eval_bad_fixes_count_against_the_agent(tree):
     assert s["verdict"]["status"] == "keep_rules"
 
 
+def test_eval_scenes_count_as_fixable_and_are_also_reported_as_needs_person(tree):
+    paths = Paths.for_split("test")
+    synthetic(paths, rules_right=8, agent_right=3, unacceptable_agent=1, label="scene", shape="rounded_rect")
+    s = ev.evaluate(paths)
+    rules, agent = s["modes"]["rules"], s["modes"]["agent"]
+    assert (rules["agree"], rules["agree_scene_as_person"]) == (8, 2)  # policy moves the number a lot
+    assert (agent["agree"], agent["agree_scene_as_person"]) == (3, 7)
+    assert s["sample"]["scenes"] == 10 and s["labels"]["pass1"] == {"scene": 10}
+    assert (rules["scene_shaped_proofs"], rules["scene_shaped_accepted"]) == (8, 8)
+    assert (agent["scene_shaped_proofs"], agent["scene_shaped_accepted"], agent["unacceptable"]) == (3, 2, 1)
+    md = (paths.results / "eval.md").read_text()
+    assert "10 scenes; shaped-sticker proofs accepted: rules 8 of 8; agent 2 of 3." in md
+    assert s["images"][0]["rules"]["shape"] == "rounded_rect"
+
+
 def test_eval_is_pending_until_everything_is_labelled(tree):
     paths = Paths.for_split("test")
     realset.append_jsonl(paths.manifest, [{"prompt_id": "p01", "prompt": "x", "model": MODELS[0],
@@ -303,3 +358,40 @@ def test_contact_sheet(tree):
         assert im.width == 2 * (2 * sheet.THUMB + sheet.TEXT_W + 4 * sheet.PAD) and im.height > 3 * sheet.THUMB
     row = read_jsonl(paths.runs("rules"))[0]
     assert any(line.startswith("background: fail -> pass") for line in sheet.flagged_lines(row))
+
+
+def test_the_spend_cap_stops_a_batch_without_recording_a_budget_outcome(tree, monkeypatch):
+    paths = generated()
+    spend.record("xai", "x", 0, 0, 0, 0, 9.99, "earlier")
+    with pytest.raises(BudgetExceeded):
+        runs.run_split(paths, "agent", runs.select(paths, sample=False), client_factory=agent_factory([]),
+                       log=lambda s: None)
+    assert not paths.runs("agent").exists()  # nothing recorded: the images can run once the cap allows
+
+    monkeypatch.setenv(spend.CAP_ENV, "20")
+    budget_script = [{"status": 200}]  # unused: the run below ends in a budget handoff instead
+
+    def budget_run(*a, **kw):
+        from printready.types import Report, RunResult
+        return RunResult(mode="agent", art=None, before=Report([]), after=Report([]), outcome="needs_person",
+                         customer_message="", handoff_reason="budget")
+
+    monkeypatch.setattr(runs, "run_agent", budget_run)
+    with pytest.raises(BudgetExceeded, match="not recorded"):
+        runs.run_split(paths, "agent", runs.select(paths, sample=False)[:1], client_factory=agent_factory([]),
+                       log=lambda s: None)
+    assert not paths.runs("agent").exists() and budget_script
+
+
+def test_compare_sheet_marks_disagreements(tree):
+    paths = generated()
+    rules_rows = runs.run_split(paths, "rules", runs.select(paths, sample=False), log=lambda s: None)
+    runs.run_split(paths, "agent", runs.select(paths, sample=False)[:3], client_factory=agent_factory([]),
+                   log=lambda s: None)
+    out = sheet.compare_sheet(paths)
+    assert out == paths.results / "contact-sheet-compare.png"
+    with Image.open(out) as im:
+        assert im.height == 44 + len(rules_rows) * (240 + 2 * sheet.PAD)
+        differs = rules_rows[0]["outcome"] != "needs_person"  # the fake agent hands everything off
+        first_row_bar = im.getpixel((2, 44 + 100))
+        assert (first_row_bar == sheet.DISAGREE) == differs

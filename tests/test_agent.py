@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from PIL import Image
 
 from printready import agent, guard, llm, pipeline, spend, types, vision
 from printready.geometry import cut_mask, long_side_px, ppi_for_long_side
@@ -199,8 +200,8 @@ def test_outcome_comes_from_types_outcome_not_the_model(tmp_path, monkeypatch):
         return types.outcome(art, final, handoff)
 
     monkeypatch.setattr(agent, "outcome", spy)
-    garbled = {"text": json.dumps({"text": [{"seen": "STIKCER", "intended": "STICKER", "garbled": True,
-                                             "cap_height_frac": 0.2}], "notes": ""})}
+    garbled = {"text": json.dumps({"text": [{"seen": "STIKCER", "intended": "STICKER", "broken": False,
+                                             "box": None}], "notes": ""})}
     script = [turn(call("remove_background"), call("add_border")), turn(call("read_text")), garbled,
               turn(call("finish", customer_message="All good, it is ready to print. Approve the proof."),
                    text="The outcome is ready.")]
@@ -285,7 +286,7 @@ def test_finish_needs_a_border_and_a_short_message(tmp_path):
     ]
     result, client, _ = run(tmp_path, script)
     first = [json.loads(m["content"]) for m in client.transport.requests[1]["body"]["messages"] if m["role"] == "tool"]
-    assert "add_border first" in first[0]["error"]
+    assert "no cut line yet" in first[0]["error"]
     second = [json.loads(m["content"]) for m in client.transport.requests[2]["body"]["messages"] if m["role"] == "tool"]
     assert "81 words" in second[-1]["error"]
     assert result.customer_message == "Removed the background. Approve the proof." and result.handoff_reason is None
@@ -333,8 +334,24 @@ def test_system_prompt_names_rule_sources_and_limits():
     assert "300 PPI" in text and "[Sticker Mule FAQ]" in text and "[convention]" in text
     assert "80 words" in text and f"at most {agent.MAX_TURNS}" in text and "$" not in text
     assert {t["function"]["name"] for t in agent.TOOLS} == {
-        "check", "look", "remove_background", "pad_canvas", "add_border", "bridge_islands", "read_text",
-        "finish", "handoff"}
+        "check", "look", "remove_background", "pad_canvas", "add_border", "bridge_islands", "fit_shape",
+        "read_text", "finish", "handoff"}
+    assert "rounded rectangle" in text and "offer" in text  # scenes get a whole-image sticker and a person option
+
+
+def test_a_scene_becomes_a_rounded_rectangle_with_cores_fit_shape(tmp_path, written):
+    yy, xx = np.mgrid[0:300, 0:300]
+    scene = np.dstack([xx * 255 // 299, yy * 255 // 299, np.full_like(xx, 120), np.full_like(xx, 255)]).astype(np.uint8)
+    path = tmp_path / "scene.png"
+    Image.fromarray(scene).save(path)
+    message = "Your art is a full scene, so we made it a rounded-rectangle sticker of the whole image. A person can cut out part of the art instead. Approve the proof."
+    script = [turn(call("fit_shape"), call("check")), turn(call("finish", customer_message=message))]
+    client = fake_client(tmp_path, script)
+    result = agent.run_agent(path, SPEC, P, tmp_path / "out", client)
+    assert result.before.by_check("background").fixer == "person"
+    assert [s.fix for s in result.art.history] == ["fit_shape"] and result.art.shape == "rounded_rect"
+    assert result.after.by_check("product_fit").fixer == "customer"
+    assert result.outcome == "fixable" and result.customer_message == message
 
 
 def test_a_file_that_does_not_open_makes_no_model_call(tmp_path, written):

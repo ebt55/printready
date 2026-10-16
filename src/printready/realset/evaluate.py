@@ -2,66 +2,81 @@
 keep-or-remove verdict. Writes results/realset/<split>/eval.md and summary.json (the UI's
 Results screen reads summary.json).
 
+Pass-1 labels record a fact (03-EVAL.md): ready_diecut, fixable_diecut, scene, needs_person.
+The PREREG mapping to outcomes is ready_diecut -> ready, fixable_diecut -> fixable,
+scene -> fixable (the tool offers a rounded-rectangle sticker), needs_person -> needs_person.
+Agreement is also reported with scene -> needs_person, side by side, so a reader sees how much
+of the number is that policy. The verdict uses the PREREG mapping.
+
 Keep-or-remove (PREREG 4): agent mode becomes the default only if, on the labelled images, it
-agrees with Ebin's pass-1 outcome on at least KEEP_MARGIN more images than rules mode AND it has
-no more bad fixes (pass-2 unacceptable, or damaged) than rules mode. Until every sampled image has
-a pass-1 label, both modes have run on all of them, and every pass-2 proof is labelled, the
-verdict is "pending".
+agrees with Ebin on at least KEEP_MARGIN more images than rules mode AND it has no more bad fixes
+(pass-2 unacceptable, including rounded-rectangle proofs, or damaged) than rules mode. Until
+every sampled image has a pass-1 label, both modes have run on all of them, and every pass-2
+proof is labelled, the verdict is "pending".
 """
 
 from __future__ import annotations
 
-import json
 import statistics
 import time
 from collections import Counter
 from typing import Any
 
 from printready.realset import MODES, Paths, last_by, read_jsonl, sample_shas, write_json
-from printready.realset.label import labels_by_pass
+from printready.realset.label import PASS1_LABELS, labels_by_pass
 from printready.types import OUTCOMES
 
 KEEP_MARGIN = 5
+PREREG_MAPPING = {"ready_diecut": "ready", "fixable_diecut": "fixable", "scene": "fixable",
+                  "needs_person": "needs_person",
+                  "ready": "ready", "fixable": "fixable"}  # the last two: labels from the 3-key page
+SCENE_AS_PERSON = {**PREREG_MAPPING, "scene": "needs_person"}
 
 
 def evaluate(paths: Paths) -> dict[str, Any]:
     manifest = last_by(read_jsonl(paths.manifest), "sha256")
     sample = sample_shas(list(manifest.values()))
     pass1, pass2 = labels_by_pass(paths.labels)
-    mapping = _read_json(paths.data / "label-pass2-mapping.json", {})
     runs = {m: last_by(read_jsonl(paths.runs(m)), "image") for m in MODES}
     labelled = [s for s in sample if s in pass1]
+    scenes = [s for s in labelled if pass1[s] == "scene"]
 
     modes = {}
     for mode in MODES:
         rows = runs[mode]
         scored = [s for s in labelled if s in rows]
-        matrix = {e: {o: 0 for o in OUTCOMES} for e in OUTCOMES}
+        matrix = {label: {o: 0 for o in OUTCOMES} for label in sorted({pass1[s] for s in scored}, key=_label_order)}
         for s in scored:
             matrix[pass1[s]][rows[s]["outcome"]] += 1
         sampled_rows = [rows[s] for s in sample if s in rows]
-        proofs = {r["fixed_sha256"] for r in sampled_rows if r["outcome"] != "needs_person" and r.get("fixed_sha256")}
+        proofs = {r["fixed_sha256"] for r in sampled_rows if _sendable(r)}
         unacceptable = sum(1 for p in proofs if pass2.get(p) == "unacceptable")
         damaged = sum(1 for r in sampled_rows if r.get("damaged"))
+        shaped = [rows[s] for s in scenes if s in rows and _sendable(rows[s]) and rows[s].get("shape") == "rounded_rect"]
         all_rows = list(rows.values())
+        agree = sum(rows[s]["outcome"] == PREREG_MAPPING[pass1[s]] for s in scored)
         modes[mode] = {
             "n_runs": len(all_rows),
             "n_scored": len(scored),
-            "agree": sum(rows[s]["outcome"] == pass1[s] for s in scored),
-            "matrix": matrix,  # rows: Ebin's label, columns: this mode's outcome
+            "agree": agree,
+            "agree_rate": round(agree / len(scored), 3) if scored else None,
+            "agree_scene_as_person": sum(rows[s]["outcome"] == SCENE_AS_PERSON[pass1[s]] for s in scored),
+            "matrix": matrix,  # rows: Ebin's pass-1 label, columns: this mode's outcome
             "outcomes": dict(Counter(r["outcome"] for r in all_rows)),
+            "shapes": dict(Counter(r.get("shape") or "die_cut" for r in all_rows)),
             "proofs_to_label": len(proofs),
             "proofs_unlabelled": sum(1 for p in proofs if p not in pass2),
             "unacceptable": unacceptable,
             "damaged": damaged,
             "bad_fixes": unacceptable + damaged,
+            "scene_shaped_proofs": len(shaped),
+            "scene_shaped_accepted": sum(1 for r in shaped if pass2.get(r["fixed_sha256"]) == "acceptable"),
             "cost_usd": _stats([r["cost_usd"] for r in all_rows]),
             "elapsed_s": _stats([r["elapsed_s"] for r in all_rows]),
         }
-        modes[mode]["agree_rate"] = round(modes[mode]["agree"] / len(scored), 3) if scored else None
 
     both = [s for s in labelled if all(s in runs[m] for m in MODES)]
-    right = {m: {s for s in both if runs[m][s]["outcome"] == pass1[s]} for m in MODES}
+    right = {m: {s for s in both if runs[m][s]["outcome"] == PREREG_MAPPING[pass1[s]]} for m in MODES}
     paired = {
         "n": len(both),
         "both_agree": len(right["rules"] & right["agent"]),
@@ -78,20 +93,30 @@ def evaluate(paths: Paths) -> dict[str, Any]:
         "split": paths.split,
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "n_images": len(manifest),
-        "sample": {"n": len(sample), "labelled_pass1": len(labelled)},
+        "sample": {"n": len(sample), "labelled_pass1": len(labelled), "scenes": len(scenes)},
         "labels": {
             "pass1": dict(Counter(pass1[s] for s in labelled)),
             "pass2": dict(Counter(pass2.values())),
         },
+        "mapping": {"prereg": PREREG_MAPPING, "scene_as_person": SCENE_AS_PERSON},
         "modes": modes,
         "paired": paired,
         "verdict": _verdict(sample, labelled, modes, paired),
         "rules_by_image_model": by_model,
-        "images": [_card(e, pass1, pass2, runs, mapping, set(sample)) for e in manifest.values()],
+        "images": [_card(e, pass1, pass2, runs, set(sample)) for e in manifest.values()],
     }
     write_json(paths.results / "summary.json", summary)
     (paths.results / "eval.md").write_text(render_markdown(summary), encoding="utf-8")
     return summary
+
+
+def _sendable(row: dict[str, Any]) -> bool:
+    """A proof that would go to the customer: outcome ready or fixable, with a fixed.png."""
+    return row["outcome"] != "needs_person" and bool(row.get("fixed_sha256"))
+
+
+def _label_order(label: str) -> int:
+    return PASS1_LABELS.index(label) if label in PASS1_LABELS else len(PASS1_LABELS)
 
 
 def _verdict(sample: list[str], labelled: list[str], modes: dict[str, Any], paired: dict[str, int]) -> dict[str, Any]:
@@ -115,14 +140,15 @@ def _verdict(sample: list[str], labelled: list[str], modes: dict[str, Any], pair
     return {"status": "keep_agent" if keep else "keep_rules", "rule": rule, "reason": reason, "agent_minus_rules": margin}
 
 
-def _card(e: dict[str, Any], pass1: dict, pass2: dict, runs: dict, mapping: dict, sample: set) -> dict[str, Any]:
+def _card(e: dict[str, Any], pass1: dict, pass2: dict, runs: dict, sample: set) -> dict[str, Any]:
     card: dict[str, Any] = {"image": e["sha256"], "prompt_id": e["prompt_id"], "image_model": e["model"],
                             "file": e["file"], "sampled": e["sha256"] in sample, "label": pass1.get(e["sha256"])}
     for mode in MODES:
         row = runs[mode].get(e["sha256"])
         card[mode] = None if row is None else {
-            "outcome": row["outcome"], "handoff_reason": row["handoff_reason"], "out_dir": row["out_dir"],
-            "proof_label": pass2.get(row.get("fixed_sha256")), "damaged": row.get("damaged", False),
+            "outcome": row["outcome"], "shape": row.get("shape") or "die_cut", "handoff_reason": row["handoff_reason"],
+            "out_dir": row["out_dir"], "proof_label": pass2.get(row.get("fixed_sha256")),
+            "damaged": row.get("damaged", False),
         }
     return card
 
@@ -134,39 +160,37 @@ def _stats(values: list[float]) -> dict[str, float]:
             "median": round(statistics.median(values), 4), "max": round(max(values), 4)}
 
 
-def _read_json(path, default):
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else default
-
-
 def render_markdown(s: dict[str, Any]) -> str:
     m, v = s["modes"], s["verdict"]
+    shaped = "; ".join(f"{mode} {m[mode]['scene_shaped_accepted']} of {m[mode]['scene_shaped_proofs']}" for mode in MODES)
     lines = [
         f"# Real set ({s['split']}): rules vs agent vs Ebin",
         "",
         f"{s['n_images']} images; {s['sample']['labelled_pass1']} of {s['sample']['n']} sampled images labelled (pass 1).",
+        "Ebin's pass-1 labels: " + ", ".join(f"{k} {s['labels']['pass1'].get(k, 0)}" for k in PASS1_LABELS) + ".",
+        f"{s['sample']['scenes']} scenes; shaped-sticker proofs accepted: {shaped}.",
         "",
         f"**Verdict: {v['status']}.** {v['reason']}",
         f"Rule (PREREG): {v['rule']}.",
         "",
-        "Ebin's pass-1 labels: " + ", ".join(f"{o} {s['labels']['pass1'].get(o, 0)}" for o in OUTCOMES),
-        "",
-        "| mode | agree with Ebin | runs | unacceptable proofs | damaged | cost total | cost / image | time / image |",
-        "|---|---|---|---|---|---|---|---|",
+        "| mode | agree (scene = fixable, PREREG) | agree (scene = needs person) | runs | unacceptable proofs | damaged "
+        "| cost total | cost / image | time / image |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for mode in MODES:
         x = m[mode]
         rate = f" ({x['agree_rate']:.0%})" if x["agree_rate"] is not None else ""
-        lines.append(f"| {mode} | {x['agree']}/{x['n_scored']}{rate} | {x['n_runs']} | {x['unacceptable']} | "
-                     f"{x['damaged']} | ${x['cost_usd']['total']:.4f} | ${x['cost_usd']['mean']:.4f} | "
-                     f"{x['elapsed_s']['mean']:.1f} s |")
+        lines.append(f"| {mode} | {x['agree']}/{x['n_scored']}{rate} | {x['agree_scene_as_person']}/{x['n_scored']} | "
+                     f"{x['n_runs']} | {x['unacceptable']} | {x['damaged']} | ${x['cost_usd']['total']:.4f} | "
+                     f"${x['cost_usd']['mean']:.4f} | {x['elapsed_s']['mean']:.1f} s |")
     p = s["paired"]
-    lines += ["", f"Paired on {p['n']} images: both agree {p['both_agree']}, only rules {p['only_rules_agrees']}, "
-                  f"only agent {p['only_agent_agrees']}, neither {p['neither']}.", ""]
+    lines += ["", f"Paired on {p['n']} images (PREREG mapping): both agree {p['both_agree']}, only rules "
+                  f"{p['only_rules_agrees']}, only agent {p['only_agent_agrees']}, neither {p['neither']}.", ""]
     for mode in MODES:
-        lines += [f"**{mode}** (rows: Ebin, columns: {mode})", "", "| | " + " | ".join(OUTCOMES) + " |",
+        lines += [f"**{mode}** (rows: Ebin's label, columns: {mode} outcome)", "", "| | " + " | ".join(OUTCOMES) + " |",
                   "|---|" + "---|" * len(OUTCOMES)]
-        for e in OUTCOMES:
-            lines.append(f"| {e} | " + " | ".join(str(m[mode]["matrix"][e][o]) for o in OUTCOMES) + " |")
+        for label, counts in m[mode]["matrix"].items():
+            lines.append(f"| {label} | " + " | ".join(str(counts[o]) for o in OUTCOMES) + " |")
         lines.append("")
     lines += ["Rules mode on every image, by image model:", "", "| image model | " + " | ".join(OUTCOMES) + " |",
               "|---|" + "---|" * len(OUTCOMES)]

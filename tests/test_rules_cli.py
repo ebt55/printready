@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from printready.cli import main
 from printready.commands.rules import CHECKS, FIXES, UNITS, render_markdown
@@ -11,14 +12,15 @@ DOC = Path(__file__).resolve().parents[1] / "docs" / "rules.md"
 def test_every_rule_and_check_is_described():
     assert set(UNITS) == set(RULE_KEYS)
     assert set(CHECKS) == set(CHECK_IDS)
-    assert set(FIXES) == {"remove_background", "add_border", "bridge_islands", "pad_canvas"}
+    assert set(FIXES) == {"remove_background", "add_border", "bridge_islands", "pad_canvas", "fit_shape"}
 
 
 def test_rules_text_lists_values_basis_and_sources(capsys):
     assert main(["rules"]) == 0
     out = capsys.readouterr().out
-    assert "ppi_target            300 PPI           Sticker Mule" in out
-    assert "max_specks            250 specks        convention" in out
+    assert re.search(r"ppi_target +300 PPI +Sticker Mule", out)
+    assert re.search(r"max_specks +250 specks +convention", out)
+    assert re.search(r"bleed_in +0.0625 in +Sticker Mule", out)
     assert "https://www.stickermule.com/" in out and "How each check measures it:" in out
 
 

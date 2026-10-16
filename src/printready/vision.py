@@ -1,9 +1,19 @@
-"""Model text checks: `text_garbled` and `text_small` (the two things pixels cannot settle).
+"""Model text checks: `text_garbled` and `text_small`.
 
 One call per image: the art cropped to its subject box (768 px long side) plus its printed size.
-The model answers JSON only, {"text": [{"seen", "intended", "garbled", "cap_height_frac"}], "notes"};
-`cap_height_frac` is cap height over the crop height, so code converts it to points with
-Artwork.ppi and compares it with cap_height_ratio x min_text_pt. The model never sees a threshold.
+The model answers JSON only:
+    {"text": [{"letters", "seen", "intended", "misspelled", "broken", "box"}], "notes"}
+- Reading: `letters` is a letter-by-letter transcription (spelling it out stops the model from
+  silently autocorrecting, e.g. WELCME read as WELCOME) and `intended` the correct spelling. Code
+  calls a line garbled if their letters differ (ignoring case, spaces and punctuation), if a
+  letter could not be made out (`?`), or if the model says a word is misspelled or a glyph broken.
+- The model only points; code measures. `box` locates a line of text (fractions of the image);
+  code measures its cap height in the full-resolution pixels (glyph heights inside the box), turns
+  it into points with Artwork.ppi and compares it with cap_height_ratio x min_text_pt. Vision
+  models misjudge small heights badly (dev bench: 2.5 pt text read as 7-12 pt), so no size number
+  comes from the model. text_small is OFF by default (PRINTREADY_TEXT_SMALL=1 turns it on): right
+  on the bench's flat type, but on real Grok lettering misplaced boxes and stitched or outlined
+  letters gave false small-text flags. See docs/vision-notes.md.
 A parse failure gets one JSON-only reminder, then both findings are `skip`; an API error (after
 the client's own retries) is a `skip` with the error. BudgetExceeded propagates to the caller.
 """
@@ -11,8 +21,13 @@ the client's own retries) is a `skip` with the error. BudgetExceeded propagates 
 from __future__ import annotations
 
 import json
+import os
+import re
 from pathlib import Path
 from typing import Any
+
+import cv2
+import numpy as np
 
 from printready.geometry import bbox
 from printready.llm import ChatClient, LLMError, image_part
@@ -21,10 +36,20 @@ from printready.types import Artwork, Finding, Spec
 
 PROMPT_PATH = Path(__file__).parent / "prompts" / "vision-text.md"
 REMINDER = 'Reply with only the JSON object described above, {"text": [...], "notes": "..."}, and no other text.'
+TEXT_SMALL_ENV = "PRINTREADY_TEXT_SMALL"  # "0" turns the text_small finding off, "1" on
+TEXT_SMALL_DEFAULT = False  # off: false flags on real Grok lettering (docs/vision-notes.md)
+BOX_PADS = (0.35, 1.0, 2.0)  # search windows around the model's box, in box heights on every side
+MIN_GLYPHS = 2  # a text line has at least this many glyphs
+MIN_CONTRAST = 40.0  # RGB distance below which a window counts as one flat colour
+
+
+def text_small_enabled() -> bool:
+    raw = os.environ.get(TEXT_SMALL_ENV)
+    return TEXT_SMALL_DEFAULT if raw is None else raw.strip() not in ("0", "false", "off", "")
 
 
 def check_text(art: Artwork, spec: Spec, profile: Profile, client: ChatClient) -> list[Finding]:
-    """The text_garbled and text_small findings for `art` at `spec.size_in` (always both)."""
+    """The text_garbled finding, and text_small unless it is turned off, for `art` at `spec.size_in`."""
     x0, y0, x1, y1 = subject_box(art)
     w_in, h_in = (x1 - x0) / art.ppi, (y1 - y0) / art.ppi
     scale = (
@@ -53,7 +78,7 @@ def check_text(art: Artwork, spec: Spec, profile: Profile, client: ChatClient) -
     if answer is None:
         reason = resp.refusal or problem
         return skipped("the model's answer could not be read", {"reason": "unreadable answer", "error": reason, **trace})
-    return findings_from_answer(answer, art, spec, profile, crop_height_px=y1 - y0, trace=trace)
+    return findings_from_answer(answer, art, spec, profile, crop=(x0, y0, x1, y1), trace=trace)
 
 
 def subject_box(art: Artwork) -> tuple[int, int, int, int]:
@@ -78,38 +103,132 @@ def parse_answer(text: str) -> tuple[dict[str, Any] | None, str]:
     for i, item in enumerate(data["text"]):
         if not isinstance(item, dict) or not isinstance(item.get("seen"), str):
             return None, f'text item {i} has no "seen" string'
-        if not isinstance(item.get("garbled"), bool):
-            return None, f'text item {i} has no true/false "garbled"'
-        frac = item.get("cap_height_frac")
-        if frac is not None and (isinstance(frac, bool) or not isinstance(frac, (int, float)) or not 0 < frac <= 1):
-            return None, f'text item {i} has a "cap_height_frac" outside 0..1'
+        if not isinstance(item.get("broken"), bool):
+            return None, f'text item {i} has no true/false "broken"'
+        if not isinstance(item.get("misspelled", False), bool) or not isinstance(item.get("letters", ""), str):
+            return None, f'text item {i} has a "misspelled" or "letters" of the wrong type'
+        box = item.get("box")
+        if box is not None and not _valid_box(box):
+            return None, f'text item {i} has a "box" that is not [left, top, right, bottom] fractions'
     return data, ""
 
+
+def _valid_box(box: Any) -> bool:
+    if not isinstance(box, list) or len(box) != 4:
+        return False
+    if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not -0.01 <= v <= 1.01 for v in box):
+        return False
+    return box[2] > box[0] and box[3] > box[1]
+
+
+def _letters(text: str) -> str:
+    return re.sub(r"[^0-9A-Z?]", "", text.upper())
+
+
+# ---------------------------------------------------------------- measuring text height
+
+def cap_height_px(rgb: np.ndarray, box: tuple[float, float, float, float]) -> float | None:
+    """Cap height (px) of the line of text the model located at `box` (x0, y0, x1, y1 px of
+    `rgb`, HxWx3 on white). None if no line of glyphs is found near it.
+
+    A vision model places boxes around small text only roughly (dev bench: up to one box height
+    off), so the search window grows (BOX_PADS x the box height on every side) until it holds a
+    whole text line. In each window, ink = pixels far (Otsu on the colour distance) from the
+    window's dominant colour; glyphs = 8-connected ink components that do not touch the window
+    edge; the line = the largest group of glyphs with similar height on a shared centre line.
+    Cap height = the 90th percentile of the line's glyph heights (dots and x-height letters do
+    not pull it down; round letters overshoot it by a few percent)."""
+    for pad in BOX_PADS:
+        line = _main_line(_glyphs(rgb, box, pad), box)
+        if len(line) >= MIN_GLYPHS:
+            return float(np.percentile([h for _, h in line], 90))
+    return None
+
+
+Glyph = tuple[float, int, int]  # (centre y, height, area) of one ink component, px
+
+
+def _glyphs(rgb: np.ndarray, box: tuple[float, float, float, float], pad: float) -> list[Glyph]:
+    """The ink components inside `box` grown by `pad` box heights."""
+    h_img, w_img = rgb.shape[:2]
+    x0, y0, x1, y1 = box
+    grow = pad * (y1 - y0)
+    xa, ya = max(0, int(x0 - grow)), max(0, int(y0 - grow))
+    xb, yb = min(w_img, int(np.ceil(x1 + grow))), min(h_img, int(np.ceil(y1 + grow)))
+    if xb - xa < 4 or yb - ya < 4:
+        return []
+    window = rgb[ya:yb, xa:xb].reshape(-1, 3).astype(np.float32)
+    distance = np.linalg.norm(window - np.median(window, axis=0), axis=1).reshape(yb - ya, xb - xa)
+    if distance.max() < MIN_CONTRAST:  # one flat colour: nothing to read
+        return []
+    scaled = np.clip(distance * (255.0 / distance.max()), 0, 255).astype(np.uint8)
+    otsu, _ = cv2.threshold(scaled, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    ink = distance > max(otsu * distance.max() / 255.0, MIN_CONTRAST / 2)
+    _, _, stats, _ = cv2.connectedComponentsWithStats(ink.astype(np.uint8), connectivity=8)
+    h, w = ink.shape
+    return [
+        (ya + y + ch / 2, int(ch), int(area)) for x, y, cw, ch, area in stats[1:]
+        if x > 0 and y > 0 and x + cw < w and y + ch < h and area >= 4 and ch >= 3
+    ]
+
+
+def _main_line(glyphs: list[Glyph], box: tuple[float, float, float, float]) -> list[tuple[float, int]]:
+    """The group of glyphs that share a centre line and have similar heights with the most ink
+    (total area): on real art, outlines, shading and texture break into many small specks, and
+    counting components would pick them over the letters. Returns (centre y, height) pairs."""
+    best: list[Glyph] = []
+    for cy, h, _ in glyphs:
+        line = [(c, g, a) for c, g, a in glyphs if abs(c - cy) <= 0.6 * max(h, g) and 0.5 <= g / h <= 2.0]
+        if sum(a for *_, a in line) > sum(a for *_, a in best):
+            best = line
+    return [(c, g) for c, g, _ in best]
+
+
+def _on_white(rgba: np.ndarray) -> np.ndarray:
+    a = rgba[..., 3:4].astype(np.float32) / 255.0
+    return (rgba[..., :3] * a + 255.0 * (1.0 - a)).round().astype(np.uint8)
+
+
+# ---------------------------------------------------------------- findings
 
 def findings_from_answer(
     answer: dict[str, Any],
     art: Artwork,
     spec: Spec,
     profile: Profile,
-    crop_height_px: int,
+    crop: tuple[int, int, int, int],
     trace: dict[str, Any] | None = None,
 ) -> list[Finding]:
-    """Turn a parsed model answer into the two findings. All thresholds are applied here."""
+    """Turn a parsed model answer into the findings. Every threshold and measurement is here."""
     trace = trace or {}
-    notes = answer.get("notes")
+    cx0, cy0, cx1, cy1 = crop
+    rgb = _on_white(art.rgba)
     items = []
     for item in answer["text"]:
-        frac = item.get("cap_height_frac")
-        cap_pt = None if frac is None else frac * crop_height_px / art.ppi * PT_PER_IN
+        seen, intended = item["seen"], item.get("intended") or item["seen"]
+        letters = item.get("letters") or seen
+        cap_px = None
+        if item.get("box"):
+            bx0, by0, bx1, by1 = item["box"]
+            px_box = (cx0 + bx0 * (cx1 - cx0), cy0 + by0 * (cy1 - cy0), cx0 + bx1 * (cx1 - cx0), cy0 + by1 * (cy1 - cy0))
+            cap_px = cap_height_px(rgb, px_box)
         items.append({
-            "seen": item["seen"],
-            "intended": item.get("intended") or item["seen"],
-            "garbled": item["garbled"],
-            "cap_height_frac": frac,
-            "cap_height_pt": None if cap_pt is None else round(cap_pt, 2),
+            "seen": seen,
+            "intended": intended,
+            "letters": letters,
+            "garbled": bool(item.get("misspelled") or item["broken"] or "?" in letters
+                            or _letters(letters) != _letters(intended)),
+            "misspelled": bool(item.get("misspelled")),
+            "broken": item["broken"],
+            "box": item.get("box"),
+            "cap_height_px": None if cap_px is None else round(cap_px, 1),
+            "cap_height_pt": None if cap_px is None else round(cap_px / art.ppi * PT_PER_IN, 2),
         })
-    base = {"items": items, "notes": notes, **trace}
-    return [_garbled_finding(items, base), _small_finding(items, base, art, spec, profile)]
+    base = {"items": items, "notes": answer.get("notes"), **trace}
+    findings = [_garbled_finding(items, base)]
+    if text_small_enabled():
+        findings.append(_small_finding(items, base, art, spec, profile))
+    return findings
 
 
 def _garbled_finding(items: list[dict[str, Any]], base: dict[str, Any]) -> Finding:
@@ -131,7 +250,7 @@ def _small_finding(
         return Finding("text_small", "pass", "There is no text to measure.", base, "none")
     sized = [i for i in items if i["cap_height_pt"] is not None]
     if not sized:
-        measured = {**base, "reason": "no text height in the answer"}
+        measured = {**base, "reason": "no text height could be measured"}
         return Finding("text_small", "skip", "The text height could not be measured.", measured, "none")
     smallest = min(sized, key=lambda i: i["cap_height_pt"])
     cap_pt = smallest["cap_height_pt"]
@@ -148,6 +267,7 @@ def _small_finding(
         "threshold_cap_pt": round(threshold, 2),
         "min_size_in_for_text": round(needed_in, 2),
         "max_size_in_at_floor": round(at_floor_in, 2),
+        "unmeasured": len(items) - len(sized),
     }
     if cap_pt >= threshold:
         msg = f"The smallest text prints at about {text_pt:.1f} pt at {size:g} in, above the {profile.min_text_pt:g} pt minimum."
@@ -163,6 +283,7 @@ def _small_finding(
 
 
 def skipped(why: str, measured: dict[str, Any]) -> list[Finding]:
-    """Both vision findings as `skip` (outcome() then sends the image to a person)."""
+    """The vision findings as `skip` (outcome() then sends the image to a person)."""
     msg = f"The text was not checked: {why}."
-    return [Finding("text_garbled", "skip", msg, measured, "none"), Finding("text_small", "skip", msg, dict(measured), "none")]
+    checks = ("text_garbled", "text_small") if text_small_enabled() else ("text_garbled",)
+    return [Finding(check, "skip", msg, dict(measured), "none") for check in checks]

@@ -1,1 +1,1 @@
-We removed the plain background and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.
+We removed the plain background and added a 0.1 in white border with a cut line. The smallest text ("STAY WILD") prints at about 3.7 pt at 3 in, under the 6 pt minimum; at 4.8 in or larger it is big enough. If the proof looks right, approve it to print your 3 in die-cut sticker.

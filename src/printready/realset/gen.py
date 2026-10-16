@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import io
-import subprocess
 import time
-from pathlib import Path
 from typing import Any, Callable
 
 from PIL import Image
@@ -20,20 +18,6 @@ from printready.llm import ChatClient, LLMError, make_client
 from printready.realset import ID_PREFIX, Paths, append_jsonl, load_prompts, read_jsonl
 
 EXTENSIONS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
-
-
-def prereg_committed(root: Path) -> tuple[bool, str]:
-    """Read-only git check: PREREG.md and realset/prompts.txt are tracked and unmodified."""
-    files = ["PREREG.md", "realset/prompts.txt"]
-    try:
-        for f in files:
-            if subprocess.run(["git", "ls-files", "--error-unmatch", f], cwd=root, capture_output=True).returncode:
-                return False, f"{f} is not committed"
-        if subprocess.run(["git", "diff", "--quiet", "HEAD", "--", *files], cwd=root, capture_output=True).returncode:
-            return False, "PREREG.md or realset/prompts.txt has uncommitted changes"
-    except OSError as exc:
-        return False, f"git is not available ({exc})"
-    return True, "PREREG.md and realset/prompts.txt are committed"
 
 
 def generate(
