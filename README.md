@@ -1,14 +1,16 @@
 # printready
 
+By Ebin Babu Thomas.
+
 Checks sticker artwork against a printer's published rules at the ordered size and fixes the mechanical problems. It draws the cut line and sends what it cannot fix to a person. Built and scored on AI-generated art. Not affiliated with Sticker Mule; the rules are paraphrased from their public FAQ pages and linked per rule.
 
 ![Before and after: a Grok image, the fixed die-cut proof with its cut line, and the findings](docs/img/hero.png)
 
 ## What it found
 
-Of 100 Grok sticker images, 38 became die-cut proofs with a border and cut line. 60 came back as rounded-rectangle proposals because the art was a full scene, and 2 went to a person. The two were one garbled word and one subject cut off at the canvas edge. The author labelled 50 of the images blind before any tool ran, and would send 53 of the 55 distinct proofs to a customer. The fixed pipeline agreed with those labels on 34 of 50, which is the ceiling. 16 of the images were labelled "ready" and are opaque JPEGs, so the tool has to change them and can only answer "fixable". A tool-use agent with the same tools also reached 34 of 50, at four times the cost and twice the time. By the rule written before the run, the agent did not earn its place. Rules mode is the default.
+Of 100 Grok sticker images, 38 became die-cut proofs with a border and cut line. 60 came back as rounded-rectangle proposals because the art was a full scene, and 2 went to a person. The two were one garbled word and one subject cut off at the canvas edge. Ebin, the author, labelled 50 of the images blind before any tool ran, and would send 53 of the 55 distinct proofs to a customer. The fixed pipeline agreed with those labels on 34 of 50, which is the ceiling. 16 of the images were labelled "ready" and are opaque JPEGs, so the tool has to change them and can only answer "fixable". A tool-use agent with the same tools also reached 34 of 50, at four times the cost and twice the time. By the rule written before the run, the agent did not earn its place. Rules mode is the default.
 
-The scene rate is the number a sticker shop would care about. `grok-imagine-image` returned a scene for 38 of 50 prompts; `grok-imagine-image-2.0` for 22 of 50. The prompts were sent as a customer would type them, without a sticker style prefix.
+The scene rate is the number a sticker shop would care about. `grok-imagine-image` returned a scene for 39 of 50 prompts; `grok-imagine-image-2.0` for 22 of 50. The prompts were sent as a customer would type them, without a sticker style prefix. One fixed prefix, tried after the fact on the first model, cut its scenes to 3 of 50. That moved more images than any fixer in this repo ([below](#prompt-prefix-experiment-exploratory)).
 
 ## Why it exists
 
@@ -24,11 +26,13 @@ Sticker Mule added Grok image generation to its artwork upload in August 2026 an
 
 ## Results
 
-![Outcomes for all 100 images and agreement with the labels](docs/img/outcomes.png)
+![Agreement with Ebin's labels against the ceiling, pass-2 acceptability 53 of 55, and cost per image](docs/img/results.png)
 
-![Twelve images before and after](docs/img/gallery-strip.png)
+![Outcomes for all 100 images by product and image model](docs/img/outcomes.png)
 
-**Real set.** 50 prompts, each sent verbatim to `xai:grok-imagine-image` and `xai:grok-imagine-image-2.0`, 100 images, every one judged as a 3 in die-cut order. The author labelled 50 of them blind, right after generation. The labels were 28 scenes, 16 ready as a die-cut, 6 fixable as a die-cut, and 0 for a person. Then both modes ran, and the author judged every distinct proof with the mode hidden.
+![Six images before and after, including the one rejected proof and the one sent to a person](docs/img/gallery-strip.png)
+
+**Real set.** 50 prompts, each sent verbatim to `xai:grok-imagine-image` and `xai:grok-imagine-image-2.0`, 100 images, every one judged as a 3 in die-cut order. Ebin labelled 50 of them blind, right after generation. The labels were 28 scenes, 16 ready as a die-cut, 6 fixable as a die-cut, and 0 for a person. Then both modes ran, and Ebin judged every distinct proof with the mode hidden.
 
 The preregistered run hit two outages after [PREREG.md](PREREG.md) was committed. Sixteen vision calls got HTTP 429 with no tokens, and every agent run got HTTP 403 before its first token. Those 66 runs were re-attempted under a declared addendum, written before the rerun, and nothing else changed. The 16 rules reruns reproduced the same `fixed.png` byte for byte. Both runs are reported.
 
@@ -43,21 +47,31 @@ The preregistered run hit two outages after [PREREG.md](PREREG.md) was committed
 | cost and time per image, agent | $0, 1.0 s | $0.011, 20.0 s |
 | verdict by the preregistered rule | keep rules | keep rules |
 
-Of the 18 hand-offs in the preregistered run, 16 were the vision outage. The tool sent those to a person rather than guess. Pass 2 was done once, after the rerun, on the 55 distinct proofs from both runs. 53 were acceptable, with one unacceptable proof per mode and no damaged fixes. Labels were made by the author, one person; there is no second labeller yet. Full tables in [eval.md](results/realset/test/eval.md); post-hoc views, including product agreement and three customer messages from each mode side by side, in [posthoc.md](results/realset/test/posthoc.md).
+Of the 18 hand-offs in the preregistered run, 16 were the vision outage. The tool sent those to a person rather than guess. Pass 2 was done once, after the rerun, on the 55 distinct proofs from both runs. 53 were acceptable, with one unacceptable proof per mode and no damaged fixes. Labels were made by Ebin alone; there is no second labeller yet. Full tables in [eval.md](results/realset/test/eval.md); post-hoc views, including product agreement and three customer messages from each mode side by side, in [posthoc.md](results/realset/test/posthoc.md).
 
 **Why the agent tied.** Its prompt restates the rules flowchart, it has the same tools, and the same function decides its outcome. It can tie or lose. It did one thing on its own, handing one image to a person by its own judgement, and it wrote the better customer messages. Neither is in the score.
 
 **Planted-defect benchmark, held out.** 258 of 258 outcomes right on the seed-8 split ([report.md](results/bench/test/report.md)). That is a correctness test, since the generator and the detectors share the rule definitions. Garbled-text detection caught 15 of 16 garbled words with no false flags on 32 clean ones.
 
-**Spend.** About $5.5 of the $10 cap, every call on the committed ledger.
+**Spend.** About $6.5 of the $10 cap, every call on the committed ledger.
 
 ## Prompt prefix experiment (exploratory)
 
-<!-- PREFIX RESULT -->
+Post hoc, decided after the test results were in, and not preregistered. One model, `grok-imagine-image`, and the same 50 test prompts. Each prompt got one fixed prefix, written once and never tuned: "Die-cut sticker design, single subject, flat plain white background, no scenery, no shadow: ". Rules mode judged both sets with the vision check off. Cost $1.00.
+
+| product, rules mode without vision | unprefixed | prefixed |
+|---|---|---|
+| die-cut proof | 10 | 47 |
+| rounded-rectangle proposal (a scene) | 39 | 3 |
+| to a person | 1 | 0 |
+
+The trade-off is size. With the prefix the subject sits smaller on more white space. At a 3 in order the resolution check goes from 44 pass, 5 warn, 1 fail to 9 pass, 40 warn, 1 fail. A warning asks the customer to pick a smaller size; nothing is upscaled. Part of that gap is arithmetic, since a whole-image rectangle uses the full canvas and a cut-out subject does not.
+
+This matters to a sticker shop. The prompt wrapper is one line the shop controls, and on this model it moved more images than any fixer in this repo. Whether Sticker Mule's uploader already adds one is unknown, and nothing here says anything about their setup. Tables in [prefix.md](results/realset/prefix/prefix.md); every original and its proof in [contact-sheet.jpg](results/realset/prefix/contact-sheet.jpg).
 
 ## Where an agent would earn its place
 
-The agent had no judgement to make that the rules could not. Version 2 gives it one. On a textured or vignette background, where flood fill is refused today, the model points to a box around the subject. Code segments inside the box. The guard checks the cutout the same way, and the author's pass-2 acceptability is the score. New preregistration, new split, and a second labeller.
+The agent had no judgement to make that the rules could not. Version 2 gives it one. On a textured or vignette background, where flood fill is refused today, the model points to a box around the subject. Code segments inside the box. The guard checks the cutout the same way, and Ebin's pass-2 acceptability is the score. New preregistration, new split, and a second labeller.
 
 ## Run it
 
@@ -80,9 +94,9 @@ uv run pytest -q                                                         # offli
 - It says nothing about Sticker Mule's real uploads, their uploader's prompt wrapping or post-processing, their proofing, or their own artwork scan. The images came from the xAI API with our prompts, not from their uploader.
 - It says nothing about print results on paper. Nothing was printed. "Passes" means passes the rules in `docs/rules.md`.
 - It covers no art other than these two image models and these 50 prompts.
-- It has no second labeller. The labels are the author's.
-- It cannot show whether the tool catches art that needs a person on real images. The author labelled none of the 50 that way, so only the benchmark covers it.
+- It has no second labeller. The labels are Ebin's.
+- It cannot show whether the tool catches art that needs a person on real images. Ebin labelled none of the 50 that way, so only the benchmark covers it.
 
 ## How it was built
 
-Claude Opus 5.5 agents wrote the code from a plan the author reviewed step by step. Claude Fable 5.1 wrote this README and gave second opinions on the design, the benchmark and the preregistration. The author labelled every image, approved each stage, and typed as little as possible. October 2026. MIT.
+Claude Opus 5.5 agents wrote the code from a plan Ebin reviewed step by step. Claude Fable 5.1 wrote this README and gave second opinions on the design, the benchmark and the preregistration. Ebin labelled every image, approved each stage, and typed as little as possible. October 2026. MIT.
