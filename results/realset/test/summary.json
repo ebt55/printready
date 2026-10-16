@@ -1,0 +1,2382 @@
+{
+  "split": "test",
+  "generated": "2026-10-16T22:08:11Z",
+  "n_images": 100,
+  "sample": {
+    "n": 50,
+    "labelled_pass1": 50,
+    "scenes": 28
+  },
+  "labels": {
+    "pass1": {
+      "scene": 28,
+      "ready_diecut": 16,
+      "fixable_diecut": 6
+    },
+    "pass2": {
+      "acceptable": 53,
+      "unacceptable": 2
+    }
+  },
+  "mapping": {
+    "prereg": {
+      "ready_diecut": "ready",
+      "fixable_diecut": "fixable",
+      "scene": "fixable",
+      "needs_person": "needs_person",
+      "ready": "ready",
+      "fixable": "fixable"
+    },
+    "scene_as_person": {
+      "ready_diecut": "ready",
+      "fixable_diecut": "fixable",
+      "scene": "needs_person",
+      "needs_person": "needs_person",
+      "ready": "ready",
+      "fixable": "fixable"
+    }
+  },
+  "modes": {
+    "rules": {
+      "n_runs": 100,
+      "n_scored": 50,
+      "agree": 29,
+      "agree_rate": 0.58,
+      "agree_scene_as_person": 9,
+      "two_class": {
+        "prereg": 42,
+        "scene_as_person": 22
+      },
+      "matrix": {
+        "ready_diecut": {
+          "ready": 0,
+          "fixable": 13,
+          "needs_person": 3
+        },
+        "fixable_diecut": {
+          "ready": 0,
+          "fixable": 5,
+          "needs_person": 1
+        },
+        "scene": {
+          "ready": 0,
+          "fixable": 24,
+          "needs_person": 4
+        }
+      },
+      "outcomes": {
+        "fixable": 82,
+        "needs_person": 18
+      },
+      "shapes": {
+        "die_cut": 39,
+        "rounded_rect": 61
+      },
+      "proofs_to_label": 42,
+      "proofs_unlabelled": 0,
+      "unacceptable": 0,
+      "damaged": 0,
+      "bad_fixes": 0,
+      "scene_shaped_proofs": 23,
+      "scene_shaped_accepted": 23,
+      "cost_usd": {
+        "n": 100,
+        "total": 0.2308,
+        "mean": 0.0023,
+        "median": 0.0022,
+        "max": 0.0051
+      },
+      "elapsed_s": {
+        "n": 100,
+        "total": 758.305,
+        "mean": 7.583,
+        "median": 5.8,
+        "max": 73.027
+      }
+    },
+    "agent": {
+      "n_runs": 50,
+      "n_scored": 50,
+      "agree": 0,
+      "agree_rate": 0.0,
+      "agree_scene_as_person": 28,
+      "two_class": {
+        "prereg": 0,
+        "scene_as_person": 28
+      },
+      "matrix": {
+        "ready_diecut": {
+          "ready": 0,
+          "fixable": 0,
+          "needs_person": 16
+        },
+        "fixable_diecut": {
+          "ready": 0,
+          "fixable": 0,
+          "needs_person": 6
+        },
+        "scene": {
+          "ready": 0,
+          "fixable": 0,
+          "needs_person": 28
+        }
+      },
+      "outcomes": {
+        "needs_person": 50
+      },
+      "shapes": {
+        "die_cut": 50
+      },
+      "proofs_to_label": 0,
+      "proofs_unlabelled": 0,
+      "unacceptable": 0,
+      "damaged": 0,
+      "bad_fixes": 0,
+      "scene_shaped_proofs": 0,
+      "scene_shaped_accepted": 0,
+      "cost_usd": {
+        "n": 50,
+        "total": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "elapsed_s": {
+        "n": 50,
+        "total": 50.594,
+        "mean": 1.0119,
+        "median": 0.821,
+        "max": 2.032
+      }
+    }
+  },
+  "paired": {
+    "n": 50,
+    "both_agree": 0,
+    "only_rules_agrees": 29,
+    "only_agent_agrees": 0,
+    "neither": 21
+  },
+  "verdict": {
+    "status": "keep_rules",
+    "rule": "agent becomes the default only if it agrees with Ebin on at least 5 more of the labelled images than rules mode and has no more bad fixes (unacceptable or damaged)",
+    "reason": "agent agrees on 0, rules on 29 (margin -29, needs +5); bad fixes agent 0, rules 0; discordant pairs: only agent right 0, only rules right 29",
+    "agent_minus_rules": -29
+  },
+  "rules_by_image_model": {
+    "xai:grok-imagine-image": {
+      "ready": 0,
+      "fixable": 46,
+      "needs_person": 4
+    },
+    "xai:grok-imagine-image-2.0": {
+      "ready": 0,
+      "fixable": 36,
+      "needs_person": 14
+    }
+  },
+  "images": [
+    {
+      "image": "aaefda510600a6abf715aa03ffa5c47c20534f041d5150735951e57735532fa6",
+      "prompt_id": "p01",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/aaefda510600a6abf715aa03ffa5c47c20534f041d5150735951e57735532fa6.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/aaefda510600a6abf715aa03ffa5c47c20534f041d5150735951e57735532fa6",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "e69c153c84e8404afa8a379a7f6550d83a41dde2ccfd85a186247876696ead0f",
+      "prompt_id": "p02",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/e69c153c84e8404afa8a379a7f6550d83a41dde2ccfd85a186247876696ead0f.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/e69c153c84e8404afa8a379a7f6550d83a41dde2ccfd85a186247876696ead0f",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/e69c153c84e8404afa8a379a7f6550d83a41dde2ccfd85a186247876696ead0f",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "49cac1493d300e96412ac33f6b550d8a675b59f667050e7eb323860edd90de26",
+      "prompt_id": "p03",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/49cac1493d300e96412ac33f6b550d8a675b59f667050e7eb323860edd90de26.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/49cac1493d300e96412ac33f6b550d8a675b59f667050e7eb323860edd90de26",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/49cac1493d300e96412ac33f6b550d8a675b59f667050e7eb323860edd90de26",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "cbd290e75289e136c8a7966243bf945c9ab7e56e43ace0b6de67e051964e60a5",
+      "prompt_id": "p04",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/cbd290e75289e136c8a7966243bf945c9ab7e56e43ace0b6de67e051964e60a5.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/cbd290e75289e136c8a7966243bf945c9ab7e56e43ace0b6de67e051964e60a5",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "c83326c3f086966d7c82552b73c2c9e9246e00585ca77cf09bcbeac1de9243a4",
+      "prompt_id": "p05",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/c83326c3f086966d7c82552b73c2c9e9246e00585ca77cf09bcbeac1de9243a4.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c83326c3f086966d7c82552b73c2c9e9246e00585ca77cf09bcbeac1de9243a4",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "13aec9cefa0194ae20d6b32151a15c1cf8bb948824e7ad7526ace2bd02a3b4f9",
+      "prompt_id": "p06",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/13aec9cefa0194ae20d6b32151a15c1cf8bb948824e7ad7526ace2bd02a3b4f9.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/13aec9cefa0194ae20d6b32151a15c1cf8bb948824e7ad7526ace2bd02a3b4f9",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "147918c53c1500adc53f766a028e6ab3122423e3d311c6da0cf5e45837dcd676",
+      "prompt_id": "p07",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/147918c53c1500adc53f766a028e6ab3122423e3d311c6da0cf5e45837dcd676.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/147918c53c1500adc53f766a028e6ab3122423e3d311c6da0cf5e45837dcd676",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/147918c53c1500adc53f766a028e6ab3122423e3d311c6da0cf5e45837dcd676",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "011112b6655fced101fb07b381a2b09bef32ae366e0fc1c4d436621cf70049cb",
+      "prompt_id": "p08",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/011112b6655fced101fb07b381a2b09bef32ae366e0fc1c4d436621cf70049cb.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/011112b6655fced101fb07b381a2b09bef32ae366e0fc1c4d436621cf70049cb",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "ea220ee241f2a6a00b42e6742ea636d55200932621bd7bbfc7eeccc106852f3a",
+      "prompt_id": "p09",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/ea220ee241f2a6a00b42e6742ea636d55200932621bd7bbfc7eeccc106852f3a.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/ea220ee241f2a6a00b42e6742ea636d55200932621bd7bbfc7eeccc106852f3a",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "73fbd2957aed56bebb6bd9e5d377918159de77218115cfc07bc8681079ef768c",
+      "prompt_id": "p10",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/73fbd2957aed56bebb6bd9e5d377918159de77218115cfc07bc8681079ef768c.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/73fbd2957aed56bebb6bd9e5d377918159de77218115cfc07bc8681079ef768c",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "7fd718ba39704fe0fd9faeba30889e0edce36fb3a3310c6600b4b7f6c3687de9",
+      "prompt_id": "p11",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/7fd718ba39704fe0fd9faeba30889e0edce36fb3a3310c6600b4b7f6c3687de9.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/7fd718ba39704fe0fd9faeba30889e0edce36fb3a3310c6600b4b7f6c3687de9",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/7fd718ba39704fe0fd9faeba30889e0edce36fb3a3310c6600b4b7f6c3687de9",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "bea06404138dd86fe1a3e18d339b700ab2a5aafe3a8f7984e689302c227febbb",
+      "prompt_id": "p12",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/bea06404138dd86fe1a3e18d339b700ab2a5aafe3a8f7984e689302c227febbb.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/bea06404138dd86fe1a3e18d339b700ab2a5aafe3a8f7984e689302c227febbb",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "03ad08316ef5b8f13a9763629490cbf143a44fd44c976ddd126f0d1ce8b137fc",
+      "prompt_id": "p13",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/03ad08316ef5b8f13a9763629490cbf143a44fd44c976ddd126f0d1ce8b137fc.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/03ad08316ef5b8f13a9763629490cbf143a44fd44c976ddd126f0d1ce8b137fc",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/03ad08316ef5b8f13a9763629490cbf143a44fd44c976ddd126f0d1ce8b137fc",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "44e470f5408f37d8dcbe669930ec3b39f8466fbb7cbb20d8cd30ac8f53012f34",
+      "prompt_id": "p14",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/44e470f5408f37d8dcbe669930ec3b39f8466fbb7cbb20d8cd30ac8f53012f34.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/44e470f5408f37d8dcbe669930ec3b39f8466fbb7cbb20d8cd30ac8f53012f34",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "bfeeafcedb2a41869c5211da9a885ab0d0549da7e2f29b9cad3fd1f7cd4fbf1e",
+      "prompt_id": "p15",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/bfeeafcedb2a41869c5211da9a885ab0d0549da7e2f29b9cad3fd1f7cd4fbf1e.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/bfeeafcedb2a41869c5211da9a885ab0d0549da7e2f29b9cad3fd1f7cd4fbf1e",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/bfeeafcedb2a41869c5211da9a885ab0d0549da7e2f29b9cad3fd1f7cd4fbf1e",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "f2cef067c6a9962647a4a57d3a96f626e45042525e098963336d43fd7692a600",
+      "prompt_id": "p16",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/f2cef067c6a9962647a4a57d3a96f626e45042525e098963336d43fd7692a600.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/f2cef067c6a9962647a4a57d3a96f626e45042525e098963336d43fd7692a600",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/f2cef067c6a9962647a4a57d3a96f626e45042525e098963336d43fd7692a600",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "009565e0d8a1732b0f7e6d95419b784885c3bf81c30d9de6e71da223ffdaae85",
+      "prompt_id": "p17",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/009565e0d8a1732b0f7e6d95419b784885c3bf81c30d9de6e71da223ffdaae85.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/009565e0d8a1732b0f7e6d95419b784885c3bf81c30d9de6e71da223ffdaae85",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "488b31576c753006435dcd37ad37343fff18a7ddc3c12b84fc461d02bb94d119",
+      "prompt_id": "p18",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/488b31576c753006435dcd37ad37343fff18a7ddc3c12b84fc461d02bb94d119.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/488b31576c753006435dcd37ad37343fff18a7ddc3c12b84fc461d02bb94d119",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/488b31576c753006435dcd37ad37343fff18a7ddc3c12b84fc461d02bb94d119",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "8826ea5771bda42781013d5661abd12d7a8f8cae2d23019ee1b9332ff3a0b2b8",
+      "prompt_id": "p19",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/8826ea5771bda42781013d5661abd12d7a8f8cae2d23019ee1b9332ff3a0b2b8.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/8826ea5771bda42781013d5661abd12d7a8f8cae2d23019ee1b9332ff3a0b2b8",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/8826ea5771bda42781013d5661abd12d7a8f8cae2d23019ee1b9332ff3a0b2b8",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "5720ec701c030195a5c4849a079bceea062dc10a3588318392457825d0d80bc7",
+      "prompt_id": "p20",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/5720ec701c030195a5c4849a079bceea062dc10a3588318392457825d0d80bc7.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/5720ec701c030195a5c4849a079bceea062dc10a3588318392457825d0d80bc7",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/5720ec701c030195a5c4849a079bceea062dc10a3588318392457825d0d80bc7",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "0fe8bcb3f75055a4f7f3ade292e6f31c8c6d1a97ca70e3580237222c030f5eb4",
+      "prompt_id": "p21",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/0fe8bcb3f75055a4f7f3ade292e6f31c8c6d1a97ca70e3580237222c030f5eb4.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/0fe8bcb3f75055a4f7f3ade292e6f31c8c6d1a97ca70e3580237222c030f5eb4",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/0fe8bcb3f75055a4f7f3ade292e6f31c8c6d1a97ca70e3580237222c030f5eb4",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "b375fd594a8e47fe779d772faa01cb8483dd70bdffa61424d2f690ff2cdd1c7e",
+      "prompt_id": "p22",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/b375fd594a8e47fe779d772faa01cb8483dd70bdffa61424d2f690ff2cdd1c7e.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/b375fd594a8e47fe779d772faa01cb8483dd70bdffa61424d2f690ff2cdd1c7e",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/b375fd594a8e47fe779d772faa01cb8483dd70bdffa61424d2f690ff2cdd1c7e",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "7d4c4111f6761c217d86275e6e3c47d19085455341819003ae71287fdde36d42",
+      "prompt_id": "p23",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/7d4c4111f6761c217d86275e6e3c47d19085455341819003ae71287fdde36d42.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/7d4c4111f6761c217d86275e6e3c47d19085455341819003ae71287fdde36d42",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/7d4c4111f6761c217d86275e6e3c47d19085455341819003ae71287fdde36d42",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "74c294dc1dd6d1811901911977f2e1375f5d6946a2ff2c445e2c3c5622d57402",
+      "prompt_id": "p24",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/74c294dc1dd6d1811901911977f2e1375f5d6946a2ff2c445e2c3c5622d57402.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/74c294dc1dd6d1811901911977f2e1375f5d6946a2ff2c445e2c3c5622d57402",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/74c294dc1dd6d1811901911977f2e1375f5d6946a2ff2c445e2c3c5622d57402",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "a20ace1b18073369333ca7c99b2159dd7535a192d9f03a4ef3f7fcde71a01dbf",
+      "prompt_id": "p25",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/a20ace1b18073369333ca7c99b2159dd7535a192d9f03a4ef3f7fcde71a01dbf.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/a20ace1b18073369333ca7c99b2159dd7535a192d9f03a4ef3f7fcde71a01dbf",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "d96725a3a4f581c11c8949ef8114c3ec4fd53904f5e65cad8a47dcbc3981b9a9",
+      "prompt_id": "p26",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/d96725a3a4f581c11c8949ef8114c3ec4fd53904f5e65cad8a47dcbc3981b9a9.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/d96725a3a4f581c11c8949ef8114c3ec4fd53904f5e65cad8a47dcbc3981b9a9",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "c5c5967693189576f1748dfbf0ba57e2c52f3e8dd905febf5ca3351f1e824a66",
+      "prompt_id": "p27",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/c5c5967693189576f1748dfbf0ba57e2c52f3e8dd905febf5ca3351f1e824a66.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c5c5967693189576f1748dfbf0ba57e2c52f3e8dd905febf5ca3351f1e824a66",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/c5c5967693189576f1748dfbf0ba57e2c52f3e8dd905febf5ca3351f1e824a66",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "6545109cb891f7f016c9affecaa0c61500f8ee209fb70e40a0194ee1f30cd7e7",
+      "prompt_id": "p28",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/6545109cb891f7f016c9affecaa0c61500f8ee209fb70e40a0194ee1f30cd7e7.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/6545109cb891f7f016c9affecaa0c61500f8ee209fb70e40a0194ee1f30cd7e7",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "da7c15c86ef9545bcbaf9c246e6edeb42ec5f571b8cb3f3069b4e69e5261c679",
+      "prompt_id": "p29",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/da7c15c86ef9545bcbaf9c246e6edeb42ec5f571b8cb3f3069b4e69e5261c679.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/da7c15c86ef9545bcbaf9c246e6edeb42ec5f571b8cb3f3069b4e69e5261c679",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/da7c15c86ef9545bcbaf9c246e6edeb42ec5f571b8cb3f3069b4e69e5261c679",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "a4ba771693d8f383832254b28d0d65ff28b6ad1eb1d5154984c52bde15bd3fcd",
+      "prompt_id": "p30",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/a4ba771693d8f383832254b28d0d65ff28b6ad1eb1d5154984c52bde15bd3fcd.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/a4ba771693d8f383832254b28d0d65ff28b6ad1eb1d5154984c52bde15bd3fcd",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/a4ba771693d8f383832254b28d0d65ff28b6ad1eb1d5154984c52bde15bd3fcd",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "b971c0100b73ef221ca3e143f42865769622b268bb6fee40802632304e2f4e23",
+      "prompt_id": "p31",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/b971c0100b73ef221ca3e143f42865769622b268bb6fee40802632304e2f4e23.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/b971c0100b73ef221ca3e143f42865769622b268bb6fee40802632304e2f4e23",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "12adfdc1286d97a74cb619c3ddb24c005c69b22cedc67d0e650a71cd9050ad2b",
+      "prompt_id": "p32",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/12adfdc1286d97a74cb619c3ddb24c005c69b22cedc67d0e650a71cd9050ad2b.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/12adfdc1286d97a74cb619c3ddb24c005c69b22cedc67d0e650a71cd9050ad2b",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/12adfdc1286d97a74cb619c3ddb24c005c69b22cedc67d0e650a71cd9050ad2b",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "4a01d7ddfd1a9e196b0ae03c4b65b56725a70f360a973cb6096e81df0285b43c",
+      "prompt_id": "p33",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/4a01d7ddfd1a9e196b0ae03c4b65b56725a70f360a973cb6096e81df0285b43c.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/4a01d7ddfd1a9e196b0ae03c4b65b56725a70f360a973cb6096e81df0285b43c",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/4a01d7ddfd1a9e196b0ae03c4b65b56725a70f360a973cb6096e81df0285b43c",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "1cd4803d1704def67d75bd30801f814fd9261f87e22cd4d42e26a889eb9a1daf",
+      "prompt_id": "p34",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/1cd4803d1704def67d75bd30801f814fd9261f87e22cd4d42e26a889eb9a1daf.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/1cd4803d1704def67d75bd30801f814fd9261f87e22cd4d42e26a889eb9a1daf",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/1cd4803d1704def67d75bd30801f814fd9261f87e22cd4d42e26a889eb9a1daf",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "b9ee6e55240e48447bb6193e15dc2646078272b061d878564cc81cf0bced109b",
+      "prompt_id": "p35",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/b9ee6e55240e48447bb6193e15dc2646078272b061d878564cc81cf0bced109b.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/b9ee6e55240e48447bb6193e15dc2646078272b061d878564cc81cf0bced109b",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/b9ee6e55240e48447bb6193e15dc2646078272b061d878564cc81cf0bced109b",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "27d6f912447439c4ac33c5c52b24f60a1425a42d5b6fc8d0ad95074d043c2a02",
+      "prompt_id": "p36",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/27d6f912447439c4ac33c5c52b24f60a1425a42d5b6fc8d0ad95074d043c2a02.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/27d6f912447439c4ac33c5c52b24f60a1425a42d5b6fc8d0ad95074d043c2a02",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/27d6f912447439c4ac33c5c52b24f60a1425a42d5b6fc8d0ad95074d043c2a02",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "d33e5e47decf51f35d05054ef29091c148c99df3b108b2cc9e38307bfa7863f7",
+      "prompt_id": "p37",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/d33e5e47decf51f35d05054ef29091c148c99df3b108b2cc9e38307bfa7863f7.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/d33e5e47decf51f35d05054ef29091c148c99df3b108b2cc9e38307bfa7863f7",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/d33e5e47decf51f35d05054ef29091c148c99df3b108b2cc9e38307bfa7863f7",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "0dbb18b18976bbeba46a3de3d9c8a05099f29bd00ca2e7b471e321b3a044a150",
+      "prompt_id": "p38",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/0dbb18b18976bbeba46a3de3d9c8a05099f29bd00ca2e7b471e321b3a044a150.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/0dbb18b18976bbeba46a3de3d9c8a05099f29bd00ca2e7b471e321b3a044a150",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/0dbb18b18976bbeba46a3de3d9c8a05099f29bd00ca2e7b471e321b3a044a150",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "46bca405598fe33be31c480b205233e1d7705c57e18f77e39b47343c8cafea1c",
+      "prompt_id": "p39",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/46bca405598fe33be31c480b205233e1d7705c57e18f77e39b47343c8cafea1c.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/46bca405598fe33be31c480b205233e1d7705c57e18f77e39b47343c8cafea1c",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "1977496f9675bd9330cf4947df3612543b707febc62951adcab9e54003f56e48",
+      "prompt_id": "p40",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/1977496f9675bd9330cf4947df3612543b707febc62951adcab9e54003f56e48.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/1977496f9675bd9330cf4947df3612543b707febc62951adcab9e54003f56e48",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/1977496f9675bd9330cf4947df3612543b707febc62951adcab9e54003f56e48",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "cfcd02f34b18429a6caf55879570e2affab478f974af003e64e1917c2e3c7c3d",
+      "prompt_id": "p41",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/cfcd02f34b18429a6caf55879570e2affab478f974af003e64e1917c2e3c7c3d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/cfcd02f34b18429a6caf55879570e2affab478f974af003e64e1917c2e3c7c3d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "403b228481528490a60f58cb93a3e98818f259408f8f57da0ce0e20cc1bcf234",
+      "prompt_id": "p42",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/403b228481528490a60f58cb93a3e98818f259408f8f57da0ce0e20cc1bcf234.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/403b228481528490a60f58cb93a3e98818f259408f8f57da0ce0e20cc1bcf234",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "763962c9470a9a1cbe16c5ffbaba9405898a1dfa27257ae02a5c840d6545fd18",
+      "prompt_id": "p43",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/763962c9470a9a1cbe16c5ffbaba9405898a1dfa27257ae02a5c840d6545fd18.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/763962c9470a9a1cbe16c5ffbaba9405898a1dfa27257ae02a5c840d6545fd18",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "73aa15abe279ccfb59e91d444697510d023468bf42d8a1f5ae39ae4522bded5a",
+      "prompt_id": "p44",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/73aa15abe279ccfb59e91d444697510d023468bf42d8a1f5ae39ae4522bded5a.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/73aa15abe279ccfb59e91d444697510d023468bf42d8a1f5ae39ae4522bded5a",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "83c0c9e09d50ecefab5fe1d2170bf17a9bec5cd1bc60638b16cf3f57794d9efc",
+      "prompt_id": "p45",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/83c0c9e09d50ecefab5fe1d2170bf17a9bec5cd1bc60638b16cf3f57794d9efc.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/83c0c9e09d50ecefab5fe1d2170bf17a9bec5cd1bc60638b16cf3f57794d9efc",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "bb89c94731427acf91bf513f007a8d281e675103869f3dd92ff330e021572050",
+      "prompt_id": "p46",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/bb89c94731427acf91bf513f007a8d281e675103869f3dd92ff330e021572050.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/bb89c94731427acf91bf513f007a8d281e675103869f3dd92ff330e021572050",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/bb89c94731427acf91bf513f007a8d281e675103869f3dd92ff330e021572050",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "afed30aa7e0f3a2bef163fa4d79715dfc02490e41133b5fc8c8d56a1fae00618",
+      "prompt_id": "p47",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/afed30aa7e0f3a2bef163fa4d79715dfc02490e41133b5fc8c8d56a1fae00618.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/afed30aa7e0f3a2bef163fa4d79715dfc02490e41133b5fc8c8d56a1fae00618",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/afed30aa7e0f3a2bef163fa4d79715dfc02490e41133b5fc8c8d56a1fae00618",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "7a87154c5b01f6f19950024afe9a4b39d4c26fc8ec8e56da4221094f0c25ed2f",
+      "prompt_id": "p48",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/7a87154c5b01f6f19950024afe9a4b39d4c26fc8ec8e56da4221094f0c25ed2f.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/7a87154c5b01f6f19950024afe9a4b39d4c26fc8ec8e56da4221094f0c25ed2f",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/7a87154c5b01f6f19950024afe9a4b39d4c26fc8ec8e56da4221094f0c25ed2f",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "f588ec22cbc286cde3afe0f874ce985cbd1aaab9c3d31690ee909c4db294fdb9",
+      "prompt_id": "p49",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/f588ec22cbc286cde3afe0f874ce985cbd1aaab9c3d31690ee909c4db294fdb9.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/f588ec22cbc286cde3afe0f874ce985cbd1aaab9c3d31690ee909c4db294fdb9",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/f588ec22cbc286cde3afe0f874ce985cbd1aaab9c3d31690ee909c4db294fdb9",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "f1ce6328f1fcf6abeefb282068d8873b9d3e9c61a7a35f6bc67e1af549514aca",
+      "prompt_id": "p50",
+      "image_model": "xai:grok-imagine-image",
+      "file": "images/f1ce6328f1fcf6abeefb282068d8873b9d3e9c61a7a35f6bc67e1af549514aca.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/f1ce6328f1fcf6abeefb282068d8873b9d3e9c61a7a35f6bc67e1af549514aca",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "3e8f9f91ab93e8b4b0bfbcec5f36f80a766c8e3a514b67cb8152cdc223e94874",
+      "prompt_id": "p01",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/3e8f9f91ab93e8b4b0bfbcec5f36f80a766c8e3a514b67cb8152cdc223e94874.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/3e8f9f91ab93e8b4b0bfbcec5f36f80a766c8e3a514b67cb8152cdc223e94874",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "4e14612aab93512223484b4d7d646fd5f7c6b7e4d675f5cab83dbe20225493ee",
+      "prompt_id": "p02",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/4e14612aab93512223484b4d7d646fd5f7c6b7e4d675f5cab83dbe20225493ee.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/4e14612aab93512223484b4d7d646fd5f7c6b7e4d675f5cab83dbe20225493ee",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "a6a3aa9ce091f8a440d0bbf6120cc6974d6ae0fc0d16aeb86221c27d14369c5d",
+      "prompt_id": "p03",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/a6a3aa9ce091f8a440d0bbf6120cc6974d6ae0fc0d16aeb86221c27d14369c5d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/a6a3aa9ce091f8a440d0bbf6120cc6974d6ae0fc0d16aeb86221c27d14369c5d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "0f01bf686f3001c3cf6e3e3c4511b6b0108847e795594133fcf410401f29fb41",
+      "prompt_id": "p04",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/0f01bf686f3001c3cf6e3e3c4511b6b0108847e795594133fcf410401f29fb41.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/0f01bf686f3001c3cf6e3e3c4511b6b0108847e795594133fcf410401f29fb41",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/0f01bf686f3001c3cf6e3e3c4511b6b0108847e795594133fcf410401f29fb41",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "da7e2324aff10dd861214ee31837feea8a67104f4681218973dac46ffa1e58ab",
+      "prompt_id": "p05",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/da7e2324aff10dd861214ee31837feea8a67104f4681218973dac46ffa1e58ab.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/da7e2324aff10dd861214ee31837feea8a67104f4681218973dac46ffa1e58ab",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/da7e2324aff10dd861214ee31837feea8a67104f4681218973dac46ffa1e58ab",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "5061cf6fa156c70e88ea86c0eb7961db466dc7817c3df04c1ddc97d4c66d7724",
+      "prompt_id": "p06",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/5061cf6fa156c70e88ea86c0eb7961db466dc7817c3df04c1ddc97d4c66d7724.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/5061cf6fa156c70e88ea86c0eb7961db466dc7817c3df04c1ddc97d4c66d7724",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "9d7e61a78144f6f5d4cbfbf273fa7de424b7edc46061756a34af3a4dd76fa556",
+      "prompt_id": "p07",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/9d7e61a78144f6f5d4cbfbf273fa7de424b7edc46061756a34af3a4dd76fa556.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/9d7e61a78144f6f5d4cbfbf273fa7de424b7edc46061756a34af3a4dd76fa556",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/9d7e61a78144f6f5d4cbfbf273fa7de424b7edc46061756a34af3a4dd76fa556",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "41e5d9153f438b5cfc66b6859ef589d9fed919598595c7db5aebcf26b31d5fad",
+      "prompt_id": "p08",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/41e5d9153f438b5cfc66b6859ef589d9fed919598595c7db5aebcf26b31d5fad.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/41e5d9153f438b5cfc66b6859ef589d9fed919598595c7db5aebcf26b31d5fad",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/41e5d9153f438b5cfc66b6859ef589d9fed919598595c7db5aebcf26b31d5fad",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "4deb9aea5713f274011b75deb01c5c66771a3126372a6502a429612306a62c4e",
+      "prompt_id": "p09",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/4deb9aea5713f274011b75deb01c5c66771a3126372a6502a429612306a62c4e.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/4deb9aea5713f274011b75deb01c5c66771a3126372a6502a429612306a62c4e",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "35b2937915cef9c1baeecde671fa2cac1d4c9edef566a31c439c055816ef4b09",
+      "prompt_id": "p10",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/35b2937915cef9c1baeecde671fa2cac1d4c9edef566a31c439c055816ef4b09.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/35b2937915cef9c1baeecde671fa2cac1d4c9edef566a31c439c055816ef4b09",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/35b2937915cef9c1baeecde671fa2cac1d4c9edef566a31c439c055816ef4b09",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "22b10a412109c25be34e687302a12cbcf77a3636b47ba2210990824cb6644e8e",
+      "prompt_id": "p11",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/22b10a412109c25be34e687302a12cbcf77a3636b47ba2210990824cb6644e8e.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/22b10a412109c25be34e687302a12cbcf77a3636b47ba2210990824cb6644e8e",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/22b10a412109c25be34e687302a12cbcf77a3636b47ba2210990824cb6644e8e",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "09c37f739913ed82ad15138f374b69a573d1bcb062473a028d28f184209e1872",
+      "prompt_id": "p12",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/09c37f739913ed82ad15138f374b69a573d1bcb062473a028d28f184209e1872.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/09c37f739913ed82ad15138f374b69a573d1bcb062473a028d28f184209e1872",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/09c37f739913ed82ad15138f374b69a573d1bcb062473a028d28f184209e1872",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "008436b1f769e4ce46111ef3282af542b2bc46e805301dfa6042d9d5c1f1b80f",
+      "prompt_id": "p13",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/008436b1f769e4ce46111ef3282af542b2bc46e805301dfa6042d9d5c1f1b80f.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/008436b1f769e4ce46111ef3282af542b2bc46e805301dfa6042d9d5c1f1b80f",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "cd078226e88f35c62b3515511c6c3a781b21261bbeef77aa991084c652afb7f4",
+      "prompt_id": "p14",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/cd078226e88f35c62b3515511c6c3a781b21261bbeef77aa991084c652afb7f4.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/cd078226e88f35c62b3515511c6c3a781b21261bbeef77aa991084c652afb7f4",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/cd078226e88f35c62b3515511c6c3a781b21261bbeef77aa991084c652afb7f4",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "1ae5ba08013252495f31afa4334177459e6921b7b29493568c1b27225f8d035d",
+      "prompt_id": "p15",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/1ae5ba08013252495f31afa4334177459e6921b7b29493568c1b27225f8d035d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/1ae5ba08013252495f31afa4334177459e6921b7b29493568c1b27225f8d035d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "7f510bbf8f5c8d877621ed3e6b07c9e2232ee5a0fc00324cc13c0aa50b23bcda",
+      "prompt_id": "p16",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/7f510bbf8f5c8d877621ed3e6b07c9e2232ee5a0fc00324cc13c0aa50b23bcda.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/7f510bbf8f5c8d877621ed3e6b07c9e2232ee5a0fc00324cc13c0aa50b23bcda",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/7f510bbf8f5c8d877621ed3e6b07c9e2232ee5a0fc00324cc13c0aa50b23bcda",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "49f70b16cb67b970720758c3ca5a06985b39a83ae19b57d2d68f70fa6ec9e1b3",
+      "prompt_id": "p17",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/49f70b16cb67b970720758c3ca5a06985b39a83ae19b57d2d68f70fa6ec9e1b3.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/49f70b16cb67b970720758c3ca5a06985b39a83ae19b57d2d68f70fa6ec9e1b3",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "1f7eecdcd31dc2e690f7b4e257b77f89dc203546af403a18bdeac0f3046bdc55",
+      "prompt_id": "p18",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/1f7eecdcd31dc2e690f7b4e257b77f89dc203546af403a18bdeac0f3046bdc55.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/1f7eecdcd31dc2e690f7b4e257b77f89dc203546af403a18bdeac0f3046bdc55",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "90c243fd1893c8c9ad3343ea07c82c9e217e9752abd37c0cc3361373e2592b13",
+      "prompt_id": "p19",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/90c243fd1893c8c9ad3343ea07c82c9e217e9752abd37c0cc3361373e2592b13.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/90c243fd1893c8c9ad3343ea07c82c9e217e9752abd37c0cc3361373e2592b13",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "d950d672f1f9063f1af590cb5b3f56717d8af3a36f240419e1f01d5216dab974",
+      "prompt_id": "p20",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/d950d672f1f9063f1af590cb5b3f56717d8af3a36f240419e1f01d5216dab974.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/d950d672f1f9063f1af590cb5b3f56717d8af3a36f240419e1f01d5216dab974",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "60d55bc0193304b310a98f62330dec718667a0a08faba03700df7ed76c07cf33",
+      "prompt_id": "p21",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/60d55bc0193304b310a98f62330dec718667a0a08faba03700df7ed76c07cf33.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/60d55bc0193304b310a98f62330dec718667a0a08faba03700df7ed76c07cf33",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/60d55bc0193304b310a98f62330dec718667a0a08faba03700df7ed76c07cf33",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "c09c57e14a7be080a97cc0133600c92e87098215f95249157a1da398a400360d",
+      "prompt_id": "p22",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/c09c57e14a7be080a97cc0133600c92e87098215f95249157a1da398a400360d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c09c57e14a7be080a97cc0133600c92e87098215f95249157a1da398a400360d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "f960166340bb64d84a74786af9a4e64c39922893ba740af2a0da636ac35af001",
+      "prompt_id": "p23",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/f960166340bb64d84a74786af9a4e64c39922893ba740af2a0da636ac35af001.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/f960166340bb64d84a74786af9a4e64c39922893ba740af2a0da636ac35af001",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "73d728636de5a730e852ae1d2e2f0bcfdf355fdead7c4019e8bb5b80e5cd251d",
+      "prompt_id": "p24",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/73d728636de5a730e852ae1d2e2f0bcfdf355fdead7c4019e8bb5b80e5cd251d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/73d728636de5a730e852ae1d2e2f0bcfdf355fdead7c4019e8bb5b80e5cd251d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "6cb637e7c2dcbeb0665c616d77c6a5dc4451d6226ba7ff290df95f2479a99890",
+      "prompt_id": "p25",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/6cb637e7c2dcbeb0665c616d77c6a5dc4451d6226ba7ff290df95f2479a99890.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/6cb637e7c2dcbeb0665c616d77c6a5dc4451d6226ba7ff290df95f2479a99890",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/6cb637e7c2dcbeb0665c616d77c6a5dc4451d6226ba7ff290df95f2479a99890",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "1a2f299f10acd4631e69802c15f3125174e42571657f6b13324b87a5b6feebbb",
+      "prompt_id": "p26",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/1a2f299f10acd4631e69802c15f3125174e42571657f6b13324b87a5b6feebbb.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/1a2f299f10acd4631e69802c15f3125174e42571657f6b13324b87a5b6feebbb",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "4faba313a8ed4eafd5822ffbbc2b908f274966f130d1e8a92c08c1adff54a00c",
+      "prompt_id": "p27",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/4faba313a8ed4eafd5822ffbbc2b908f274966f130d1e8a92c08c1adff54a00c.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/4faba313a8ed4eafd5822ffbbc2b908f274966f130d1e8a92c08c1adff54a00c",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "0308d6035a444c7131fb82710b20b5bb777f625b46948331dd19fd7b66064395",
+      "prompt_id": "p28",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/0308d6035a444c7131fb82710b20b5bb777f625b46948331dd19fd7b66064395.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/0308d6035a444c7131fb82710b20b5bb777f625b46948331dd19fd7b66064395",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "bf3301f7b42d3873250e4dafde2c89bcf8fa6fb4a5a644883db98fbd1fb327e8",
+      "prompt_id": "p29",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/bf3301f7b42d3873250e4dafde2c89bcf8fa6fb4a5a644883db98fbd1fb327e8.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/bf3301f7b42d3873250e4dafde2c89bcf8fa6fb4a5a644883db98fbd1fb327e8",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/bf3301f7b42d3873250e4dafde2c89bcf8fa6fb4a5a644883db98fbd1fb327e8",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "c370b85bddadc9eeeb591d054f70f73243f4ca2a041a5250e83f35abbef2e27b",
+      "prompt_id": "p30",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/c370b85bddadc9eeeb591d054f70f73243f4ca2a041a5250e83f35abbef2e27b.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c370b85bddadc9eeeb591d054f70f73243f4ca2a041a5250e83f35abbef2e27b",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "c0f8f3edd18953d2ec702b675a9dd7a93aebec26ed5ac2f8461b90b70a86c865",
+      "prompt_id": "p31",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/c0f8f3edd18953d2ec702b675a9dd7a93aebec26ed5ac2f8461b90b70a86c865.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c0f8f3edd18953d2ec702b675a9dd7a93aebec26ed5ac2f8461b90b70a86c865",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/c0f8f3edd18953d2ec702b675a9dd7a93aebec26ed5ac2f8461b90b70a86c865",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "d8c5530331ccef36fee59d3c71134ce2dc2a9c613196ee65524533446a2ae8fd",
+      "prompt_id": "p32",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/d8c5530331ccef36fee59d3c71134ce2dc2a9c613196ee65524533446a2ae8fd.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/d8c5530331ccef36fee59d3c71134ce2dc2a9c613196ee65524533446a2ae8fd",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "98ea3bf4c0a73ef26cc5e16d720d87bde84e32cdff0d5817a0351540f6bb4803",
+      "prompt_id": "p33",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/98ea3bf4c0a73ef26cc5e16d720d87bde84e32cdff0d5817a0351540f6bb4803.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/98ea3bf4c0a73ef26cc5e16d720d87bde84e32cdff0d5817a0351540f6bb4803",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "57141780616e8a1eac1afbbda348f872268ff02db96c6329e749e05d206094f9",
+      "prompt_id": "p34",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/57141780616e8a1eac1afbbda348f872268ff02db96c6329e749e05d206094f9.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/57141780616e8a1eac1afbbda348f872268ff02db96c6329e749e05d206094f9",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "3bacedf09e5a90ccb8ad856e91ea9cd35bf12744baa30515c5526a9c297345fb",
+      "prompt_id": "p35",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/3bacedf09e5a90ccb8ad856e91ea9cd35bf12744baa30515c5526a9c297345fb.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "fixable",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/3bacedf09e5a90ccb8ad856e91ea9cd35bf12744baa30515c5526a9c297345fb",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "527e62d4f4ddc61df22a44a1430074413cdeb101646da5caaaeb075754ab0fbe",
+      "prompt_id": "p36",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/527e62d4f4ddc61df22a44a1430074413cdeb101646da5caaaeb075754ab0fbe.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "fixable",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/527e62d4f4ddc61df22a44a1430074413cdeb101646da5caaaeb075754ab0fbe",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/527e62d4f4ddc61df22a44a1430074413cdeb101646da5caaaeb075754ab0fbe",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "4300ce04c18e6bafff02a41d6ed758c71820cf43538884f9ac8a97e818b960fa",
+      "prompt_id": "p37",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/4300ce04c18e6bafff02a41d6ed758c71820cf43538884f9ac8a97e818b960fa.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/4300ce04c18e6bafff02a41d6ed758c71820cf43538884f9ac8a97e818b960fa",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "5e57c25bdad729ccd9353285a8dfacea1defdbb90212e6392135e97881dbf83b",
+      "prompt_id": "p38",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/5e57c25bdad729ccd9353285a8dfacea1defdbb90212e6392135e97881dbf83b.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/5e57c25bdad729ccd9353285a8dfacea1defdbb90212e6392135e97881dbf83b",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/5e57c25bdad729ccd9353285a8dfacea1defdbb90212e6392135e97881dbf83b",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "c1cf290cb01fc6e9e6615ea451fec4174d8349e5607d8993b02dd8e3fa93179f",
+      "prompt_id": "p39",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/c1cf290cb01fc6e9e6615ea451fec4174d8349e5607d8993b02dd8e3fa93179f.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/c1cf290cb01fc6e9e6615ea451fec4174d8349e5607d8993b02dd8e3fa93179f",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "6ac78e48de7b5a25b3a3d5af97aad327c037d29d7d21b160edb8c642249af87d",
+      "prompt_id": "p40",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/6ac78e48de7b5a25b3a3d5af97aad327c037d29d7d21b160edb8c642249af87d.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/6ac78e48de7b5a25b3a3d5af97aad327c037d29d7d21b160edb8c642249af87d",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/6ac78e48de7b5a25b3a3d5af97aad327c037d29d7d21b160edb8c642249af87d",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "569dd3075e34e1420340a9cd8f294c210290d3d2de45a43fcf7f2cc57d650e7f",
+      "prompt_id": "p41",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/569dd3075e34e1420340a9cd8f294c210290d3d2de45a43fcf7f2cc57d650e7f.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/569dd3075e34e1420340a9cd8f294c210290d3d2de45a43fcf7f2cc57d650e7f",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/569dd3075e34e1420340a9cd8f294c210290d3d2de45a43fcf7f2cc57d650e7f",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "706993700b19e067a194a9d87fd94efc8a6a9252094d7e38eb0b4cc5356b93dc",
+      "prompt_id": "p42",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/706993700b19e067a194a9d87fd94efc8a6a9252094d7e38eb0b4cc5356b93dc.jpg",
+      "sampled": true,
+      "label": "ready_diecut",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/706993700b19e067a194a9d87fd94efc8a6a9252094d7e38eb0b4cc5356b93dc",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/706993700b19e067a194a9d87fd94efc8a6a9252094d7e38eb0b4cc5356b93dc",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "6c5d32f36cb4c28dd17d21723889cf80601ca034a55c9399c73d957ce7142d71",
+      "prompt_id": "p43",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/6c5d32f36cb4c28dd17d21723889cf80601ca034a55c9399c73d957ce7142d71.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/6c5d32f36cb4c28dd17d21723889cf80601ca034a55c9399c73d957ce7142d71",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "99ac163f1de0b428aaa24edab028c7a84a85db7c422bf64f19bd154b5344b22a",
+      "prompt_id": "p44",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/99ac163f1de0b428aaa24edab028c7a84a85db7c422bf64f19bd154b5344b22a.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/99ac163f1de0b428aaa24edab028c7a84a85db7c422bf64f19bd154b5344b22a",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "f5cd2433349726bb18f3dedb3fac7cec2c96e9a848ff48c50da4586f66756093",
+      "prompt_id": "p45",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/f5cd2433349726bb18f3dedb3fac7cec2c96e9a848ff48c50da4586f66756093.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/f5cd2433349726bb18f3dedb3fac7cec2c96e9a848ff48c50da4586f66756093",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/f5cd2433349726bb18f3dedb3fac7cec2c96e9a848ff48c50da4586f66756093",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "be61375e022f7f5efaf6678f22a0ba60c9cbe79748ba6167d03445273d833b9a",
+      "prompt_id": "p46",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/be61375e022f7f5efaf6678f22a0ba60c9cbe79748ba6167d03445273d833b9a.jpg",
+      "sampled": true,
+      "label": "fixable_diecut",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/be61375e022f7f5efaf6678f22a0ba60c9cbe79748ba6167d03445273d833b9a",
+        "proof_label": "unacceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/be61375e022f7f5efaf6678f22a0ba60c9cbe79748ba6167d03445273d833b9a",
+        "proof_label": null,
+        "damaged": false
+      }
+    },
+    {
+      "image": "53c0b69d519e534eab28828942ea935457f7e1d9929f01ff83d5a7b0c39d9711",
+      "prompt_id": "p47",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/53c0b69d519e534eab28828942ea935457f7e1d9929f01ff83d5a7b0c39d9711.jpg",
+      "sampled": true,
+      "label": "scene",
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/53c0b69d519e534eab28828942ea935457f7e1d9929f01ff83d5a7b0c39d9711",
+        "proof_label": "acceptable",
+        "damaged": false
+      },
+      "agent": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": "error",
+        "out_dir": "results/realset/test/agent/53c0b69d519e534eab28828942ea935457f7e1d9929f01ff83d5a7b0c39d9711",
+        "proof_label": "acceptable",
+        "damaged": false
+      }
+    },
+    {
+      "image": "e449676e868e010a3ba8857ccaff714e822389082852c4ac81801b33cf87f8af",
+      "prompt_id": "p48",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/e449676e868e010a3ba8857ccaff714e822389082852c4ac81801b33cf87f8af.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/e449676e868e010a3ba8857ccaff714e822389082852c4ac81801b33cf87f8af",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "fe6804bafe40e305aba8bc0871dba6b24c147f1d7b5d638b83df74bac9d7331d",
+      "prompt_id": "p49",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/fe6804bafe40e305aba8bc0871dba6b24c147f1d7b5d638b83df74bac9d7331d.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "rounded_rect",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/fe6804bafe40e305aba8bc0871dba6b24c147f1d7b5d638b83df74bac9d7331d",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    },
+    {
+      "image": "85f8c122c574e2cd2ea2aeebea8121dd0c8b4571fec195a082463ab689041daf",
+      "prompt_id": "p50",
+      "image_model": "xai:grok-imagine-image-2.0",
+      "file": "images/85f8c122c574e2cd2ea2aeebea8121dd0c8b4571fec195a082463ab689041daf.jpg",
+      "sampled": false,
+      "label": null,
+      "rules": {
+        "outcome": "needs_person",
+        "shape": "die_cut",
+        "handoff_reason": null,
+        "out_dir": "results/realset/test/rules/85f8c122c574e2cd2ea2aeebea8121dd0c8b4571fec195a082463ab689041daf",
+        "proof_label": null,
+        "damaged": false
+      },
+      "agent": null
+    }
+  ],
+  "rerun": {
+    "label": "rerun (PREREG addendum 1)",
+    "reruns": {
+      "rules": {
+        "listed": 16,
+        "attempts": 16,
+        "settled": 16,
+        "error_at_deadline": 0,
+        "still_pending": 0,
+        "fixed_matches_original": 16,
+        "fixed_differs": 0
+      },
+      "agent": {
+        "listed": 50,
+        "attempts": 50,
+        "settled": 50,
+        "error_at_deadline": 0,
+        "still_pending": 0,
+        "fixed_matches_original": 30,
+        "fixed_differs": 20
+      }
+    },
+    "modes": {
+      "rules": {
+        "n_runs": 100,
+        "n_scored": 50,
+        "agree": 34,
+        "agree_rate": 0.68,
+        "agree_scene_as_person": 6,
+        "two_class": {
+          "prereg": 49,
+          "scene_as_person": 21
+        },
+        "matrix": {
+          "ready_diecut": {
+            "ready": 0,
+            "fixable": 15,
+            "needs_person": 1
+          },
+          "fixable_diecut": {
+            "ready": 0,
+            "fixable": 6,
+            "needs_person": 0
+          },
+          "scene": {
+            "ready": 0,
+            "fixable": 28,
+            "needs_person": 0
+          }
+        },
+        "outcomes": {
+          "fixable": 98,
+          "needs_person": 2
+        },
+        "shapes": {
+          "die_cut": 39,
+          "rounded_rect": 61
+        },
+        "proofs_to_label": 49,
+        "proofs_unlabelled": 0,
+        "unacceptable": 1,
+        "damaged": 0,
+        "bad_fixes": 1,
+        "scene_shaped_proofs": 26,
+        "scene_shaped_accepted": 26,
+        "cost_usd": {
+          "n": 100,
+          "total": 0.2768,
+          "mean": 0.0028,
+          "median": 0.0027,
+          "max": 0.0051
+        },
+        "elapsed_s": {
+          "n": 100,
+          "total": 824.96,
+          "mean": 8.2496,
+          "median": 6.5565,
+          "max": 73.027
+        }
+      },
+      "agent": {
+        "n_runs": 50,
+        "n_scored": 50,
+        "agree": 34,
+        "agree_rate": 0.68,
+        "agree_scene_as_person": 6,
+        "two_class": {
+          "prereg": 49,
+          "scene_as_person": 21
+        },
+        "matrix": {
+          "ready_diecut": {
+            "ready": 0,
+            "fixable": 15,
+            "needs_person": 1
+          },
+          "fixable_diecut": {
+            "ready": 0,
+            "fixable": 6,
+            "needs_person": 0
+          },
+          "scene": {
+            "ready": 0,
+            "fixable": 28,
+            "needs_person": 0
+          }
+        },
+        "outcomes": {
+          "fixable": 49,
+          "needs_person": 1
+        },
+        "shapes": {
+          "rounded_rect": 30,
+          "die_cut": 20
+        },
+        "proofs_to_label": 49,
+        "proofs_unlabelled": 0,
+        "unacceptable": 1,
+        "damaged": 0,
+        "bad_fixes": 1,
+        "scene_shaped_proofs": 26,
+        "scene_shaped_accepted": 26,
+        "cost_usd": {
+          "n": 50,
+          "total": 0.5497,
+          "mean": 0.011,
+          "median": 0.0109,
+          "max": 0.0184
+        },
+        "elapsed_s": {
+          "n": 50,
+          "total": 1001.193,
+          "mean": 20.0239,
+          "median": 17.1855,
+          "max": 56.649
+        }
+      }
+    },
+    "paired": {
+      "n": 50,
+      "both_agree": 34,
+      "only_rules_agrees": 0,
+      "only_agent_agrees": 0,
+      "neither": 16
+    },
+    "verdict": {
+      "status": "keep_rules",
+      "rule": "agent becomes the default only if it agrees with Ebin on at least 5 more of the labelled images than rules mode and has no more bad fixes (unacceptable or damaged)",
+      "reason": "agent agrees on 34, rules on 34 (margin +0, needs +5); bad fixes agent 1, rules 1; discordant pairs: only agent right 0, only rules right 0",
+      "agent_minus_rules": 0
+    }
+  }
+}
