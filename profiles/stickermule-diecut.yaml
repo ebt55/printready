@@ -1,6 +1,7 @@
 # Die-cut sticker rules, paraphrased from Sticker Mule's public FAQ pages (linked per rule).
 # printready is not affiliated with Sticker Mule. Rules marked `convention` are our own
 # choices where the FAQ gives no number; the README labels them the same way.
+# Every constant that decides a label boundary lives here.
 name: stickermule-diecut
 product: die_cut
 rules:
@@ -23,23 +24,23 @@ rules:
   min_line_pt:
     value: 1.0
     source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
-    why: Lines thinner than one point are not recommended.
+    why: Lines thinner than one point are not recommended (reported as a pixel width, not checked).
   min_text_pt:
     value: 6.0
     source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
     why: Text below six points is not recommended.
-  min_internal_cut_in:
-    value: 0.25
-    source: https://www.stickermule.com/support/faq/artwork/change-requests
-    why: Cuts inside the outline are possible only when the hole is at least a quarter inch.
+  cap_height_ratio:
+    value: 0.7
+    source: convention
+    why: Capital letters are roughly 0.7 of the font's point size, so 6 pt text has about 4.2 pt caps.
   min_neck_in:
     value: 0.125
     source: convention
-    why: A die-cut waist narrower than an eighth of an inch tends to tear or curl.
+    why: A die-cut waist narrower than an eighth of an inch tends to tear or curl (diameter of the border closing).
   max_upload_mb:
     value: 20
     source: https://www.stickermule.com/faqs/stickermule/file-size-limits-for-artwork-uploader
-    why: The artwork uploader takes files up to 20 MB.
+    why: The artwork uploader takes files up to 20 MB (read as 20,000,000 bytes).
   soft_alpha_max_in:
     value: 0.03
     source: convention
@@ -48,3 +49,23 @@ rules:
     value: 0.25
     source: convention
     why: The widest border we grow to join separate parts before handing off to a person.
+  bg_delta_e:
+    value: 8.0
+    source: convention
+    why: Edge-ring pixels within this CIEDE2000 distance of the dominant ring colour count as background.
+  bg_ring_uniform_frac:
+    value: 0.95
+    source: convention
+    why: The edge ring is one colour when at least this share of it is within bg_delta_e.
+  edge_cut_min_run_in:
+    value: 0.1
+    source: convention
+    why: Subject pixels running along the canvas edge for longer than this mean the art is cut off.
+  speck_max_in2:
+    value: 0.0004
+    source: convention
+    why: Parts smaller than this area (0.02 x 0.02 in) are specks, not islands.
+  damage_max_frac:
+    value: 0.02
+    source: convention
+    why: Background removal is damaged if it erased more than this share of real subject colour.

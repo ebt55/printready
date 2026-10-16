@@ -1,7 +1,9 @@
 """The shared contract (see 01-DESIGN.md). Owned by the core agent; every other module imports only.
 
-Physical units: `Spec.size_in` is the longest side of the finished sticker, border included.
-Pixel boxes are (x0, y0, x1, y1) in the coordinates of the image the finding was made on.
+Units: `Spec.size_in` is the longest side of the finished sticker, border included.
+`Artwork.ppi = subject_bbox_long_px / (size_in - 2 * profile.border_in)`, set once when the subject
+is first known (or from the full canvas while the image is opaque and unremoved).
+`Finding.boxes` are (x0, y0, x1, y1) px in the coordinates of the array passed to run_checks.
 """
 
 from __future__ import annotations
@@ -12,14 +14,21 @@ from typing import Any, Literal, get_args
 
 import numpy as np
 
+SUBJECT_ALPHA = 128  # subject = pixels with alpha >= this, once a subject is known
+
 Status = Literal["pass", "warn", "fail", "skip"]
 Fixer = Literal["auto", "customer", "person", "none"]  # who can resolve a failed/warned finding
-Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image, also the label set
+Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image, also Ebin's label set
+Mode = Literal["rules", "agent"]
 
 STATUSES: tuple[str, ...] = get_args(Status)
 FIXERS: tuple[str, ...] = get_args(Fixer)
 OUTCOMES: tuple[str, ...] = get_args(Outcome)
+MODES: tuple[str, ...] = get_args(Mode)
 PRODUCTS: tuple[str, ...] = ("die_cut",)  # v1 scope
+
+# add_border is standard production, not a correction.
+CORRECTIVE_FIXES: tuple[str, ...] = ("remove_background", "bridge_islands", "pad_canvas")
 
 DETERMINISTIC_CHECK_IDS: tuple[str, ...] = (
     "file",
@@ -28,7 +37,6 @@ DETERMINISTIC_CHECK_IDS: tuple[str, ...] = (
     "soft_alpha",
     "edge_crop",
     "islands",
-    "internal_cut",
 )
 VISION_CHECK_IDS: tuple[str, ...] = ("text_garbled", "text_small")
 CHECK_IDS: tuple[str, ...] = DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS
@@ -75,7 +83,7 @@ class Finding:
     message: str  # one plain sentence a customer could read
     measured: dict[str, Any]  # the numbers, e.g. {"ppi": 142.3, "max_size_in_at_target": 1.9}
     fixer: Fixer
-    boxes: list[tuple[int, int, int, int]] = field(default_factory=list)  # x0,y0,x1,y1 px, for overlay
+    boxes: list[tuple[int, int, int, int]] = field(default_factory=list)  # x0,y0,x1,y1 px
 
     def __post_init__(self) -> None:
         if self.check not in CHECK_IDS:
@@ -137,14 +145,34 @@ class Report:
 
 
 @dataclass
+class Step:
+    """One entry in Artwork.history."""
+
+    fix: str  # function name, e.g. "remove_background"
+    ok: bool
+    damaged: bool
+    note: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"fix": self.fix, "ok": self.ok, "damaged": self.damaged, "note": self.note}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Step:
+        return cls(fix=data["fix"], ok=bool(data["ok"]), damaged=bool(data["damaged"]), note=data["note"])
+
+
+@dataclass
 class Artwork:
     """Working state passed through fixes."""
 
     rgba: np.ndarray  # HxWx4 uint8
-    subject: np.ndarray | None = None  # HxW bool, None while opaque and unremoved
+    subject: np.ndarray | None  # HxW bool, None while opaque and unremoved
+    ppi: float  # set once; see Units
+    offset: tuple[int, int] = (0, 0)  # cumulative pad_canvas shift: original (x, y) is now (x+dx, y+dy)
     border_in: float | None = None  # None until a border is added
-    cut: np.ndarray | None = None  # HxW bool cut mask (subject + border), None until built
-    history: list[str] = field(default_factory=list)  # human-readable steps applied
+    cut: np.ndarray | None = None  # HxW bool cut mask, None until built
+    history: list[Step] = field(default_factory=list)
+    meta: dict[str, Any] = field(default_factory=dict)  # path, bytes, format; set by load_artwork
 
     def __post_init__(self) -> None:
         if self.rgba.ndim != 3 or self.rgba.shape[2] != 4 or self.rgba.dtype != np.uint8:
@@ -153,6 +181,9 @@ class Artwork:
             mask = getattr(self, name)
             if mask is not None and (mask.shape != self.rgba.shape[:2] or mask.dtype != np.bool_):
                 raise ValueError(f"{name} must be HxW bool matching rgba, got {mask.shape} {mask.dtype}")
+        if not self.ppi > 0:
+            raise ValueError(f"ppi must be positive, got {self.ppi!r}")
+        self.offset = (int(self.offset[0]), int(self.offset[1]))
 
     @property
     def height(self) -> int:
@@ -171,10 +202,13 @@ class Artwork:
         return {
             "width": self.width,
             "height": self.height,
+            "ppi": float(self.ppi),
+            "offset": list(self.offset),
             "subject_px": None if self.subject is None else int(self.subject.sum()),
             "border_in": self.border_in,
             "cut_px": None if self.cut is None else int(self.cut.sum()),
-            "history": list(self.history),
+            "history": [s.to_dict() for s in self.history],
+            "meta": _jsonable(self.meta),
         }
 
 
@@ -183,16 +217,60 @@ class FixResult:
     art: Artwork
     ok: bool
     note: str
+    damaged: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return {"ok": self.ok, "note": self.note, "art": self.art.to_dict()}
+        return {"ok": self.ok, "note": self.note, "damaged": self.damaged, "art": self.art.to_dict()}
 
 
-def decide(report: Report) -> Outcome:
-    """ready if no warn/fail; needs_person if any warn/fail has fixer person or none; else fixable."""
-    flagged = [f for f in report.findings if f.status in ("warn", "fail")]
-    if not flagged:
-        return "ready"
+@dataclass
+class RunResult:
+    """What both modes (pipeline.run_rules, agent.run_agent) return for one image."""
+
+    mode: Mode
+    art: Artwork  # the final Artwork (after fixes; history holds every Step)
+    before: Report  # run_checks on the loaded art
+    after: Report  # final report: last run_checks (+ vision findings if any); the one outcome() uses
+    outcome: Outcome
+    customer_message: str
+    person_notes: list[str] = field(default_factory=list)
+    handoff_reason: str | None = None
+    cost_usd: float = 0.0
+    outputs: dict[str, str] = field(default_factory=dict)  # output name -> file path, e.g. "proof" -> ".../proof.png"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "mode": self.mode,
+            "outcome": self.outcome,
+            "handoff_reason": self.handoff_reason,
+            "customer_message": self.customer_message,
+            "person_notes": list(self.person_notes),
+            "cost_usd": float(self.cost_usd),
+            "art": self.art.to_dict(),
+            "before": self.before.to_dict(),
+            "after": self.after.to_dict(),
+            "outputs": dict(self.outputs),
+        }
+
+
+def outcome(art: Artwork | None, final: Report, handoff: bool = False) -> Outcome:
+    """The ONE outcome rule, used by both modes and by eval.
+
+    needs_person: handoff, or any Step damaged, or any warn/fail in `final` with fixer person|none,
+        or any `skip` in `final` (something could not be verified).
+    ready: no successful CORRECTIVE_FIXES step in history and `final` has no warn/fail.
+    fixable: otherwise (corrective fixes applied, and/or remaining warn/fail are fixer auto|customer).
+    `art` may be None when the file never loaded (the `file` fail finding then decides).
+    """
+    history = art.history if art is not None else []
+    flagged = [f for f in final.findings if f.status in ("warn", "fail")]
+    if handoff or any(s.damaged for s in history):
+        return "needs_person"
     if any(f.fixer in ("person", "none") for f in flagged):
         return "needs_person"
+    if any(f.status == "skip" for f in final.findings):
+        return "needs_person"
+    corrected = any(s.fix in CORRECTIVE_FIXES and s.ok and not s.damaged for s in history)
+    if not corrected and not flagged:
+        return "ready"
     return "fixable"
