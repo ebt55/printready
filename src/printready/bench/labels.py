@@ -28,6 +28,7 @@ BAND = 0.10  # no label-deciding quantity may sit within 10 % of its threshold
 MIN_SIDE_PX = 64  # `file` check: at least 64 px a side (01-DESIGN, deterministic checks)
 MASK_CHECKS = ("soft_alpha", "edge_crop", "islands")  # need a subject; skip while opaque
 AUTO_FIX = {"background": "remove_background", "edge_crop": "pad_canvas", "islands": "bridge_islands"}
+SHAPE_FIX = "fit_shape"  # a background a person would have to cut out: whole-image rounded rectangle
 
 Label = dict[str, str]  # {"status": ..., "fixer": ...}
 
@@ -47,6 +48,7 @@ class Thresholds:
     min_text_pt: float
     cap_height_ratio: float
     max_upload_bytes: int
+    bleed_in: float
 
     @classmethod
     def from_profile(cls, p: Profile) -> Thresholds:
@@ -62,7 +64,13 @@ class Thresholds:
             min_text_pt=p.min_text_pt,
             cap_height_ratio=p.cap_height_ratio,
             max_upload_bytes=p.max_upload_bytes,
+            bleed_in=p.bleed_in,
         )
+
+    def shape_in(self, size_in: float) -> float:
+        """The PPI denominator for a whole-image rounded-rectangle sticker (fit_shape): the canvas
+        long side spans the order size plus the bleed on both sides."""
+        return size_in + 2 * self.bleed_in
 
     def printable_in(self, size_in: float) -> float:
         """The art's long side at an order of `size_in`: the contract's PPI denominator."""
@@ -145,14 +153,30 @@ def as_subject(gt: dict[str, Any]) -> dict[str, Any]:
     return sub
 
 
+def shape_labels(gt: dict[str, Any], th: Thresholds, *, vision: bool = False) -> dict[str, Label]:
+    """Labels for the whole image as a rounded-rectangle sticker (after fit_shape, 01-DESIGN
+    addendum "shape fallback"): the cut-out checks do not apply and pass, resolution is re-judged at
+    the shape scale (canvas long side over size + 2 x bleed), and product_fit is a warn for the
+    customer to accept the product change. Text checks are unchanged."""
+    out = labels(gt, th, vision=vision)
+    out["resolution"] = resolution_label(gt["ppi_shape"], gt["ppi_shape_at_1in"], th)
+    for check in ("background", *MASK_CHECKS):
+        out[check] = _label("pass")
+    out["product_fit"] = _label("warn", "customer")
+    return out
+
+
 def expected_final(gt: dict[str, Any], th: Thresholds, *, vision: bool = False):
     """Labels after the rules pipeline does exactly what the planted defect calls for.
 
-    Mirrors the design's fixed order: remove_background on a background fail/auto, pad_canvas on an
-    edge_crop warn/auto, bridge_islands on an islands fail/auto. Each such fix is assumed to succeed
-    without damage. Returns (final labels, names of the corrective fixes applied)."""
+    Mirrors the design's fixed order: remove_background on a background fail/auto, or fit_shape on a
+    background fail/person; then pad_canvas on an edge_crop warn/auto and bridge_islands on an
+    islands fail/auto. Each fix is assumed to succeed without damage.
+    Returns (final labels, names of the corrective fixes applied)."""
     current = labels(gt, th, vision=vision)
     applied: list[str] = []
+    if current["background"] == _label("fail", "person"):
+        return shape_labels(gt, th, vision=vision), [SHAPE_FIX]
     if current["background"] == _label("fail", "auto"):
         applied.append(AUTO_FIX["background"])
         current = labels(as_subject(gt), th, vision=vision)
@@ -199,6 +223,11 @@ def near_threshold(gt: dict[str, Any], th: Thresholds) -> list[str]:
         check("gap_in", gt["gap_in"], th.merge_gap_in)
         check("gap_in", gt["gap_in"], th.bridge_gap_in)
     if gt["opaque"]:
+        if gt["ring_uniformity"] < th.bg_ring_uniform_frac:  # fit_shape re-judges PPI at shape scale
+            check("ppi_shape", gt["ppi_shape"], th.ppi_floor)
+            check("ppi_shape", gt["ppi_shape"], th.ppi_target)
+            if gt["ppi_shape"] < th.ppi_floor:
+                check("ppi_shape_at_1in", gt["ppi_shape_at_1in"], th.ppi_floor)
         if gt["ring_uniformity"] >= th.bg_ring_uniform_frac:
             # A fraction capped at 1 cannot sit 10 % above 0.95, so for a uniform ring the deciding
             # quantity is its colour spread: every ring pixel well inside bg_delta_e of the mean.

@@ -72,7 +72,7 @@ def test_outcomes_follow_the_labels(rows):
         "islands": {"ready", "fixable", "needs_person"},
         "soft_alpha": {"ready", "needs_person"},
         "edge_crop": {"fixable", "needs_person"},
-        "background": {"fixable", "needs_person"},
+        "background": {"fixable"},  # solid: removed; gradient/texture: whole-image sticker (fit_shape)
         "text": {"ready"},
     }
     for row in rows:
@@ -82,6 +82,9 @@ def test_outcomes_follow_the_labels(rows):
             small = row["param"].get("cap_pt", 99) < 4.2
             expected = "needs_person" if v == "garbled" else "fixable" if small else "ready"
             assert row["outcome_vision"] == expected, row["id"]
-    by_bg = Counter((r["param"]["background"], r["outcome"]) for r in rows if r["family"] == "background")
-    assert all(o == ("fixable" if k in ("white", "saturated", "near_white_noise") else "needs_person")
-               for (k, o) in by_bg)
+    for row in rows:
+        if row["family"] == "background" and row["param"]["background"] in ("gradient", "texture"):
+            assert row["fixes"] == ["fit_shape"], row["id"]
+            assert row["expected_final"] == {"file": "pass", "resolution": "pass", "background": "pass",
+                                             "soft_alpha": "pass", "edge_crop": "pass", "islands": "pass",
+                                             "product_fit": "warn"}, row["id"]

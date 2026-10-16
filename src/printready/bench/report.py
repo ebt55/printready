@@ -25,7 +25,16 @@ from printready.bench.generate import read_manifest
 from printready.bench.labels import Thresholds
 from printready.bench.run import default_manifest, limit_rows, results_dir
 from printready.profile import load_profile
-from printready.types import DETERMINISTIC_CHECK_IDS, OUTCOMES, Artwork, Finding, Report, Step, outcome
+from printready.types import (
+    DETERMINISTIC_CHECK_IDS,
+    OUTCOMES,
+    PRODUCT_CHECK_IDS,
+    Artwork,
+    Finding,
+    Report,
+    Step,
+    outcome,
+)
 
 STATUSES = ("pass", "warn", "fail", "skip")
 FLAGGED = ("warn", "fail")
@@ -238,14 +247,21 @@ def outcome_metrics(rows, preds) -> dict[str, Any]:
             "matrix": _matrix(counts, list(OUTCOMES), cols), "misses": misses}
 
 
+ABSENT = "absent"  # product_fit is reported only when fit_shape changed the product
+
+
 def final_agreement(rows, preds) -> dict[str, dict[str, Any]]:
-    """Final (after the pipeline) status per check vs the manifest's expected_final."""
+    """Final (after the pipeline) status per check vs the manifest's expected_final, including
+    product_fit (expected and predicted either present with a status, or absent)."""
     out = {}
-    for check in DETERMINISTIC_CHECK_IDS:
+    for check in (*DETERMINISTIC_CHECK_IDS, *PRODUCT_CHECK_IDS):
         n = agree = 0
         for row in rows:
             n += 1
-            agree += _status(preds.get(row["id"]), "after", check) == row["expected_final"][check]
+            want = row["expected_final"].get(check, ABSENT)
+            entry = ((preds.get(row["id"]) or {}).get("after") or {}).get(check)
+            got = entry["status"] if entry else (ABSENT if check in PRODUCT_CHECK_IDS else ERROR)
+            agree += got == want
         out[check] = {"n": n, "agree": agree, "rate": _rate(agree, n)}
     return out
 

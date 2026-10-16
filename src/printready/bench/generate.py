@@ -190,6 +190,9 @@ def measure(p: Planted, png: bytes, th: Thresholds, size_in: float = SIZE_IN) ->
         "min_side_px": min(H, W),
         "file_bytes": len(png),
     }
+    if p.opaque:  # if the background goes to fit_shape, PPI is re-judged for the whole canvas
+        gt["ppi_shape"] = max(H, W) / th.shape_in(size_in)
+        gt["ppi_shape_at_1in"] = max(H, W) / th.shape_in(1.0)
     if gt["parts"] > 1:
         gt["gap_px"] = p.gt["gap_px"]
         gt["gap_in"] = p.gt["gap_px"] / ppi_subject

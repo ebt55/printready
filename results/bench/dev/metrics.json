@@ -1355,13 +1355,13 @@
     ],
     [
      0,
-     76,
+     92,
      0
     ],
     [
      0,
      0,
-     56
+     40
     ]
    ]
   },
@@ -1397,6 +1397,11 @@
    "n": 258,
    "agree": 258,
    "rate": 1.0
+  },
+  "product_fit": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
   }
  },
  "pipeline_before_disagrees": [],
@@ -1405,36 +1410,36 @@
   "split": "dev",
   "samples": 258,
   "jobs": 8,
-  "seconds": 32.4,
+  "seconds": 35.4,
   "manifest": "manifest-dev.jsonl",
-  "manifest_sha256": "3ceb160d4500066a44a6c02b33d7de9cc07943bce5e89e18e2fc7ab70be7850a",
+  "manifest_sha256": "077ef0fc0f7411d0c605a851bf47eb581f5bb5ab9dc22fb01e3c112e3209f0ac",
   "errors": 0
  },
  "note": "Deterministic checks from `bench run`; vision only when `bench run --vision` was run live (text family). Agent mode is not run on the benchmark.",
  "vision": {
   "model": "xai:grok-4.3",
-  "cost_usd": 0.137026,
+  "cost_usd": 0.138159,
   "n": 48,
   "text_garbled": {
    "precision": 1.0,
-   "recall": 0.875,
+   "recall": 0.9375,
    "n": 48,
-   "tp": 14,
+   "tp": 15,
    "fp": 0,
-   "fn": 2,
+   "fn": 1,
    "tn": 32,
    "skip": 0,
    "not_run": 0
   },
   "text_small": {
-   "precision": null,
-   "recall": 0.0,
+   "precision": 1.0,
+   "recall": 0.625,
    "n": 48,
-   "tp": 0,
+   "tp": 5,
    "fp": 0,
-   "fn": 8,
+   "fn": 3,
    "tn": 40,
-   "skip": 0,
+   "skip": 3,
    "not_run": 0
   },
   "threshold_cap_pt": 4.2,
@@ -1449,72 +1454,7 @@
     "predicted": "pass",
     "gt_cap_pt": 18.9347,
     "seen": "WELCOME -> WELCOME",
-    "model_cap": "0.38 -> 47.92 pt",
-    "reason": null
-   },
-   {
-    "id": "text-030",
-    "variant": "garbled",
-    "check": "text_garbled",
-    "planted": "FOERST",
-    "intended": "FOREST",
-    "expected": "fail/person",
-    "predicted": "pass",
-    "gt_cap_pt": 15.6669,
-    "seen": "FOERST -> FOERST",
-    "model_cap": "0.15 -> 30.24 pt",
-    "reason": null
-   },
-   {
-    "id": "text-032",
-    "variant": "sized",
-    "check": "text_small",
-    "planted": "BREWERY",
-    "intended": "BREWERY",
-    "expected": "warn/customer",
-    "predicted": "pass",
-    "gt_cap_pt": 2.5007,
-    "seen": "BREWERY -> BREWERY",
-    "model_cap": "0.05 -> 10.08 pt",
-    "reason": null
-   },
-   {
-    "id": "text-033",
-    "variant": "sized",
-    "check": "text_small",
-    "planted": "SUMMER",
-    "intended": "SUMMER",
-    "expected": "warn/customer",
-    "predicted": "pass",
-    "gt_cap_pt": 2.4992,
-    "seen": "SUMMER -> SUMMER",
-    "model_cap": "0.07 -> 8.06 pt",
-    "reason": null
-   },
-   {
-    "id": "text-034",
-    "variant": "sized",
-    "check": "text_small",
-    "planted": "BOOKS",
-    "intended": "BOOKS",
-    "expected": "warn/customer",
-    "predicted": "pass",
-    "gt_cap_pt": 2.5002,
-    "seen": "BOOKS -> BOOKS",
-    "model_cap": "0.05 -> 10.08 pt",
-    "reason": null
-   },
-   {
-    "id": "text-035",
-    "variant": "sized",
-    "check": "text_small",
-    "planted": "COOKIES",
-    "intended": "COOKIES",
-    "expected": "warn/customer",
-    "predicted": "pass",
-    "gt_cap_pt": 2.5007,
-    "seen": "COOKIES -> COOKIES",
-    "model_cap": "0.05 -> 6.65 pt",
+    "model_cap": "19.4 pt (measured in box)",
     "reason": null
    },
    {
@@ -1524,24 +1464,11 @@
     "planted": "ROCKET",
     "intended": "ROCKET",
     "expected": "warn/customer",
-    "predicted": "pass",
+    "predicted": "skip",
     "gt_cap_pt": 2.9988,
     "seen": "ROCKET -> ROCKET",
-    "model_cap": "0.06 -> 12.1 pt",
-    "reason": null
-   },
-   {
-    "id": "text-037",
-    "variant": "sized",
-    "check": "text_small",
-    "planted": "DONUTS",
-    "intended": "DONUTS",
-    "expected": "warn/customer",
-    "predicted": "pass",
-    "gt_cap_pt": 3.0009,
-    "seen": "DONUTS -> DONUTS",
-    "model_cap": "0.08 -> 8.89 pt",
-    "reason": null
+    "model_cap": "n/a (measured in box)",
+    "reason": "no text height could be measured"
    },
    {
     "id": "text-038",
@@ -1550,11 +1477,11 @@
     "planted": "ADVENTURE",
     "intended": "ADVENTURE",
     "expected": "warn/customer",
-    "predicted": "pass",
+    "predicted": "skip",
     "gt_cap_pt": 3.0,
     "seen": "ADVENTURE -> ADVENTURE",
-    "model_cap": "0.06 -> 12.08 pt",
-    "reason": null
+    "model_cap": "n/a (measured in box)",
+    "reason": "no text height could be measured"
    },
    {
     "id": "text-039",
@@ -1563,17 +1490,17 @@
     "planted": "TACOS",
     "intended": "TACOS",
     "expected": "warn/customer",
-    "predicted": "pass",
+    "predicted": "skip",
     "gt_cap_pt": 3.0008,
     "seen": "TACOS -> TACOS",
-    "model_cap": "0.05 -> 10.07 pt",
-    "reason": null
+    "model_cap": "n/a (measured in box)",
+    "reason": "no text height could be measured"
    }
   ],
   "outcome_vision": {
    "n": 48,
-   "agree": 38,
-   "accuracy": 0.7917,
+   "agree": 44,
+   "accuracy": 0.9167,
    "misses": [
     {
      "id": "text-029",
@@ -1581,49 +1508,19 @@
      "predicted": "ready"
     },
     {
-     "id": "text-030",
-     "expected": "needs_person",
-     "predicted": "ready"
-    },
-    {
-     "id": "text-032",
-     "expected": "fixable",
-     "predicted": "ready"
-    },
-    {
-     "id": "text-033",
-     "expected": "fixable",
-     "predicted": "ready"
-    },
-    {
-     "id": "text-034",
-     "expected": "fixable",
-     "predicted": "ready"
-    },
-    {
-     "id": "text-035",
-     "expected": "fixable",
-     "predicted": "ready"
-    },
-    {
      "id": "text-036",
      "expected": "fixable",
-     "predicted": "ready"
-    },
-    {
-     "id": "text-037",
-     "expected": "fixable",
-     "predicted": "ready"
+     "predicted": "needs_person"
     },
     {
      "id": "text-038",
      "expected": "fixable",
-     "predicted": "ready"
+     "predicted": "needs_person"
     },
     {
      "id": "text-039",
      "expected": "fixable",
-     "predicted": "ready"
+     "predicted": "needs_person"
     }
    ]
   }
