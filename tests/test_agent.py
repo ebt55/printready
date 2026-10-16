@@ -146,9 +146,10 @@ def test_image_goes_back_as_a_user_message_after_the_tool_results(tmp_path):
     assert [tool_look["tool_call_id"], tool_text["tool_call_id"]] == ids
     assert all(isinstance(m["content"], str) and "image_url" not in m["content"] for m in (tool_look, tool_text))
     assert user["role"] == "user"
-    label, image = user["content"]
+    label, image, after = user["content"]
     assert label["type"] == "text" and ids[0] in label["text"]
     assert image["type"] == "image_url" and image["image_url"]["url"].startswith("data:image/png;base64,")
+    assert after == {"type": "text", "text": agent.AFTER_IMAGE}
     look_turn = next(e for e in events if e["type"] == "turn" and e["n"] == 3)
     assert look_turn["image"] == "look-1-proof.png" and (tmp_path / "out" / look_turn["image"]).exists()
     # the first user message carries the order, the check report and the uploaded art

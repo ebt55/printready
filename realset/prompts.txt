@@ -1,0 +1,54 @@
+# printready real-image TEST prompts: 50 sticker requests a customer might type into an artwork
+# generator. Model-drafted (Claude Opus 5.5, 17 Oct 2026) and frozen by PREREG.md before any image
+# is generated. One request per line, ids p01..p50 by order. Words to print are in double quotes
+# (25 of 50). No real brands, people or characters: every name is invented, any match is a coincidence.
+a kawaii strawberry with a smiling face and tiny leaves
+a round hiking club badge with pine trees that says "TRAIL TALES"
+a corgi wearing sunglasses riding a surfboard
+a slogan sticker "GOOD VIBES ONLY" in bubble letters
+a cute bowl of ramen with chopsticks and a soft-boiled egg
+a food truck logo: a smiling taco and the name "TACO PLANET"
+a small cactus in a pink pot with one flower on top
+a retro diner badge with a fried egg that says "SUNNY SIDE DINER"
+a fox reading a book under a giant mushroom
+a sticker that says "PLANT MOM" with leaves around the letters
+a hot air balloon floating over rolling green hills
+a bee mascot for a honey shop called "HIVE & HONEY"
+a cozy mug of hot cocoa with marshmallows and steam
+a vintage motorcycle club patch with the words "IRON ROAD RIDERS"
+a panda eating bamboo, simple flat illustration
+a bookstore logo with an open book and the words "THE QUIET PAGE"
+a pastel rainbow with a fluffy cloud at each end
+a gym sticker with a dumbbell that says "LIFT HEAVY"
+an octopus playing four drums at once
+a bakery label with a pink cupcake and the words "SWEET CRUMBS"
+a sunflower with a happy face and bold outlines
+a camping sticker: a tent under the stars and the words "OUT THERE SOMEWHERE"
+a pixel-art treasure chest overflowing with gold coins
+a cat cafe logo: a cat sitting in a coffee cup and the name "WHISKER BREW"
+a cute dinosaur eating a slice of watermelon
+a band-style sticker with a lightning bolt and the words "STATIC NOISE"
+a bright lemon slice with little sparkles
+a dog groomer logo with a fluffy poodle and the words "FLUFF & BUFF"
+a whale with a tiny island and a palm tree on its back
+a farmers market badge with vegetables that says "FRESH FROM THE FIELD"
+a mushroom house with a round door and a smoking chimney
+a slogan sticker "COFFEE FIRST" with a steaming cup
+a paper airplane leaving a dotted trail
+a retro gaming sticker with a joystick and the words "PLAYER TWO"
+a glossy peach with one bite taken out
+a pizza shop mascot: a pizza slice with arms and the name "CRUST CORNER"
+a snail with a galaxy-patterned shell
+a running club sticker with sneakers that says "RUN THE CITY"
+a stack of pancakes with butter and dripping syrup
+a plant shop logo with a fern and the words "GREEN THUMB CO"
+a sleepy sloth hanging from a branch
+a sticker that says "STAY CURIOUS" with a magnifying glass
+a sushi roll with a happy face next to a dish of soy sauce
+a skate shop badge with flames and the words "KICKFLIP YARD"
+a frog wearing a tiny crown on a lily pad
+a candle shop label with a flame and the words "EMBER & WICK"
+a ringed planet with little stars around it
+a teacher appreciation sticker with an apple that says "BEST TEACHER EVER"
+a bunch of colorful balloons tied together
+a lemonade stand badge with a lemon and the words "SQUEEZE THE DAY"

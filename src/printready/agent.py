@@ -41,8 +41,9 @@ MAX_MESSAGE_WORDS = 80
 LOG_NAME = "log.jsonl"
 PROMPT_PATH = Path(__file__).parent / "prompts" / "agent-system.md"
 FIX_TOOLS = ("remove_background", "pad_canvas", "add_border", "bridge_islands")
-NUDGE = "Continue by calling a tool. End the run with finish or handoff."
+NUDGE = "Text replies reach nobody. Call a tool; end the run with finish (with the customer message) or handoff."
 LAST_TURN = "This is your last turn: call finish or handoff now."
+AFTER_IMAGE = "That is the image you asked for. Continue with your next tool call (finish delivers the customer message)."
 
 Event = dict[str, Any]
 EventFn = Callable[[Event], None]
@@ -276,6 +277,7 @@ class _Run:
                 for call_id, out in shown:
                     parts.append({"type": "text", "text": f"Image from look (call {call_id}): {out.image_file}"})
                     parts.append(image_part(out.image))
+                parts.append({"type": "text", "text": AFTER_IMAGE})
                 messages.append({"role": "user", "content": parts})
             if not resp.tool_calls:
                 messages.append({"role": "user", "content": NUDGE})

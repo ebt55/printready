@@ -8,3 +8,9 @@ out/
 data/bench/**/*.png
 data/realset/images/
 results/**/scratch/
+data/realset/**/images/
+data/realset/**/label-images/
+# real-set per-image outputs are large (5-11 MB each): keep report.json, runs.jsonl, eval and sheets
+results/realset/**/*.png
+results/realset/**/*.html
+!results/realset/*/contact-sheet*.png

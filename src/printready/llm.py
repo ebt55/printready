@@ -86,6 +86,15 @@ class ChatResponse:
     request_sha256: str = ""
 
 
+@dataclass
+class ImageResult:
+    data: bytes  # the encoded image as returned (JPEG or PNG)
+    revised_prompt: str | None  # the prompt the image model actually used, if it says
+    model: str  # model id the API returned
+    cost_usd: float
+    request_sha256: str
+
+
 # ---------------------------------------------------------------- transports
 
 class HttpTransport:
@@ -141,7 +150,7 @@ class FakeTransport:
         if "choices" in entry or "data" in entry:
             return 200, entry, {}
         if "b64_json" in entry:
-            return 200, {"data": [{"b64_json": entry["b64_json"]}]}, {}
+            return 200, {"data": [{"b64_json": entry["b64_json"], "revised_prompt": entry.get("revised_prompt")}]}, {}
         return 200, _expand_fake_chat(entry, len(self.requests)), {}
 
     def close(self) -> None:
@@ -265,20 +274,27 @@ class ChatClient:
 
     def image(self, prompt: str, *, purpose: str = "image", **opts: Any) -> bytes:
         """One generated image (n=1, b64_json, aspect_ratio 1:1 unless given) as encoded bytes."""
+        return self.image_result(prompt, purpose=purpose, **opts).data
+
+    def image_result(self, prompt: str, *, purpose: str = "image", **opts: Any) -> ImageResult:
+        """Like image(), with the revised prompt (if the API returns one), model id and cost."""
         body = {"model": self.name, "prompt": prompt, "n": 1, "response_format": "b64_json", "aspect_ratio": "1:1"}
         body.update(opts)
         est = spend.estimate(self.price, images=1)
         data, rec = self._request("/images/generations", body, purpose, est)
         try:
-            raw = base64.b64decode(data["data"][0]["b64_json"])
+            item = data["data"][0]
+            raw = base64.b64decode(item["b64_json"])
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             self._log({**rec, "status": "error", "error": f"image response has no b64_json ({exc})"})
             raise LLMError(f"image response has no b64_json ({exc})") from None
         usd = spend.cost(self.price, images=1)
         self._record_spend(0, 0, 0, 1, usd, purpose)
-        rec.update(status="ok", model_returned=data.get("model", self.name), images=1, cost_usd=round(usd, 6))
+        model = str(data.get("model") or self.name)
+        rec.update(status="ok", model_returned=model, images=1, cost_usd=round(usd, 6))
         self._log(rec)
-        return raw
+        return ImageResult(data=raw, revised_prompt=item.get("revised_prompt") or None, model=model, cost_usd=usd,
+                           request_sha256=rec["request_sha256"])
 
     # -- shared plumbing -----------------------------------------------------
 

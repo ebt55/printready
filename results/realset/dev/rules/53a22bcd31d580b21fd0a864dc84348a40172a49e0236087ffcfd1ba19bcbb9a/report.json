@@ -1,0 +1,222 @@
+{
+  "mode": "rules",
+  "outcome": "needs_person",
+  "handoff_reason": null,
+  "customer_message": "Before printing, a person on our team will check this: the art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out. We will send you an updated proof.",
+  "person_notes": [
+    "background fail (person): The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
+    "soft_alpha not verified: needs background removal first",
+    "edge_crop not verified: needs background removal first",
+    "islands not verified: needs background removal first"
+  ],
+  "cost_usd": 0.0,
+  "elapsed_s": 0.043,
+  "spec": {
+    "product": "die_cut",
+    "size_in": 3.0,
+    "prompt": "a cheerful potted monstera plant with big glossy leaves"
+  },
+  "profile": "stickermule-diecut",
+  "art": {
+    "width": 1024,
+    "height": 1024,
+    "ppi": 365.7142857142857,
+    "offset": [
+      0,
+      0
+    ],
+    "subject_px": null,
+    "border_in": null,
+    "cut_px": null,
+    "history": [],
+    "meta": {
+      "path": "C:\\Users\\ebin\\claude-ground\\printready\\data\\realset\\dev\\images\\53a22bcd31d580b21fd0a864dc84348a40172a49e0236087ffcfd1ba19bcbb9a.jpg",
+      "bytes": 367093,
+      "format": "JPEG",
+      "real_alpha": false,
+      "width": 1024,
+      "height": 1024
+    }
+  },
+  "history": [],
+  "before": {
+    "status": "fail",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 367093,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "measured": {
+          "ppi": 365.71,
+          "basis": "canvas",
+          "max_size_in_at_target": 3.613,
+          "max_size_in_at_floor": 7.027,
+          "one_pt_px": 5.08
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "fail",
+        "message": "The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
+        "measured": {
+          "real_alpha": false,
+          "colour_rgb": [
+            222,
+            214,
+            207
+          ],
+          "colour_hex": "#ded6cf",
+          "colour_lab": [
+            86.15,
+            1.35,
+            4.55
+          ],
+          "ring_uniform_frac": 0.3427,
+          "ring_band_px": 20
+        },
+        "fixer": "person",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "after": {
+    "status": "fail",
+    "findings": [
+      {
+        "check": "file",
+        "status": "pass",
+        "message": "The file opens fine (1024 x 1024 px, JPEG, 0.4 MB).",
+        "measured": {
+          "width_px": 1024,
+          "height_px": 1024,
+          "format": "JPEG",
+          "bytes": 367093,
+          "max_bytes": 20000000
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "resolution",
+        "status": "pass",
+        "message": "At 3 in this art prints at 366 PPI (measured on the whole canvas), meeting the 300 PPI target; lines thinner than 5.1 px print under 1 pt.",
+        "measured": {
+          "ppi": 365.71,
+          "basis": "canvas",
+          "max_size_in_at_target": 3.613,
+          "max_size_in_at_floor": 7.027,
+          "one_pt_px": 5.08
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "background",
+        "status": "fail",
+        "message": "The art sits on a background that is not one colour (gradient, texture or photo), so a person needs to cut it out.",
+        "measured": {
+          "real_alpha": false,
+          "colour_rgb": [
+            222,
+            214,
+            207
+          ],
+          "colour_hex": "#ded6cf",
+          "colour_lab": [
+            86.15,
+            1.35,
+            4.55
+          ],
+          "ring_uniform_frac": 0.3427,
+          "ring_band_px": 20
+        },
+        "fixer": "person",
+        "boxes": []
+      },
+      {
+        "check": "soft_alpha",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "edge_crop",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      },
+      {
+        "check": "islands",
+        "status": "skip",
+        "message": "Not checked yet: the background has to be removed first.",
+        "measured": {
+          "reason": "needs background removal first"
+        },
+        "fixer": "none",
+        "boxes": []
+      }
+    ]
+  },
+  "outputs": {
+    "fixed": "fixed.png",
+    "proof": "proof.png",
+    "overlay": "overlay.png",
+    "customer_message": "customer_message.md",
+    "report": "report.json",
+    "html": "report.html"
+  }
+}

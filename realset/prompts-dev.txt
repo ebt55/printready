@@ -1,0 +1,15 @@
+# printready real-image DEV prompts: 10 sticker requests a customer might type into an artwork
+# generator. Model-drafted (Claude Opus 5.5, 17 Oct 2026). Detectors and prompts may be tuned on
+# these images; they are never part of the test set and are not labelled.
+# One request per line, ids d01..d10 by order. Words to print are in double quotes (5 of 10).
+# No real brands, people or characters: every name is invented, any match is a coincidence.
+a cute cartoon axolotl holding a tiny cup of bubble tea
+a retro sunset badge that says "SALT & PINE SURF CLUB"
+a smiling avocado half doing a yoga pose
+a vintage camping badge with mountains, a campfire and the words "STAY WILD"
+a cheerful potted monstera plant with big glossy leaves
+a happy coffee cup mascot for a cafe called "MAPLE & MOSS COFFEE"
+a sleepy orange cat curled up on a crescent moon
+a bold slogan sticker "CHOOSE KINDNESS" with little hearts around it
+a friendly little robot watering a flower
+a bakery logo with a golden croissant and the words "Little Crumb Bakery"
