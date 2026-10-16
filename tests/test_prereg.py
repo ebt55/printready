@@ -15,6 +15,9 @@ FILES = {
     "src/printready/bench/run.py": "RUNNER = 1\n",
     "src/printready/prompts/vision-text.md": "Read the text.\n",
     "src/printready/web/server.py": "WEB = 1\n",
+    "src/printready/commands/serve.py": "SERVE = 1\n",
+    "src/printready/commands/site.py": "SITE = 1\n",
+    "src/printready/commands/bench.py": "BENCH = 1\n",
 }
 
 
@@ -39,6 +42,8 @@ def test_freeze_creates_prereg_and_verify_passes(repo):
     assert "src/printready/bench/run.py" not in paths  # the runner is not generator source
     source = snap["source"][prereg.SOURCE_GROUP]["files"]
     assert "src/printready/bench/run.py" in source and "src/printready/web/server.py" not in source
+    assert "src/printready/commands/bench.py" in source
+    assert not {"src/printready/commands/serve.py", "src/printready/commands/site.py"} & set(source)
     assert snap["settings"]["agent_max_turns"] == agent.MAX_TURNS
     assert snap["settings"]["temperature"] == 0
     assert snap["settings"]["text_small_env"] == "PRINTREADY_TEXT_SMALL"
@@ -100,3 +105,20 @@ def test_require_verified_needs_a_commit(repo):
     prereg.freeze(repo)
     with pytest.raises(prereg.PreregError, match="not committed|could not run git"):
         prereg.require_verified(repo)  # tmp dir is not a git repository
+
+
+def test_ui_commands_are_not_frozen_even_in_an_older_freeze(repo):
+    """serve.py / site.py changes never fail verify, also against a block frozen before they were
+    excluded (that block lists them; the current exclusion rule applies to it too)."""
+    path, snap = prereg.freeze(repo)
+    group = snap["source"].pop(prereg.SOURCE_GROUP)
+    group["files"]["src/printready/commands/serve.py"] = "0" * 64
+    snap["source"]["src/printready/**/*.py (excluding web/)"] = group  # the earlier label
+    text = path.read_text(encoding="utf-8")
+    head, rest = text.split(prereg.START, 1)
+    path.write_text(head + prereg.render_block(snap) + rest.split(prereg.END, 1)[1], encoding="utf-8")
+    (repo / "src/printready/commands/serve.py").write_text("SERVE = 2\n", encoding="utf-8")
+    (repo / "src/printready/commands/site.py").write_text("SITE = 2\n", encoding="utf-8")
+    assert prereg.verify(repo) == []
+    (repo / "src/printready/commands/bench.py").write_text("BENCH = 2\n", encoding="utf-8")
+    assert prereg.verify(repo) == [next(line for line in prereg.verify(repo) if "commands/bench.py" in line)]

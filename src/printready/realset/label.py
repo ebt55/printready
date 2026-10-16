@@ -3,7 +3,8 @@
 label-pass1.json  the sampled originals, by hash, shuffled (seed 7), caption "3 in die-cut sticker"
 label-pass2.json  every distinct proof either mode would send a customer (outcome ready or
                   fixable), de-duplicated by the sha256 of fixed.png, shuffled
-label-pass2-mapping.json   proof sha -> the (mode, image) runs it came from; read only by eval,
+label-pass2-mapping.json   proof sha -> the (mode, image, source) runs it came from, source being
+                  "original" or "rerun" (PREREG addendum 1); read only by eval,
                   never by the label page
 Every image the page shows is a PNG copy in label-images/<sha256>.png, so neither a path nor a
 file format can reveal the image model or the mode.
@@ -54,12 +55,16 @@ def pass2_items(paths: Paths) -> dict[str, Any]:
     sampled = set(sample_shas(read_jsonl(paths.manifest)))
     mapping: dict[str, list[dict[str, str]]] = {}
     items: dict[str, dict[str, Any]] = {}
-    for mode in MODES:
-        for row in last_by(read_jsonl(paths.runs(mode)), "image").values():
+    from printready.realset.rerun import rerun_runs  # PREREG addendum 1: rerun proofs are labelled too
+
+    sources = [(mode, source, path) for mode in MODES
+               for source, path in (("original", paths.runs(mode)), ("rerun", rerun_runs(paths, mode)))]
+    for mode, source, path in sources:
+        for row in last_by(read_jsonl(path), "image").values():
             proof_sha = row.get("fixed_sha256")
             if row["image"] not in sampled or row["outcome"] == "needs_person" or not proof_sha:
                 continue
-            mapping.setdefault(proof_sha, []).append({"mode": mode, "image": row["image"]})
+            mapping.setdefault(proof_sha, []).append({"mode": mode, "image": row["image"], "source": source})
             if proof_sha not in items:
                 shown = _shown(paths, paths.root / row["out_dir"] / "proof.png", proof_sha)
                 items[proof_sha] = {"image": row["image"], "proof": proof_sha, "file": shown}

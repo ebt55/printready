@@ -25,7 +25,11 @@ START = "<!-- prereg:frozen:start -->"
 END = "<!-- prereg:frozen:end -->"
 SCHEMA = 1
 HASHING = "sha256 of the file bytes with CRLF normalised to LF"
-SOURCE_GROUP = "src/printready/**/*.py (excluding web/)"
+SOURCE_PREFIX = "src/printready/"
+# The workbench UI is not part of any run: its package and its two commands are left out.
+SOURCE_EXCLUDE_DIRS = ("web",)
+SOURCE_EXCLUDE_FILES = ("commands/serve.py", "commands/site.py")
+SOURCE_GROUP = "src/printready/**/*.py (excluding web/, commands/serve.py, commands/site.py)"
 # The bench generator: everything that decides benchmark images and labels (not the runner/report).
 GENERATOR_EXCLUDE = ("run.py", "report.py")
 
@@ -65,13 +69,21 @@ def frozen_files(root: Path) -> dict[str, str]:
     return files
 
 
+def is_frozen_source(rel: str) -> bool:
+    """`rel` is a repo-relative path; True if it is package source the freeze covers."""
+    if not rel.startswith(SOURCE_PREFIX) or not rel.endswith(".py"):
+        return False
+    inner = rel[len(SOURCE_PREFIX):]
+    return inner.split("/", 1)[0] not in SOURCE_EXCLUDE_DIRS and inner not in SOURCE_EXCLUDE_FILES
+
+
 def source_files(root: Path) -> list[Path]:
     base = root / "src" / "printready"
-    return sorted(p for p in base.rglob("*.py") if "web" not in p.relative_to(base).parts[:1])
+    return sorted(p for p in base.rglob("*.py") if is_frozen_source(_rel(root, p)))
 
 
 def source_group(root: Path) -> dict[str, Any]:
-    """Per-file hashes of the package source (web/ excluded) and one combined hash over them."""
+    """Per-file hashes of the package source (UI excluded) and one combined hash over them."""
     per_file = {_rel(root, p): file_sha256(p) for p in source_files(root)}
     combined = hashlib.sha256("".join(f"{k}\0{v}\n" for k, v in per_file.items()).encode()).hexdigest()
     return {"sha256": combined, "count": len(per_file), "files": per_file}
@@ -174,10 +186,13 @@ def diff(frozen: dict[str, Any], now: dict[str, Any]) -> list[str]:
             out.append(f"MISSING  {old['path']} ({label})")
         elif old["sha256"] != new["sha256"]:
             out.append(f"CHANGED  {old['path']} ({label}): {old['sha256'][:12]} -> {new['sha256'][:12]}")
-    old_src = frozen.get("source", {}).get(SOURCE_GROUP, {})
+    # The source group is matched by prefix (its label names the exclusions), and the current
+    # exclusion rule applies to the frozen file list too, so excluding a file is not a change.
+    old_src = next((v for k, v in frozen.get("source", {}).items() if k.startswith(SOURCE_PREFIX)), {})
     new_src = now["source"][SOURCE_GROUP]
-    if old_src.get("sha256") != new_src["sha256"]:
-        of, nf = old_src.get("files", {}), new_src["files"]
+    if "files" in old_src:
+        of = {k: v for k, v in old_src["files"].items() if is_frozen_source(k)}
+        nf = new_src["files"]
         for rel in sorted(set(of) | set(nf)):
             if rel not in of:
                 out.append(f"NEW      {rel} (source)")
@@ -185,8 +200,8 @@ def diff(frozen: dict[str, Any], now: dict[str, Any]) -> list[str]:
                 out.append(f"MISSING  {rel} (source)")
             elif of[rel] != nf[rel]:
                 out.append(f"CHANGED  {rel} (source): {of[rel][:12]} -> {nf[rel][:12]}")
-        if not out or not any("(source)" in line for line in out):
-            out.append(f"CHANGED  {SOURCE_GROUP}: combined hash differs")
+    elif old_src.get("sha256") != new_src["sha256"]:
+        out.append(f"CHANGED  {SOURCE_GROUP}: combined hash differs")
     old_set, new_set = frozen.get("settings", {}), now["settings"]
     for key in sorted(set(old_set) | set(new_set)):
         if old_set.get(key) != new_set.get(key):

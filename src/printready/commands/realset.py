@@ -3,7 +3,9 @@
     realset gen   --split dev|test [--models a,b]         images through the spend guard (resumable)
     realset run   --split S --mode rules|agent [--model M] [--sample-50] [--only IDS] [--yes] [--force]
     realset label --split S --pass 1|2                    the workbench in label mode
-    realset eval  --split S                               eval.md + summary.json, PREREG verdict
+    realset eval  --split S [--with-rerun]                eval.md + summary.json, PREREG verdict
+    realset rerun-list --split S --deadline T             runs that never reached a model (PREREG addendum 1)
+    realset rerun --split S --mode M --yes                re-attempt only those, into results/realset/S-rerun/
     realset sheet --split S [--mode rules]                contact sheet for looking at results
 """
 
@@ -57,7 +59,21 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
     ev = actions.add_parser("eval", help="agreement tables and the keep-or-remove verdict")
     split_arg(ev)
+    ev.add_argument("--with-rerun", action="store_true", help="also the numbers with the PREREG addendum 1 reruns")
     ev.set_defaults(func=run_eval)
+
+    rl = actions.add_parser("rerun-list", help="list runs whose every model call got HTTP 403/429 with zero tokens")
+    split_arg(rl)
+    rl.add_argument("--deadline", required=True, help="after this time unsettled reruns become hand-off 'error', "
+                                                      "e.g. 2026-10-19T18:00+05:30")
+    rl.set_defaults(func=run_rerun_list)
+
+    rr = actions.add_parser("rerun", help="re-attempt only the listed runs (PREREG addendum 1)")
+    split_arg(rr)
+    rr.add_argument("--mode", choices=MODES, required=True)
+    rr.add_argument("--yes", action="store_true", help="make the paid calls after reading the estimate")
+    rr.add_argument("--env-file", type=Path, default=None, help="dotenv file to load API keys from")
+    rr.set_defaults(func=run_rerun)
 
     sheet = actions.add_parser("sheet", help="contact sheet: original | proof | outcome per image")
     split_arg(sheet)
@@ -193,7 +209,7 @@ def run_eval(args: argparse.Namespace) -> int:
     from printready.realset.evaluate import evaluate
 
     paths = Paths.for_split(args.split)
-    summary = evaluate(paths)
+    summary = evaluate(paths, with_rerun=args.with_rerun)
     print((paths.results / "eval.md").read_text(encoding="utf-8"))
     print(f"wrote {paths.results / 'eval.md'} and {paths.results / 'summary.json'} (verdict {summary['verdict']['status']})")
     return 0
@@ -205,4 +221,68 @@ def run_sheet(args: argparse.Namespace) -> int:
     paths = Paths.for_split(args.split)
     out = compare_sheet(paths) if args.compare else contact_sheet(paths, args.mode)
     print(f"wrote {out}")
+    return 0
+
+
+def run_rerun_list(args: argparse.Namespace) -> int:
+    from printready.realset import last_by, read_jsonl
+    from printready.realset.rerun import LIST_NAME, RerunError, write_list
+
+    paths = Paths.for_split(args.split)
+    try:
+        listed = write_list(paths, args.deadline)
+    except RerunError as exc:
+        print(f"realset rerun-list: {exc}", file=sys.stderr)
+        return 2
+    for mode in MODES:
+        total = len(last_by(read_jsonl(paths.runs(mode)), "image"))
+        print(f"{mode}: {len(listed[mode])} of {total} runs never reached a model (every call HTTP 403/429, 0 tokens)")
+    print(f"wrote {paths.results / LIST_NAME} (deadline {args.deadline}); runs that billed any token are never listed")
+    return 0
+
+
+def run_rerun(args: argparse.Namespace) -> int:
+    from printready.llm import make_client
+    from printready.realset.rerun import RerunError, read_list, rerun, rerun_runs, status
+    from printready.realset.runs import agent_estimate
+    from printready.spend import BudgetExceeded, estimate, price_for
+
+    paths = Paths.for_split(args.split)
+    if not _prereg_gate(args.split):
+        return 1
+    try:
+        deadline, _ = read_list(paths)
+        state = status(paths, args.mode)
+    except RerunError as exc:
+        print(f"realset rerun: {exc}", file=sys.stderr)
+        return 2
+    pending = state["pending"]
+    print(f"{args.mode}: {len(state['settled'])} settled, {len(state['final'])} final at the deadline, "
+          f"{len(pending)} to attempt; deadline {deadline.isoformat()}")
+    if pending:
+        _load_env(args.env_file)
+        from printready.llm import DEFAULT_MODEL
+
+        if args.mode == "agent":
+            typical, worst = agent_estimate(DEFAULT_MODEL, len(pending))
+        else:
+            per_call = estimate(price_for(DEFAULT_MODEL), tokens_in=3000, tokens_out=4096)
+            typical, worst = 0.004 * len(pending), per_call * len(pending)
+        print(f"estimate: about ${typical:.2f}, at most ${worst:.2f}; {_ledger_line()}")
+        if not args.yes:
+            print("Re-run with --yes to start.", file=sys.stderr)
+            return 2
+    try:
+        rerun(paths, args.mode, client_factory=lambda model: make_client(model, env_file=args.env_file))
+    except (RerunError, BudgetExceeded) as exc:
+        print(f"realset rerun: stopped, {exc}", file=sys.stderr)
+        return 1
+    from printready.realset import last_by, read_jsonl
+
+    rows = last_by(read_jsonl(rerun_runs(paths, args.mode)), "image").values()
+    if args.mode == "rules":
+        same = sum(1 for r in rows if r.get("fixed_matches_original") is True)
+        differs = sum(1 for r in rows if r.get("fixed_matches_original") is False)
+        print(f"fixed.png identical to the original run: {same}; different: {differs}")
+    print(f"{args.mode}: {len(status(paths, args.mode)['pending'])} still unsettled; {_ledger_line()}")
     return 0

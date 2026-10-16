@@ -53,6 +53,25 @@ Agent mode becomes the default only on two conditions, both measured on Ebin's 5
 - Agreement with more than one person. There is no inter-rater number.
 - Whether the rules are right. On geometric checks the bench is a correctness test of the code, because the generator and the detectors share the rule definitions.
 
+## Addendum 1, 17 Oct 2026, declared before any rerun
+
+The test runs in commit 2804623 hold two infrastructure failures. Rules mode: 16 vision calls got HTTP 429 ("model at capacity") after the client's three retries, no tokens, so `text_garbled` skipped and the outcome fell to needs_person. Agent mode: all 50 runs ended at the first call with HTTP 403 (prepaid credit exhausted), no tokens; the model was never called. Ledger at that point: $4.93 of the $10 cap. Ebin added credit and approved this addendum.
+
+The no-reruns rule was written so that no model output could be selected on. These runs contain none. We re-attempt exactly these 66 runs, listed by hash in `results/realset/test/rerun-list.txt`, and nothing else. A run qualifies only if every model call in its log returned 403 or 429 with zero tokens; the two rules runs that reached the model and flagged garbled text are not listed. Re-attempts use the unchanged client and backoff, repeated until one attempt bills at least one token or until 19 Oct 2026 18:00 IST, whichever is first. The first attempt that reaches the model is final, whatever it returns. Runs still failing at the deadline stay hand-off "error" and are counted. Outputs go to `results/realset/test-rerun/`; the original runs are never overwritten. Both runs are evaluated and reported side by side; every rerun number in the README says "rerun". For the 16 rules runs we report whether `fixed.png` hashes match the original (the pipeline before vision is deterministic). Pass 2 happens once, after the rerun, on distinct proofs from both runs, blinded as preregistered.
+
+Checks, fixes, prompts, profile, thresholds, model ids, turn limit and temperature are unchanged. The only source changes are the rerun gate (`src/printready/realset/rerun.py`, new; `src/printready/commands/realset.py`; `src/printready/realset/evaluate.py`; `src/printready/realset/label.py`) and `src/printready/prereg.py`, which now also leaves the two workbench UI command files (`commands/serve.py`, `commands/site.py`) out of the source hash, as `web/` already was; no run imports them. `printready prereg verify` at this commit, before the re-freeze:
+
+```
+prereg verify: MISMATCH
+  CHANGED  src/printready/commands/realset.py (source): b3be2058e0ee -> 2db55478818c
+  CHANGED  src/printready/prereg.py (source): 1329914daa2e -> af38a427d724
+  CHANGED  src/printready/realset/evaluate.py (source): 7c7a8ad9006d -> 187067ad28b4
+  CHANGED  src/printready/realset/label.py (source): 30ac2127e8d5 -> 401b829f6422
+  NEW      src/printready/realset/rerun.py (source)
+```
+
+Every other frozen hash (profile, prompts, checks, fixes, agent, vision, llm, bench) is unchanged. The model id the API returns is logged per call and reported.
+
 <!-- prereg:frozen:start -->
 ## Frozen artifacts
 
