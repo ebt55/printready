@@ -11,7 +11,7 @@ import { h, s, clear, cssVar } from "./dom.js";
 import { icon } from "./icons.js";
 import { api } from "./api.js";
 import { checkName, fixName, num, sizeLabel } from "./format.js";
-import { segmented } from "./ui.js";
+import { openMenu, segmented } from "./ui.js";
 
 const PAD = 44;
 const RULER = 22;
@@ -121,6 +121,8 @@ export function createStage(root, actions) {
   const hudBL = h("div", { class: "hud hud-bl" });
   const hudBR = h("div", { class: "hud hud-br" });
   const progress = h("div", { class: "stage-progress", hidden: true }, h("i"));
+  // While a run has produced no fix yet, the art is shown dimmed with this in the middle.
+  const waitPill = h("div", { class: "stage-wait", hidden: true, role: "status" }, h("span", { class: "spinner" }), "Checking the art; fixes appear here");
   const grip = h(
     "button",
     { class: "compare-grip", type: "button", role: "slider", "aria-label": "Compare divider", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "50" },
@@ -143,6 +145,7 @@ export function createStage(root, actions) {
     hudBL,
     hudBR,
     progress,
+    waitPill,
     emptyEl
   );
   const stepsEl = h("div", { class: "steps-strip", hidden: true });
@@ -194,10 +197,15 @@ export function createStage(root, actions) {
       } else if (v === "after") {
         sc.over = place(afterImg || orig);
         sc.label = fixed ? "Print file · fixed.png" : afterImg ? "Working copy" : "No fixes yet";
+        sc.dimOver = !afterImg && sc.running;
       } else if (v === "compare") {
         sc.under = place(orig);
         sc.over = place(afterImg);
         sc.label = "Compare";
+        if (!afterImg) {
+          sc.under = place(orig);
+          sc.dimUnder = sc.running;
+        }
       } else if (v === "steps") {
         const i = Math.min(m.stepIndex ?? sc.steps.length - 1, sc.steps.length - 1);
         const stp = sc.steps[Math.max(0, i)];
@@ -219,6 +227,7 @@ export function createStage(root, actions) {
         }
       }
       sc.cutUrl = run.cutline && v !== "steps" ? run.cutline.url : null;
+      sc.textBoxes = v !== "steps" ? run.text_boxes || [] : [];
       sc.borderIn = art && art.border_in;
       sc.dims = `${num(sc.W)} × ${num(sc.H)} px`;
     } else if (draft) {
@@ -262,7 +271,7 @@ export function createStage(root, actions) {
     tools.append(
       h(
         "div",
-        { class: "toolgroup", role: "group", "aria-label": "Overlays" },
+        { class: "toolgroup tg-overlays", role: "group", "aria-label": "Overlays" },
         OVERLAYS.map((o) =>
           h(
             "button",
@@ -281,7 +290,7 @@ export function createStage(root, actions) {
       ),
       h(
         "div",
-        { class: "toolgroup", role: "group", "aria-label": "Background" },
+        { class: "toolgroup tg-backdrop", role: "group", "aria-label": "Background" },
         BACKDROPS.map((b) =>
           h(
             "button",
@@ -298,6 +307,34 @@ export function createStage(root, actions) {
           )
         )
       ),
+    );
+    // narrow columns (1024 px screens): overlays and backgrounds fold into one menu (CSS @container)
+    tools.append(
+      h(
+        "div",
+        { class: "toolgroup tg-more" },
+        h(
+          "button",
+          {
+            class: "icon-btn",
+            type: "button",
+            "aria-label": "Overlays and background",
+            "aria-haspopup": "menu",
+            "data-tip": "Overlays and background",
+            "data-tip-pos": "left",
+            onClick: (e) =>
+              openMenu(
+                e.currentTarget,
+                [{ section: "Overlays" }]
+                  .concat(OVERLAYS.map((o) => ({ label: o.label, icon: o.icon, kbd: o.kbd, checked: Boolean(m.overlays[o.key]), onSelect: () => actions.setOverlay(o.key, !m.overlays[o.key]) })))
+                  .concat([{ section: "Background" }])
+                  .concat(BACKDROPS.map((b) => ({ label: b.label, checked: m.backdrop === b.value, onSelect: () => actions.setBackdrop(b.value) }))),
+                "Overlays and background"
+              ),
+          },
+          icon("layers", 16)
+        )
+      )
     );
     bar.append(tools);
     updateZoomLabel();
@@ -364,6 +401,18 @@ export function createStage(root, actions) {
           { class: "ov-box" + (b.check === focus ? " focused" : ""), "data-status": b.status, "data-check": b.check },
           s("rect", { class: "fill", x: b.x, y: b.y, width: Math.max(1, b.w), height: Math.max(1, b.h) }),
           s("rect", { x: b.x, y: b.y, width: Math.max(1, b.w), height: Math.max(1, b.h) })
+        )
+      );
+    }
+    for (const t of sc.textBoxes || []) {
+      if (!(m.overlays.boxes || t.check === focus)) continue;
+      const [x0, y0, x1, y1] = t.box;
+      g.append(
+        s(
+          "g",
+          { class: "ov-box ov-text" + (t.check === focus ? " focused" : ""), "data-status": t.status, "data-check": t.check },
+          s("rect", { class: "fill", x: x0, y: y0, width: Math.max(1, x1 - x0), height: Math.max(1, y1 - y0) }),
+          s("rect", { x: x0, y: y0, width: Math.max(1, x1 - x0), height: Math.max(1, y1 - y0) })
         )
       );
     }
@@ -609,6 +658,16 @@ export function createStage(root, actions) {
             "div",
             { class: "box-label" + (b.check === focus ? " focused" : ""), "data-status": b.status, style: { left: tx + b.x * sc + "px", top: ty + b.y * sc + "px" } },
             checkName(b.check)
+          )
+        );
+      }
+      for (const t of sc0.textBoxes || []) {
+        if (!(m.overlays.boxes || t.check === focus)) continue;
+        labels.append(
+          h(
+            "div",
+            { class: "box-label" + (t.check === focus ? " focused" : ""), "data-status": t.status, "data-kind": "text", style: { left: tx + t.box[0] * sc + "px", top: ty + t.box[1] * sc + "px" } },
+            t.label
           )
         );
       }
@@ -866,6 +925,9 @@ export function createStage(root, actions) {
     artboard.hidden = !(m.run || m.draft);
     setImg(imgUnder, sc.under);
     setImg(imgOver, sc.over);
+    imgOver.classList.toggle("dimmed", Boolean(sc.dimOver));
+    imgUnder.classList.toggle("dimmed", Boolean(sc.dimUnder));
+    waitPill.hidden = !(sc.dimOver || sc.dimUnder);
     progress.hidden = !sc.running;
     renderOverlay(m, sc);
     renderHud(m, sc);

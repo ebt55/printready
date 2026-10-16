@@ -256,3 +256,33 @@ def test_concurrent_sse_readers(demo_server):
         t.join(30)
     assert len(results) == 3 and all(r and r[-1]["type"] == "done" for r in results)
     assert len({len(r) for r in results}) == 1
+
+
+def test_text_boxes_come_back_in_pixels(demo_server):
+    c, _ = demo_server
+    _, body = c.json("POST", "/api/runs", {"sample_id": "badge", "size_in": 3, "mode": "rules", "vision": True})
+    c.events(body["run_id"])
+    _, view = c.json("GET", f"/api/runs/{body['run_id']}")
+    boxes = view["text_boxes"]
+    assert boxes and any(b["status"] == "fail" for b in boxes)
+    w, h = view["result"]["art"]["width"], view["result"]["art"]["height"]
+    for b in boxes:
+        x0, y0, x1, y1 = b["box"]
+        assert 0 <= x0 < x1 <= w and 0 <= y0 < y1 <= h
+
+
+def test_a_running_view_never_shows_final_outputs(tmp_path):
+    """Until `done`, fixed.png, the cut line and the downloads stay hidden, even if the files
+    already exist (a replay, or a pipeline that writes early)."""
+    from printready.web.runs import build_view
+
+    (tmp_path / "original.png").write_bytes(base64.b64decode(png_b64()))
+    for name in ("fixed.png", "proof.png"):
+        (tmp_path / name).write_bytes(base64.b64decode(png_b64()))
+    (tmp_path / "cutline.svg").write_text('<svg viewBox="0 0 1 1"></svg>', encoding="utf-8")
+    record = {"id": "x", "status": "running", "original": "original.png", "spec": {"size_in": 3}}
+    view = build_view(tmp_path, record, lambda n: n, [])
+    assert view["images"]["original"] and not view["images"]["fixed"] and not view["images"]["proof"]
+    assert view["cutline"] is None and view["downloads"] == []
+    view = build_view(tmp_path, {**record, "status": "done"}, lambda n: n, [])
+    assert view["images"]["fixed"] and view["cutline"]

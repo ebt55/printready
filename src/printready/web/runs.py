@@ -26,6 +26,10 @@ from PIL import Image
 EVENT_TYPES = ("step", "turn", "findings", "done", "error")
 PRIMARY_DOWNLOADS = ("fixed.png", "cutline.svg", "proof.png", "report.json")
 EXTRA_DOWNLOADS = ("customer_message.md", "report.html", "overlay.png", "log.jsonl")
+# Written at the end of a run: never shown while it is still running (a half-written file, or a
+# cut line before any fix, would misrepresent the run).
+FINAL_OUTPUTS = set(PRIMARY_DOWNLOADS) | set(EXTRA_DOWNLOADS)
+TEXT_CHECKS = ("text_garbled", "text_small")
 
 
 def utc_now() -> str:
@@ -73,6 +77,67 @@ def image_size(path: Path) -> tuple[int, int] | None:
     return _size_cache[key]
 
 
+_crop_cache: dict[tuple[str, float, str], tuple[int, int, int, int]] = {}
+
+
+def subject_crop(fixed: Path, art: dict) -> tuple[int, int, int, int]:
+    """The box the vision check measured text in (vision.subject_box: the subject's bounding box,
+    or the whole canvas while there is no subject), recovered from fixed.png: its alpha bounding
+    box, inset by the white border when a die-cut border was added. Approximate by at most the
+    border's smoothing, which is far finer than the model's own text boxes."""
+    w, h = int(art.get("width") or 0), int(art.get("height") or 0)
+    full = (0, 0, w, h)
+    try:
+        key = (str(fixed), fixed.stat().st_mtime, json.dumps([art.get("border_in"), art.get("ppi"), art.get("shape")]))
+    except OSError:
+        return full
+    if key in _crop_cache:
+        return _crop_cache[key]
+    box = full
+    try:
+        with Image.open(fixed) as im:
+            if "A" in im.getbands():
+                found = im.getchannel("A").point(lambda a: 255 if a >= 128 else 0).getbbox()
+                if found:
+                    box = found
+                    border = art.get("border_in")
+                    if border and art.get("cut_px") and art.get("shape", "die_cut") == "die_cut":
+                        k = int(round(float(border) * float(art.get("ppi") or 0)))
+                        x0, y0, x1, y1 = box
+                        if x1 - x0 > 2 * k and y1 - y0 > 2 * k:
+                            box = (x0 + k, y0 + k, x1 - k, y1 - k)
+    except Exception:
+        box = full
+    _crop_cache[key] = box
+    return box
+
+
+def text_boxes(run_dir: Path, fixed_name: str, result: dict | None) -> list[dict]:
+    """Where the vision check found each line of text, in the final art's pixels (the model gives
+    boxes as fractions of the subject's bounding box)."""
+    if not result or not result.get("art"):
+        return []
+    findings = (result.get("after") or {}).get("findings") or []
+    source = next((f for f in findings if f.get("check") == "text_garbled" and (f.get("measured") or {}).get("items")), None)
+    source = source or next((f for f in findings if f.get("check") in TEXT_CHECKS and (f.get("measured") or {}).get("items")), None)
+    if source is None:
+        return []
+    items = [it for it in source["measured"]["items"] if isinstance(it.get("box"), list) and len(it["box"]) == 4]
+    if not items:
+        return []
+    x0, y0, x1, y1 = subject_crop(run_dir / fixed_name, result["art"])
+    out = []
+    for it in items:
+        bx0, by0, bx1, by1 = (float(v) for v in it["box"])
+        garbled = bool(it.get("garbled"))
+        seen, intended = it.get("seen", ""), it.get("intended") or it.get("seen", "")
+        out.append({"check": "text_garbled", "status": "fail" if garbled else "ok",
+                    "label": f"{seen} → {intended}" if garbled and intended != seen else seen,
+                    "box": [round(x0 + bx0 * (x1 - x0)), round(y0 + by0 * (y1 - y0)),
+                            round(x0 + bx1 * (x1 - x0)), round(y0 + by1 * (y1 - y0))]})
+    return out
+
+
 def make_thumb(src: Path, dest: Path, max_px: int = 160) -> bool:
     try:
         with Image.open(src) as im:
@@ -103,6 +168,8 @@ def build_view(run_dir: Path, record: dict, url: Callable[[str], str], events: l
     files = {}
     if run_dir.exists():
         files = {f.name: f.stat().st_size for f in run_dir.iterdir() if f.is_file() and not f.name.startswith("_")}
+    if record.get("status") in ("queued", "running"):
+        files = {k: v for k, v in files.items() if k not in FINAL_OUTPUTS}
 
     def img(name: str | None) -> dict | None:
         if not name or name not in files:
@@ -178,6 +245,7 @@ def build_view(run_dir: Path, record: dict, url: Callable[[str], str], events: l
         "cutline": {"url": url(cut_name), "name": cut_name} if cut_name in files else None,
         "steps": steps,
         "turns": turns,
+        "text_boxes": text_boxes(run_dir, fixed_name, result) if fixed_name in files else [],
         "reports": {"first": reports[0] if reports else None, "latest": reports[-1] if reports else None},
         "result": result,
         "downloads": downloads,

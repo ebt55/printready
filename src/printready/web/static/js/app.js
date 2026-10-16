@@ -10,7 +10,7 @@ import { createWorkbench } from "./workbench.js";
 import { createResults } from "./results.js";
 import { createLabel } from "./label.js";
 import { bind, installShortcuts, showShortcuts } from "./shortcuts.js";
-import { empty, toast } from "./ui.js";
+import { empty, installTooltips, toast } from "./ui.js";
 
 const THEMES = ["auto", "light", "dark"];
 
@@ -42,6 +42,7 @@ async function boot() {
   store.set({ theme });
 
   installShortcuts();
+  installTooltips();
   const screens = {
     workbench: h("section", { class: "screen", "data-screen": "workbench", hidden: true }),
     results: h("section", { class: "screen", "data-screen": "results", hidden: true }),

@@ -71,11 +71,19 @@ def read_events(run_dir: Path) -> list[dict]:
 
 
 def replay(source: Path, dest: Path, emit: Callable[[dict], None], speed: float = 1.0) -> None:
-    """Copy a saved run's files into `dest`, then re-emit its events with the recorded timing
-    (at least MIN_GAP_S apart; `speed` scales every wait, 0 = instant)."""
+    """Re-emit a saved run's events with the recorded timing (at least MIN_GAP_S apart; `speed`
+    scales every wait, 0 = instant). Files appear like in a real run: step previews and the
+    images the model looked at up front (events name them), final outputs just before `done`."""
+    from printready.web.runs import FINAL_OUTPUTS
+
     dest.mkdir(parents=True, exist_ok=True)
+    finals = []
     for f in source.iterdir():
-        if f.is_file() and f.name != "events.jsonl":
+        if not f.is_file() or f.name == "events.jsonl":
+            continue
+        if f.name in FINAL_OUTPUTS:
+            finals.append(f)
+        else:
             shutil.copy2(f, dest / f.name)
     last_t = 0.0
     for ev in read_events(source):
@@ -84,6 +92,9 @@ def replay(source: Path, dest: Path, emit: Callable[[dict], None], speed: float 
         last_t = t
         if wait > 0:
             time.sleep(wait)
+        if ev.get("type") == "done":
+            for f in finals:
+                shutil.copy2(f, dest / f.name)
         emit(ev)
 
 

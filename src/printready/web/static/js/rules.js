@@ -242,6 +242,21 @@ export function guardBar(guard, ctx) {
       marks: [{ value: limit * 100, display: `${num(limit * 100, 0)}%`, label: "limit", source: lim.source }],
     };
   }
+  if (guard.metric === "subject_px_changed" || guard.metric === "image_px_changed") {
+    // border, pad, bridge and shape fixes must leave the art bit-identical: limit 0 pixels
+    const v = Number(guard.value) || 0;
+    const hi = Math.max(10, v * 1.5);
+    return {
+      label: guard.label || "pixels changed",
+      value: v,
+      display: num(v),
+      unit: "px",
+      status: guard.passed === false ? "fail" : "pass",
+      domain: [0, hi],
+      zones: [{ from: 0.5, to: hi, level: 2 }],
+      marks: [{ value: 0, display: "0", label: "limit", source: "design" }],
+    };
+  }
   return null;
 }
 

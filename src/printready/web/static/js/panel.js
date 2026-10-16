@@ -152,8 +152,9 @@ function findingRow(f, before, m, actions, ctx) {
   const pinned = m.focusCheck && m.focusCheck.pinned && m.focusCheck.check === f.check;
   const open = f.status !== "pass" || expanded.has(f.check) || pinned;
   const was = before && before.status !== f.status ? before : null;
-  const meas = open ? measurementsFor(f, ctx) : null;
-  const boxes = (f.boxes || []).length;
+  const meas = measurementsFor(f, ctx);
+  const textBoxes = ((m.run && m.run.text_boxes) || []).filter((b) => b.check === f.check).length;
+  const boxes = (f.boxes || []).length || textBoxes;
   const row = h(
     "div",
     {
@@ -192,6 +193,8 @@ function findingRow(f, before, m, actions, ctx) {
       open && f.status !== "pass" ? fixerBadge(f.fixer) : null,
       open && boxes ? h("span", { class: "boxes-hint", "data-tip": "Regions marked on the stage" }, icon("boxes", 12), boxes) : null
     ),
+    // collapsed (passing) rows still read as rules: one compact bar, value against the rule
+    !open && meas.bars.length ? thresholdBar(meas.bars[0], { compact: true }) : null,
     open ? h("p", { class: "finding-msg" }, f.message) : null,
     open && meas && (meas.bars.length || meas.facts.length)
       ? h(
@@ -312,7 +315,7 @@ function timelineSection(m, actions, ctx) {
         ),
         st.note ? h("p", { class: "tl-note" }, st.note) : null,
         facts.length ? h("div", { class: "finding-facts" }, facts) : null,
-        guardLine || bar ? h("div", { class: "tl-guard" }, guardLine, bar ? thresholdBar(bar) : null) : null
+        guardLine || bar ? h("div", { class: "tl-guard" }, guardLine, bar ? thresholdBar(bar, { compact: true }) : null) : null
       )
     );
   });

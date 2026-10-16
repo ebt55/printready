@@ -611,6 +611,8 @@ main {
 /* ---------------------------------------------------------------- centre stage */
 
 .stage {
+  container-type: inline-size;
+  container-name: stage;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -651,6 +653,66 @@ main {
   width: 28px;
   height: 28px;
   border-radius: 7px;
+}
+
+.tg-more {
+  display: none;
+}
+
+@container stage (max-width: 760px) {
+  .tg-overlays,
+  .tg-backdrop {
+    display: none;
+  }
+  .tg-more {
+    display: inline-flex;
+  }
+  .stage-bar .seg button {
+    padding: 0 var(--s-2);
+  }
+}
+
+.menu {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-2);
+  min-width: 240px;
+}
+
+.menu-label {
+  padding: 6px var(--s-2) 2px;
+  font-size: var(--fs-11);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  padding: 7px var(--s-2);
+  border-radius: 8px;
+  font-size: var(--fs-13);
+  color: var(--ink);
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: var(--surface-hover);
+}
+
+.menu-item .kbd {
+  margin-left: auto;
+}
+
+.menu-item .tick {
+  width: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--accent-ink);
 }
 
 .zoom-readout {
@@ -769,6 +831,31 @@ main {
   -webkit-user-drag: none;
 }
 
+.world img.layer.dimmed {
+  opacity: 0.42;
+  filter: grayscale(0.35);
+}
+
+.stage-wait {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--ink-2);
+  pointer-events: none;
+}
+
 .world.pixelated img.layer {
   image-rendering: pixelated;
 }
@@ -812,6 +899,10 @@ main {
 
 .ov-box[data-status="fail"] rect {
   stroke: var(--fail-dot);
+}
+
+.ov-box[data-status="ok"] rect {
+  stroke: var(--ink-3);
 }
 
 .ov-box[data-status="warn"] rect {
@@ -862,6 +953,15 @@ main {
 
 .box-label[data-status="fail"] {
   background: var(--fail-dot);
+}
+
+.box-label[data-kind="text"] {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.box-label[data-status="ok"] {
+  background: var(--ink-3);
 }
 
 .box-label[data-status="warn"] {
@@ -1326,7 +1426,7 @@ input[type="range"].scrub {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   gap: var(--s-3);
-  animation: fade-in var(--dur-slow) var(--ease);
+  animation: rise var(--dur-slow) var(--ease);
 }
 
 .turn-n {
@@ -1621,6 +1721,7 @@ input[type="range"].scrub {
 .panel {
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden; /* a safety net: nothing in the panel is meant to be wider than it */
   background: var(--surface);
   border-left: 1px solid var(--line);
 }
@@ -1635,7 +1736,7 @@ input[type="range"].scrub {
   border-radius: 14px;
   border: 1px solid var(--line);
   background: var(--surface-2);
-  animation: fade-in var(--dur-slow) var(--ease);
+  animation: rise var(--dur-slow) var(--ease);
 }
 
 .banner-top {
@@ -1772,7 +1873,7 @@ input[type="range"].scrub {
   border: 1px solid transparent;
   cursor: pointer;
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
-  animation: fade-in var(--dur-slow) var(--ease);
+  animation: rise var(--dur-slow) var(--ease);
 }
 
 .finding + .finding {
@@ -1948,7 +2049,7 @@ input[type="range"].scrub {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr);
   gap: var(--s-3);
-  animation: fade-in var(--dur-slow) var(--ease);
+  animation: rise var(--dur-slow) var(--ease);
 }
 
 .tl-node {
@@ -2131,13 +2232,19 @@ input[type="range"].scrub {
 
 .proofcard-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-2);
   padding: var(--s-3) var(--s-4) var(--s-4);
 }
 
 .proofcard-actions .btn:disabled {
   opacity: 0.6;
+}
+
+.proofcard-actions .btn {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .notes {
@@ -2166,7 +2273,7 @@ input[type="range"].scrub {
 
 .downloads {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-2);
 }
 
@@ -2301,6 +2408,7 @@ input[type="range"].scrub {
 .results {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .results-inner {
@@ -2507,7 +2615,7 @@ input[type="range"].scrub {
   box-shadow: var(--shadow-1);
   overflow: hidden;
   transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
-  animation: fade-in var(--dur-slow) var(--ease);
+  animation: rise var(--dur-slow) var(--ease);
 }
 
 .gcard:hover {

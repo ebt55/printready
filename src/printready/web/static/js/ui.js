@@ -36,6 +36,9 @@ export function srcTag(source) {
   if (source === "convention") {
     return h("span", { class: "src", "data-kind": "convention", "data-tip": "Our convention: the FAQ gives no number", tabindex: "0" }, "conv");
   }
+  if (source === "design") {
+    return h("span", { class: "src", "data-kind": "convention", "data-tip": "Fixed by the design: fixes must not change the art" }, "spec");
+  }
   if (source === "derived") {
     return h("span", { class: "src", "data-kind": "convention", "data-tip": "Derived from the rules above" }, "derived");
   }
@@ -68,7 +71,8 @@ export function empty(iconName, title, text, actions) {
 /* ---------------------------------------------------------------- threshold bar */
 // m = { label, value, display, unit, status, domain: [lo, hi], marks: [{ value, display, label, source }],
 //       zones: [{ from, to, level }], note }
-export function thresholdBar(m) {
+export function thresholdBar(m, opts = {}) {
+  if (opts.compact) return compactBar(m);
   const [lo, hi] = m.domain;
   const span = hi - lo || 1;
   const pos = (v) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
@@ -96,6 +100,34 @@ export function thresholdBar(m) {
           m.note ? h("span", null, m.note) : null
         )
       : null
+  );
+}
+
+// One line: the track (zones, rule marks, value dot), then the number, unit and rule source.
+function compactBar(m) {
+  const [lo, hi] = m.domain;
+  const span = hi - lo || 1;
+  const pos = (v) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
+  const marks = m.marks || [];
+  const aria = `${m.label}: ${m.display}${m.unit ? " " + m.unit : ""}. ` + marks.map((mk) => `${mk.label} ${mk.display}.`).join(" ");
+  return h(
+    "div",
+    { class: "tb tb-compact", "data-status": m.status || "skip", title: `${m.label}: ${m.display}${m.unit ? " " + m.unit : ""}` + (marks.length ? ` (${marks.map((mk) => `${mk.label} ${mk.display}`).join(", ")})` : "") },
+    h(
+      "div",
+      { class: "tb-track", role: "img", "aria-label": aria },
+      (m.zones || []).map((z) => h("i", { class: "tb-zone", "data-level": z.level || 1, style: { left: pos(z.from) + "%", width: Math.max(0, pos(z.to) - pos(z.from)) + "%" } })),
+      marks.map((mk) => h("i", { class: "tb-mark", style: { left: pos(mk.value) + "%" } })),
+      m.value === null || m.value === undefined ? null : h("i", { class: "tb-dot", style: { left: pos(m.value) + "%" } })
+    ),
+    h(
+      "span",
+      { class: "tb-side" },
+      h("b", null, m.display),
+      m.unit ? h("span", null, m.unit) : null,
+      marks.length ? h("span", null, `/ ${marks[0].display}`) : null,
+      marks.length ? srcTag(marks[0].source) : null
+    )
   );
 }
 
@@ -297,4 +329,95 @@ export function segmented(options, value, onChange, opts = {}) {
 export function replaceChildren(el, ...children) {
   clear(el);
   for (const c of children.flat(Infinity)) if (c) el.append(c);
+}
+
+/* ---------------------------------------------------------------- tooltips */
+// One shared tooltip for every [data-tip] element: fixed-position, clamped to the window, shown
+// after a short delay on hover or keyboard focus. Nothing is laid out until it shows.
+
+let tipEl = null;
+let tipTimer = null;
+let tipOwner = null;
+
+function hideTip() {
+  clearTimeout(tipTimer);
+  tipOwner = null;
+  if (tipEl) tipEl.hidden = true;
+}
+
+function showTip(target) {
+  const text = target.getAttribute("data-tip");
+  if (!text || !target.isConnected) return;
+  if (!tipEl) {
+    tipEl = h("div", { class: "tooltip", role: "tooltip", hidden: true });
+    document.body.append(tipEl);
+  }
+  tipEl.textContent = text;
+  tipEl.hidden = false;
+  const r = target.getBoundingClientRect();
+  const t = tipEl.getBoundingClientRect();
+  const pos = target.getAttribute("data-tip-pos");
+  let top = pos === "below" ? r.bottom + 8 : r.top - t.height - 8;
+  if (top < 4) top = r.bottom + 8;
+  if (top + t.height > window.innerHeight - 4) top = r.top - t.height - 8;
+  let left = pos === "left" ? r.right - t.width : r.left + r.width / 2 - t.width / 2;
+  left = Math.max(8, Math.min(window.innerWidth - t.width - 8, left));
+  tipEl.style.left = left + "px";
+  tipEl.style.top = top + "px";
+}
+
+export function installTooltips() {
+  const enter = (e) => {
+    const target = e.target.closest && e.target.closest("[data-tip]");
+    if (!target || target === tipOwner) return;
+    hideTip();
+    tipOwner = target;
+    tipTimer = setTimeout(() => showTip(target), e.type === "focusin" ? 150 : 380);
+  };
+  const leave = (e) => {
+    if (!tipOwner) return;
+    const to = e.relatedTarget;
+    if (to && tipOwner.contains(to)) return;
+    hideTip();
+  };
+  document.addEventListener("mouseover", enter);
+  document.addEventListener("focusin", (e) => e.target.matches && e.target.matches(":focus-visible") && enter(e));
+  document.addEventListener("mouseout", leave);
+  document.addEventListener("focusout", leave);
+  document.addEventListener("mousedown", hideTip, true);
+  document.addEventListener("keydown", hideTip, true);
+  document.addEventListener("scroll", hideTip, true);
+}
+
+// A small menu in a popover: [{ label, checked, kbd, onSelect }] or { section: "Title" }.
+export function openMenu(anchor, items, label) {
+  const close = () => closePopover();
+  const body = h(
+    "div",
+    { class: "menu", role: "menu", "aria-label": label || "Menu" },
+    items.map((it) =>
+      it.section
+        ? h("div", { class: "menu-label" }, it.section)
+        : h(
+            "button",
+            {
+              class: "menu-item",
+              type: "button",
+              role: it.checked === undefined ? "menuitem" : "menuitemcheckbox",
+              "aria-checked": it.checked === undefined ? null : String(Boolean(it.checked)),
+              onClick: () => {
+                it.onSelect();
+                close();
+              },
+            },
+            h("span", { class: "tick" }, it.checked ? icon("check", 14) : null),
+            it.icon ? icon(it.icon, 15) : null,
+            it.label,
+            it.kbd ? kbd(it.kbd) : null
+          )
+    )
+  );
+  openPopover(anchor, body, label);
+  const first = body.querySelector("button");
+  if (first) first.focus();
 }
