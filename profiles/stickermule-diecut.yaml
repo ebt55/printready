@@ -1,0 +1,50 @@
+# Die-cut sticker rules, paraphrased from Sticker Mule's public FAQ pages (linked per rule).
+# printready is not affiliated with Sticker Mule. Rules marked `convention` are our own
+# choices where the FAQ gives no number; the README labels them the same way.
+name: stickermule-diecut
+product: die_cut
+rules:
+  ppi_target:
+    value: 300
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: Raster art should reach 300 PPI at the printed size.
+  ppi_floor:
+    value: 150
+    source: convention
+    why: Below about 150 PPI a print looks visibly soft (a common print-on-demand low threshold).
+  border_in:
+    value: 0.1
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: Proofs use a standard border of one tenth of an inch around the art.
+  border_min_in:
+    value: 0.0625
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: The narrowest border offered is a sixteenth of an inch.
+  min_line_pt:
+    value: 1.0
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: Lines thinner than one point are not recommended.
+  min_text_pt:
+    value: 6.0
+    source: https://www.stickermule.com/faqs/stickermule/what-are-your-artwork-requirements-for-stickers-and-labels
+    why: Text below six points is not recommended.
+  min_internal_cut_in:
+    value: 0.25
+    source: https://www.stickermule.com/support/faq/artwork/change-requests
+    why: Cuts inside the outline are possible only when the hole is at least a quarter inch.
+  min_neck_in:
+    value: 0.125
+    source: convention
+    why: A die-cut waist narrower than an eighth of an inch tends to tear or curl.
+  max_upload_mb:
+    value: 20
+    source: https://www.stickermule.com/faqs/stickermule/file-size-limits-for-artwork-uploader
+    why: The artwork uploader takes files up to 20 MB.
+  soft_alpha_max_in:
+    value: 0.03
+    source: convention
+    why: A semi-transparent band (shadow, glow) wider than this leaves the cut position ambiguous.
+  max_bridge_border_in:
+    value: 0.25
+    source: convention
+    why: The widest border we grow to join separate parts before handing off to a person.

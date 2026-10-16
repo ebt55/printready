@@ -1,0 +1,198 @@
+"""The shared contract (see 01-DESIGN.md). Owned by the core agent; every other module imports only.
+
+Physical units: `Spec.size_in` is the longest side of the finished sticker, border included.
+Pixel boxes are (x0, y0, x1, y1) in the coordinates of the image the finding was made on.
+"""
+
+from __future__ import annotations
+
+import copy
+from dataclasses import dataclass, field
+from typing import Any, Literal, get_args
+
+import numpy as np
+
+Status = Literal["pass", "warn", "fail", "skip"]
+Fixer = Literal["auto", "customer", "person", "none"]  # who can resolve a failed/warned finding
+Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image, also the label set
+
+STATUSES: tuple[str, ...] = get_args(Status)
+FIXERS: tuple[str, ...] = get_args(Fixer)
+OUTCOMES: tuple[str, ...] = get_args(Outcome)
+PRODUCTS: tuple[str, ...] = ("die_cut",)  # v1 scope
+
+DETERMINISTIC_CHECK_IDS: tuple[str, ...] = (
+    "file",
+    "resolution",
+    "background",
+    "soft_alpha",
+    "edge_crop",
+    "islands",
+    "internal_cut",
+)
+VISION_CHECK_IDS: tuple[str, ...] = ("text_garbled", "text_small")
+CHECK_IDS: tuple[str, ...] = DETERMINISTIC_CHECK_IDS + VISION_CHECK_IDS
+
+# Severity order for Report.status(); "skip" is not ranked because it is ignored.
+_SEVERITY = {"pass": 0, "warn": 1, "fail": 2}
+
+
+def _jsonable(value: Any) -> Any:
+    """Convert numpy scalars/arrays and tuples to plain JSON types, recursively."""
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    return value
+
+
+@dataclass(frozen=True)
+class Spec:
+    """The order: product, finished size (longest side, border included, inches), optional prompt."""
+
+    product: str
+    size_in: float
+    prompt: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.product not in PRODUCTS:
+            raise ValueError(f"product must be one of {PRODUCTS}, got {self.product!r}")
+        if not self.size_in > 0:
+            raise ValueError(f"size_in must be positive, got {self.size_in!r}")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"product": self.product, "size_in": float(self.size_in), "prompt": self.prompt}
+
+
+@dataclass
+class Finding:
+    check: str  # one of CHECK_IDS
+    status: Status
+    message: str  # one plain sentence a customer could read
+    measured: dict[str, Any]  # the numbers, e.g. {"ppi": 142.3, "max_size_in_at_target": 1.9}
+    fixer: Fixer
+    boxes: list[tuple[int, int, int, int]] = field(default_factory=list)  # x0,y0,x1,y1 px, for overlay
+
+    def __post_init__(self) -> None:
+        if self.check not in CHECK_IDS:
+            raise ValueError(f"unknown check id {self.check!r}")
+        if self.status not in STATUSES:
+            raise ValueError(f"unknown status {self.status!r}")
+        if self.fixer not in FIXERS:
+            raise ValueError(f"unknown fixer {self.fixer!r}")
+        boxes = []
+        for box in self.boxes:
+            if len(box) != 4:
+                raise ValueError(f"box must be (x0, y0, x1, y1), got {box!r}")
+            boxes.append(tuple(int(v) for v in box))
+        self.boxes = boxes
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "check": self.check,
+            "status": self.status,
+            "message": self.message,
+            "measured": _jsonable(self.measured),
+            "fixer": self.fixer,
+            "boxes": [list(b) for b in self.boxes],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Finding:
+        return cls(
+            check=data["check"],
+            status=data["status"],
+            message=data["message"],
+            measured=dict(data.get("measured", {})),
+            fixer=data["fixer"],
+            boxes=[tuple(b) for b in data.get("boxes", [])],
+        )
+
+
+@dataclass
+class Report:
+    findings: list[Finding]
+
+    def status(self) -> Status:
+        """Worst status among findings, ignoring skips. "skip" if nothing was actually checked."""
+        ranked = [f.status for f in self.findings if f.status != "skip"]
+        if not ranked:
+            return "skip"
+        return max(ranked, key=_SEVERITY.__getitem__)
+
+    def by_check(self, check: str) -> Finding | None:
+        """The first finding for `check`, or None if that check did not report."""
+        return next((f for f in self.findings if f.check == check), None)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"status": self.status(), "findings": [f.to_dict() for f in self.findings]}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Report:
+        return cls(findings=[Finding.from_dict(f) for f in data.get("findings", [])])
+
+
+@dataclass
+class Artwork:
+    """Working state passed through fixes."""
+
+    rgba: np.ndarray  # HxWx4 uint8
+    subject: np.ndarray | None = None  # HxW bool, None while opaque and unremoved
+    border_in: float | None = None  # None until a border is added
+    cut: np.ndarray | None = None  # HxW bool cut mask (subject + border), None until built
+    history: list[str] = field(default_factory=list)  # human-readable steps applied
+
+    def __post_init__(self) -> None:
+        if self.rgba.ndim != 3 or self.rgba.shape[2] != 4 or self.rgba.dtype != np.uint8:
+            raise ValueError(f"rgba must be HxWx4 uint8, got {self.rgba.shape} {self.rgba.dtype}")
+        for name in ("subject", "cut"):
+            mask = getattr(self, name)
+            if mask is not None and (mask.shape != self.rgba.shape[:2] or mask.dtype != np.bool_):
+                raise ValueError(f"{name} must be HxW bool matching rgba, got {mask.shape} {mask.dtype}")
+
+    @property
+    def height(self) -> int:
+        return int(self.rgba.shape[0])
+
+    @property
+    def width(self) -> int:
+        return int(self.rgba.shape[1])
+
+    def copy(self) -> Artwork:
+        """Deep copy, so a fix can work on its own arrays and the guard can compare before/after."""
+        return copy.deepcopy(self)
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON summary. Pixel arrays are excluded; only their sizes are reported."""
+        return {
+            "width": self.width,
+            "height": self.height,
+            "subject_px": None if self.subject is None else int(self.subject.sum()),
+            "border_in": self.border_in,
+            "cut_px": None if self.cut is None else int(self.cut.sum()),
+            "history": list(self.history),
+        }
+
+
+@dataclass
+class FixResult:
+    art: Artwork
+    ok: bool
+    note: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"ok": self.ok, "note": self.note, "art": self.art.to_dict()}
+
+
+def decide(report: Report) -> Outcome:
+    """ready if no warn/fail; needs_person if any warn/fail has fixer person or none; else fixable."""
+    flagged = [f for f in report.findings if f.status in ("warn", "fail")]
+    if not flagged:
+        return "ready"
+    if any(f.fixer in ("person", "none") for f in flagged):
+        return "needs_person"
+    return "fixable"
