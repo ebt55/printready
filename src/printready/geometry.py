@@ -16,7 +16,7 @@ import numpy as np
 from skimage.color import deltaE_ciede2000, rgb2lab
 
 from printready.profile import Profile
-from printready.types import Spec
+from printready.types import SUBJECT_ALPHA, Spec
 
 # Algorithm settings (not label boundaries, so they live here rather than in the profile).
 RING_FRAC = 0.02  # background ring = outer band, 2 % of the shorter canvas side
@@ -173,6 +173,19 @@ def outline_polygons(mask: np.ndarray, ppi: float) -> list[np.ndarray]:
 
 
 # ---------------------------------------------------------------- measurements
+
+def art_alpha(rgba: np.ndarray, subject: np.ndarray | None) -> np.ndarray:
+    """Alpha of the ART layer only, so art-property checks never measure what a tool added.
+
+    Every fix keeps `subject == (art alpha >= SUBJECT_ALPHA)`; add_border/bridge_islands only
+    paint pixels that were nearly transparent (alpha < 16) opaque white. So an opaque pixel outside
+    the subject was painted by a tool and counts as transparent here (its original alpha was
+    below the partial-alpha band, so no measurement depends on the exact value)."""
+    alpha = rgba[..., 3].copy()
+    if subject is not None:
+        alpha[~subject & (alpha >= SUBJECT_ALPHA)] = 0
+    return alpha
+
 
 def soft_alpha_p95_px(alpha: np.ndarray) -> float:
     """95th percentile distance (px) from each partial-alpha pixel (16..239) to the nearest pixel

@@ -175,3 +175,17 @@ def test_write_outputs_requires_spec_and_round_trips(tmp_path):
     assert (tmp_path / "again" / outputs["overlay"]).exists()
     with pytest.raises(ValueError):
         write_outputs(RunResult(**{**result.__dict__, "spec": None}), tmp_path / "nospec")
+
+
+def test_soft_shadow_still_needs_person_after_border(tmp_path):
+    # Bench regression: the white border used to halve the soft-alpha distances and hide the shadow.
+    yy, xx = np.indices((320, 320))
+    rgba = np.zeros((320, 320, 4), np.uint8)
+    rgba[..., :3] = 30
+    rgba[..., 3] = np.clip(255 * (1 - (np.hypot(xx - 160, yy - 160) - 90) / 24), 0, 255).astype(np.uint8)  # 0.06 in at 400 PPI
+    result, _ = run(tmp_path, "shadow.png", rgba, spec=Spec("die_cut", 204 / 400 + 0.2))
+    assert [s.fix for s in result.art.history] == ["add_border"]
+    soft = result.after.by_check("soft_alpha")
+    assert (soft.status, soft.fixer) == ("warn", "person")
+    assert soft.measured == result.before.by_check("soft_alpha").measured
+    assert result.outcome == "needs_person"

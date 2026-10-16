@@ -9,7 +9,7 @@ MIN_SIDE_PX = 64
 
 
 def check_file(art: Artwork, spec: Spec, profile: Profile) -> Finding:
-    w, h = art.width, art.height
+    w, h = art.meta.get("width", art.width), art.meta.get("height", art.height)  # the file, not the padded canvas
     nbytes = art.meta.get("bytes")
     fmt = art.meta.get("format")
     measured = {

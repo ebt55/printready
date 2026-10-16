@@ -37,6 +37,8 @@ def artwork_from_rgba(
     meta = dict(meta or {})
     real = has_real_alpha(rgba[..., 3])
     meta["real_alpha"] = real
+    meta.setdefault("width", int(rgba.shape[1]))  # the file's own size; padding never changes it
+    meta.setdefault("height", int(rgba.shape[0]))
     subject = rgba[..., 3] >= SUBJECT_ALPHA if real else None
     long_px = long_side_px(subject) if subject is not None else 0
     if long_px == 0:  # opaque, or nothing visible: scale from the canvas

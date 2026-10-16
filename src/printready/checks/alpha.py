@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 from printready.checks._common import r, skip_needs_mask
-from printready.geometry import PARTIAL_ALPHA, bbox, soft_alpha_p95_px
+from printready.geometry import PARTIAL_ALPHA, art_alpha, bbox, soft_alpha_p95_px
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
 
@@ -13,7 +13,7 @@ from printready.types import Artwork, Finding, Spec
 def check_soft_alpha(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     if art.subject is None:
         return skip_needs_mask("soft_alpha")
-    alpha = art.rgba[..., 3]
+    alpha = art_alpha(art.rgba, art.subject)  # never the border or padding a fix added
     lo, hi = PARTIAL_ALPHA
     partial = (alpha >= lo) & (alpha <= hi)
     p95_px = soft_alpha_p95_px(alpha)
