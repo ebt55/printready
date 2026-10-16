@@ -247,6 +247,29 @@ def ring_pixels(rgb: np.ndarray, band_frac: float = RING_FRAC) -> tuple[np.ndarr
     return np.concatenate([p.reshape(-1, 3) for p in parts]), b
 
 
+def distinct_colours(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """The distinct colours of ...x3 uint8 pixels (Kx3 uint8) and each pixel's index into them.
+    Colour maths then runs once per colour, not once per pixel (AI art has few distinct colours)."""
+    flat = rgb.reshape(-1, 3).astype(np.int32)
+    keys = (flat[:, 0] << 16) | (flat[:, 1] << 8) | flat[:, 2]
+    uniq, inverse = np.unique(keys, return_inverse=True)
+    colours = np.stack([uniq >> 16, (uniq >> 8) & 255, uniq & 255], axis=1).astype(np.uint8)
+    return colours, inverse.reshape(-1)
+
+
+def to_lab(colours: np.ndarray) -> np.ndarray:
+    """Kx3 uint8 sRGB -> Kx3 CIELAB."""
+    return rgb2lab(colours[None].astype(np.float64) / 255.0)[0]
+
+
+def delta_e_to(rgb: np.ndarray, lab_ref: tuple[float, float, float]) -> np.ndarray:
+    """CIEDE2000 distance of every pixel of a ...x3 uint8 array from one CIELAB colour."""
+    colours, inverse = distinct_colours(rgb)
+    lab = to_lab(colours)
+    de = deltaE_ciede2000(lab, np.broadcast_to(np.asarray(lab_ref, np.float64), lab.shape))
+    return de[inverse].reshape(rgb.shape[:-1])
+
+
 def ring_uniformity(rgb: np.ndarray, delta_e: float, band_frac: float = RING_FRAC) -> Ring:
     """How much of the outer ring is one colour, by CIEDE2000.
 
@@ -256,9 +279,10 @@ def ring_uniformity(rgb: np.ndarray, delta_e: float, band_frac: float = RING_FRA
     ring, b = ring_pixels(rgb, band_frac)
     keys = (ring[:, 0] // 32).astype(np.int32) * 64 + (ring[:, 1] // 32) * 8 + (ring[:, 2] // 32)
     in_mode = keys == np.bincount(keys).argmax()
-    lab = rgb2lab(ring[None].astype(np.float64) / 255.0)[0]
-    dominant = np.median(lab[in_mode], axis=0)
-    de = deltaE_ciede2000(lab, np.broadcast_to(dominant, lab.shape))
+    colours, inverse = distinct_colours(ring)
+    lab = to_lab(colours)
+    dominant = np.median(lab[inverse[in_mode]], axis=0)
+    de = deltaE_ciede2000(lab, np.broadcast_to(dominant, lab.shape))[inverse]
     rgb_dom = np.median(ring[in_mode], axis=0).round().astype(int)
     return Ring(
         uniform_frac=float(np.mean(de <= delta_e)),

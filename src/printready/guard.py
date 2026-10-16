@@ -57,7 +57,7 @@ def removal_damage(before: Artwork, after: Artwork, profile: Profile) -> dict[st
     bg_lab = ring_uniformity(before.rgba[..., :3], profile.bg_delta_e).lab
     far = 0
     if removed.any():
-        distance = background_lab_distance(before.rgba[..., :3][removed][None], bg_lab)[0]
+        distance = background_lab_distance(before.rgba[..., :3][removed], bg_lab)
         far = int((distance > 2 * profile.bg_delta_e).sum())
     kept = int(after.subject.sum()) if after.subject is not None else 0
     return {"removed_px": int(removed.sum()), "far_px": far, "kept_px": kept, "frac": far / max(kept, 1)}

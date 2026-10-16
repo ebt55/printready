@@ -11,10 +11,16 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
-from skimage.color import deltaE_ciede2000, rgb2lab
-
 from printready.fixes._common import evolve, refuse
-from printready.geometry import components, dilate, fill_holes, long_side_px, ppi_for_long_side, ring_uniformity
+from printready.geometry import (
+    components,
+    delta_e_to,
+    dilate,
+    fill_holes,
+    long_side_px,
+    ppi_for_long_side,
+    ring_uniformity,
+)
 from printready.profile import Profile
 from printready.types import SUBJECT_ALPHA, Artwork, FixResult, Spec
 
@@ -26,9 +32,8 @@ MIN_CONTRAST_RGB = 30.0  # below this subject/background RGB distance, alpha can
 
 
 def background_lab_distance(rgb: np.ndarray, lab_colour: tuple[float, float, float]) -> np.ndarray:
-    """CIEDE2000 distance of every pixel of an HxWx3 uint8 image from one CIELAB colour."""
-    lab = rgb2lab(rgb.astype(np.float64) / 255.0)
-    return deltaE_ciede2000(lab, np.broadcast_to(np.asarray(lab_colour), lab.shape))
+    """CIEDE2000 distance of every pixel of a ...x3 uint8 array from one CIELAB colour."""
+    return delta_e_to(rgb, lab_colour)
 
 
 def flood_from_edge(candidate: np.ndarray) -> np.ndarray:

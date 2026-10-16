@@ -11,7 +11,9 @@ from printready.types import Artwork, Finding, Spec
 
 def check_background(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     if art.subject is not None:
-        return Finding("background", "pass", "The background is already transparent.", {"real_alpha": True}, "none")
+        removed = any(s.fix == "remove_background" and s.ok for s in art.history)
+        msg = "The background was removed." if removed else "The background is transparent."
+        return Finding("background", "pass", msg, {"real_alpha": True, "removed": removed}, "none")
     ring = ring_uniformity(art.rgba[..., :3], profile.bg_delta_e)
     colour = "#{:02x}{:02x}{:02x}".format(*ring.rgb)
     measured = {

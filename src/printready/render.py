@@ -27,17 +27,15 @@ def _font(size: int) -> ImageFont.ImageFont:
 def checkerboard(h: int, w: int) -> np.ndarray:
     """HxWx3 uint8 light checkerboard (shows where the sticker is transparent)."""
     square = max(8, min(h, w) // 24)
-    yy, xx = np.indices((h, w))
-    board = ((yy // square + xx // square) % 2).astype(bool)
-    out = np.empty((h, w, 3), np.uint8)
-    out[~board], out[board] = CHECKER
-    return out
+    board = ((np.arange(h) // square) % 2)[:, None] ^ ((np.arange(w) // square) % 2)[None, :]
+    return np.where(board[..., None].astype(bool), np.uint8(CHECKER[1][0]), np.uint8(CHECKER[0][0])).repeat(3, axis=2)
 
 
 def composite(rgba: np.ndarray, under: np.ndarray) -> np.ndarray:
-    """Alpha-composite RGBA over an HxWx3 background."""
-    a = rgba[..., 3:4].astype(np.float32) / 255.0
-    return (rgba[..., :3] * a + under * (1.0 - a)).round().astype(np.uint8)
+    """Alpha-composite RGBA over an HxWx3 background (integer maths, rounded)."""
+    a = rgba[..., 3:4].astype(np.uint16)
+    out = rgba[..., :3].astype(np.uint16) * a + under.astype(np.uint16) * (255 - a) + 127
+    return (out // 255).astype(np.uint8)
 
 
 def render_overlay(art: Artwork, report: Report) -> Image.Image:

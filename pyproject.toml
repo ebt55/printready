@@ -20,6 +20,11 @@ dependencies = [
 [project.scripts]
 printready = "printready.cli:main"
 
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.9",
+]
+
 [dependency-groups]
 dev = ["pytest>=8.3"]
 
