@@ -162,6 +162,20 @@ def test_spelled_out_letters_and_the_misspelled_flag_both_count(tmp_path):
     assert [i["garbled"] for i in check_text(art, SPEC, P, c)[0].measured["items"]] == [True, True, False]
 
 
+def test_findings_record_the_crop_the_model_saw(tmp_path):
+    # the workbench maps the model's fractional boxes to pixels with it: x = x0 + f * (x1 - x0)
+    art, box = text_art(cap_px=20)
+    frac = as_fraction(box)
+    findings = check_text(art, SPEC, P, client_for(tmp_path, answer(item("SHOP", box=frac))))
+    assert [f.measured["crop"] for f in findings] == [[0, 50, 400, 250]] * 2
+    x0, y0, x1, y1 = findings[0].measured["crop"]
+    assert x0 + frac[0] * (x1 - x0) == pytest.approx(box[0], abs=1)
+    opaque, _ = text_art(with_subject=False)
+    assert check_text(opaque, SPEC, P, client_for(tmp_path, answer()))[0].measured["crop"] == [0, 0, 400, 300]
+    failed = check_text(art, SPEC, P, client_for(tmp_path, {"status": 400}))
+    assert failed[0].status == "skip" and failed[0].measured["crop"] == [0, 50, 400, 250]
+
+
 def test_text_small_is_off_by_default(tmp_path, monkeypatch):
     monkeypatch.delenv(vision.TEXT_SMALL_ENV)
     art, box = text_art(cap_px=12)

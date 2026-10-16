@@ -24,7 +24,9 @@ from printready.types import RunResult
 
 AGENT_TYPICAL_USD = 0.01  # observed on grok-4.3: 4-5 turns, about $0.008-0.012 per image
 AGENT_TURN_TOKENS_IN = 8000  # generous prompt size per turn for the worst case
-PRECHECK_USD = {"rules": 0.015, "agent": 0.05}  # room needed before an image starts (one vision call / a typical run)
+# Room needed before an image starts: rules = one vision call's own worst-case estimate (the call
+# refuses below it); agent = above the largest dev run ($0.021; the run's own calls check again).
+PRECHECK_USD = {"rules": 0.015, "agent": 0.03}
 
 
 def pass1_missing(paths: Paths) -> list[str]:
@@ -90,7 +92,7 @@ def run_split(
         finally:
             if client is not None:
                 client.close()
-        if run.handoff_reason == "budget":
+        if hit_cap(run):
             raise BudgetExceeded(f"spend cap reached during {e['prompt_id']} {sha[:12]}; it was not recorded")
         row = summarize(run, e, out_dir, paths.root, getattr(client, "model", None))
         append_jsonl(paths.runs(mode), [row])
@@ -99,6 +101,13 @@ def run_split(
             + (f" ({row['handoff_reason']})" if row["handoff_reason"] else "")
             + (f" ${row['cost_usd']:.4f}" if row["cost_usd"] else ""))
     return rows
+
+
+def hit_cap(run: RunResult) -> bool:
+    """The spend cap, not the image, decided this run: an agent "budget" handoff, or a rules-mode
+    vision check that was skipped because the call would have passed the cap."""
+    return run.handoff_reason == "budget" or any(
+        "BudgetExceeded" in str(f.measured.get("reason", "")) for f in run.after.findings if f.status == "skip")
 
 
 def summarize(run: RunResult, entry: dict[str, Any], out_dir: Path, root: Path, model: str | None) -> dict[str, Any]:

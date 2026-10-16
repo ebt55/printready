@@ -1,0 +1,1 @@
+Removed the solid background and added a 0.1 in white border with die-cut line. At 3 in this prints at 288 PPI and will look slightly soft. It prints sharp up to 2.9 in; please pick a size. Approve the proof?

@@ -1,13 +1,11 @@
 {
   "mode": "rules",
-  "outcome": "needs_person",
+  "outcome": "fixable",
   "handoff_reason": null,
-  "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. Before printing, a person on our team will check this: the smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering. We ...",
-  "person_notes": [
-    "text_small warn (person): The smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering."
-  ],
-  "cost_usd": 0.003747,
-  "elapsed_s": 10.885,
+  "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.",
+  "person_notes": [],
+  "cost_usd": 0.003183,
+  "elapsed_s": 11.319,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -267,13 +265,13 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.24,
+                0.27,
                 0.48,
-                0.76,
-                0.56
+                0.73,
+                0.55
               ],
-              "cap_height_px": 3.9,
-              "cap_height_pt": 0.86
+              "cap_height_px": 191.5,
+              "cap_height_pt": 42.08
             },
             {
               "seen": "COFFEE",
@@ -283,72 +281,20 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.32,
-                0.56,
-                0.68,
-                0.64
+                0.35,
+                0.55,
+                0.65,
+                0.62
               ],
-              "cap_height_px": 34.2,
-              "cap_height_pt": 7.51
+              "cap_height_px": 53.6,
+              "cap_height_pt": 11.78
             }
           ],
-          "notes": "Text matches request exactly with no issues.",
+          "notes": "text matches request exactly, two clear lines on cup",
           "model": "grok-4.3",
           "request_sha256": "caeeaccc1d176b748a481e4bea72649299de81abfa32697cedca0d4265ca45de"
         },
         "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "warn",
-        "message": "The smallest text (\"MAPLE & MOSS\") prints at about 1.2 pt at 3 in, under the 6 pt minimum, and the image is not sharp enough to print larger; a person needs to enlarge the lettering.",
-        "measured": {
-          "items": [
-            {
-              "seen": "MAPLE & MOSS",
-              "intended": "MAPLE & MOSS",
-              "letters": "M A P L E / & / M O S S",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.24,
-                0.48,
-                0.76,
-                0.56
-              ],
-              "cap_height_px": 3.9,
-              "cap_height_pt": 0.86
-            },
-            {
-              "seen": "COFFEE",
-              "intended": "COFFEE",
-              "letters": "C O F F E E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.32,
-                0.56,
-                0.68,
-                0.64
-              ],
-              "cap_height_px": 34.2,
-              "cap_height_pt": 7.51
-            }
-          ],
-          "notes": "Text matches request exactly with no issues.",
-          "model": "grok-4.3",
-          "request_sha256": "caeeaccc1d176b748a481e4bea72649299de81abfa32697cedca0d4265ca45de",
-          "min_cap_height_pt": 0.86,
-          "min_text_pt_equiv": 1.23,
-          "threshold_cap_pt": 4.2,
-          "min_size_in_for_text": 13.87,
-          "max_size_in_at_floor": 6.32,
-          "unmeasured": 0
-        },
-        "fixer": "person",
         "boxes": []
       }
     ]

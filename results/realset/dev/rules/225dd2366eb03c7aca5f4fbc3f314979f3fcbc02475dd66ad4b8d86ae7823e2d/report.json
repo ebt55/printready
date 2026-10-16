@@ -4,8 +4,8 @@
   "handoff_reason": null,
   "customer_message": "We removed the plain background, added a little space around the edges and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
-  "cost_usd": 0.003676,
-  "elapsed_s": 12.062,
+  "cost_usd": 0.002619,
+  "elapsed_s": 11.04,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -361,12 +361,12 @@
               "broken": false,
               "box": [
                 0.12,
-                0.12,
+                0.15,
                 0.88,
                 0.38
               ],
-              "cap_height_px": 113.4,
-              "cap_height_pt": 24.04
+              "cap_height_px": 115.0,
+              "cap_height_pt": 24.38
             },
             {
               "seen": "SURF CLUB",
@@ -377,69 +377,17 @@
               "broken": false,
               "box": [
                 0.15,
-                0.68,
+                0.72,
                 0.85,
-                0.88
+                0.85
               ],
-              "cap_height_px": 94.5,
-              "cap_height_pt": 20.03
+              "cap_height_px": 93.7,
+              "cap_height_pt": 19.86
             }
           ],
-          "notes": "Text is clear, legible, and matches request exactly.",
+          "notes": "Text matches request with correct spelling and no broken letters.",
           "model": "grok-4.3",
           "request_sha256": "208a8a10421bc677b96ec180a1c5a6786b8b33fe26ddd9aae3c656d495d4390d"
-        },
-        "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "pass",
-        "message": "The smallest text prints at about 28.6 pt at 3 in, above the 6 pt minimum.",
-        "measured": {
-          "items": [
-            {
-              "seen": "SALT & PINE",
-              "intended": "SALT & PINE",
-              "letters": "S A L T / & / P I N E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.12,
-                0.12,
-                0.88,
-                0.38
-              ],
-              "cap_height_px": 113.4,
-              "cap_height_pt": 24.04
-            },
-            {
-              "seen": "SURF CLUB",
-              "intended": "SURF CLUB",
-              "letters": "S U R F / C L U B",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.15,
-                0.68,
-                0.85,
-                0.88
-              ],
-              "cap_height_px": 94.5,
-              "cap_height_pt": 20.03
-            }
-          ],
-          "notes": "Text is clear, legible, and matches request exactly.",
-          "model": "grok-4.3",
-          "request_sha256": "208a8a10421bc677b96ec180a1c5a6786b8b33fe26ddd9aae3c656d495d4390d",
-          "min_cap_height_pt": 20.03,
-          "min_text_pt_equiv": 28.61,
-          "threshold_cap_pt": 4.2,
-          "min_size_in_for_text": 0.79,
-          "max_size_in_at_floor": 6.54,
-          "unmeasured": 0
         },
         "fixer": "none",
         "boxes": []

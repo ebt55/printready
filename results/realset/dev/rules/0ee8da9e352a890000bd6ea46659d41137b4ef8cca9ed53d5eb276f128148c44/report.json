@@ -4,8 +4,8 @@
   "handoff_reason": null,
   "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.",
   "person_notes": [],
-  "cost_usd": 0.001973,
-  "elapsed_s": 4.309,
+  "cost_usd": 0.00097,
+  "elapsed_s": 6.172,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -255,19 +255,6 @@
         "check": "text_garbled",
         "status": "pass",
         "message": "No text was found in the art.",
-        "measured": {
-          "items": [],
-          "notes": "no text",
-          "model": "grok-4.3",
-          "request_sha256": "09473ee27d631a2a4393c27f7ed35d3aace36d6a809c60e65d7c73918562870a"
-        },
-        "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "pass",
-        "message": "There is no text to measure.",
         "measured": {
           "items": [],
           "notes": "no text",

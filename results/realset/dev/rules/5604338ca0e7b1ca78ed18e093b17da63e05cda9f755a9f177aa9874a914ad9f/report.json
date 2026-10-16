@@ -4,8 +4,8 @@
   "handoff_reason": null,
   "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
-  "cost_usd": 0.003907,
-  "elapsed_s": 14.971,
+  "cost_usd": 0.002847,
+  "elapsed_s": 10.516,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -337,12 +337,12 @@
               "broken": false,
               "box": [
                 0.45,
-                0.65,
+                0.68,
                 0.55,
-                0.72
+                0.74
               ],
-              "cap_height_px": 127.8,
-              "cap_height_pt": 27.91
+              "cap_height_px": null,
+              "cap_height_pt": null
             },
             {
               "seen": "MOSS",
@@ -353,7 +353,7 @@
               "broken": false,
               "box": [
                 0.15,
-                0.7,
+                0.72,
                 0.85,
                 0.85
               ],
@@ -368,102 +368,18 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.22,
+                0.25,
                 0.85,
-                0.78,
-                0.94
+                0.75,
+                0.93
               ],
               "cap_height_px": 44.5,
               "cap_height_pt": 9.72
             }
           ],
-          "notes": "text matches customer request exactly, all lettering clear",
+          "notes": "All text clear and matches request exactly.",
           "model": "grok-4.3",
           "request_sha256": "2356d90d303a3a46990528f01d3697836117e80794994564027620e8ce52476b"
-        },
-        "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "pass",
-        "message": "The smallest text prints at about 13.9 pt at 3 in, above the 6 pt minimum.",
-        "measured": {
-          "items": [
-            {
-              "seen": "MAPLE",
-              "intended": "MAPLE",
-              "letters": "M A P L E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.05,
-                0.52,
-                0.95,
-                0.68
-              ],
-              "cap_height_px": 147.4,
-              "cap_height_pt": 32.19
-            },
-            {
-              "seen": "&",
-              "intended": "&",
-              "letters": "&",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.45,
-                0.65,
-                0.55,
-                0.72
-              ],
-              "cap_height_px": 127.8,
-              "cap_height_pt": 27.91
-            },
-            {
-              "seen": "MOSS",
-              "intended": "MOSS",
-              "letters": "M O S S",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.15,
-                0.7,
-                0.85,
-                0.85
-              ],
-              "cap_height_px": 116.7,
-              "cap_height_pt": 25.49
-            },
-            {
-              "seen": "COFFEE",
-              "intended": "COFFEE",
-              "letters": "C O F F E E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.22,
-                0.85,
-                0.78,
-                0.94
-              ],
-              "cap_height_px": 44.5,
-              "cap_height_pt": 9.72
-            }
-          ],
-          "notes": "text matches customer request exactly, all lettering clear",
-          "model": "grok-4.3",
-          "request_sha256": "2356d90d303a3a46990528f01d3697836117e80794994564027620e8ce52476b",
-          "min_cap_height_pt": 9.72,
-          "min_text_pt_equiv": 13.89,
-          "threshold_cap_pt": 4.2,
-          "min_size_in_for_text": 1.41,
-          "max_size_in_at_floor": 6.35,
-          "unmeasured": 0
         },
         "fixer": "none",
         "boxes": []

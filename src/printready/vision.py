@@ -73,8 +73,10 @@ def check_text(art: Artwork, spec: Spec, profile: Profile, client: ChatClient) -
             resp = client.chat(messages, purpose="vision")
             answer, problem = parse_answer(resp.text)
     except LLMError as exc:
-        return skipped("the text check could not reach the model", {"reason": "api error", "error": str(exc)})
-    trace = {"model": resp.model, "request_sha256": resp.request_sha256}
+        return skipped("the text check could not reach the model",
+                       {"reason": "api error", "error": str(exc), "crop": [x0, y0, x1, y1]})
+    # `crop` is the region of art.rgba the model saw (px): its fractional text boxes are relative to it
+    trace = {"model": resp.model, "request_sha256": resp.request_sha256, "crop": [x0, y0, x1, y1]}
     if answer is None:
         reason = resp.refusal or problem
         return skipped("the model's answer could not be read", {"reason": "unreadable answer", "error": reason, **trace})

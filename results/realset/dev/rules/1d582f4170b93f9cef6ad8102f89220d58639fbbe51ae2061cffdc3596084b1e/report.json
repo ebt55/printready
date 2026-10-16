@@ -4,8 +4,8 @@
   "handoff_reason": null,
   "customer_message": "We removed the plain background and added a 0.1 in white border with a cut line. At 3 in it prints at 180 PPI; at 1.9 in or smaller it is fully sharp. Keep 3 in or choose a smaller size. If the proof looks right, approve it to print your 3 in die-cut sticker.",
   "person_notes": [],
-  "cost_usd": 0.003629,
-  "elapsed_s": 14.904,
+  "cost_usd": 0.003472,
+  "elapsed_s": 22.948,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -323,7 +323,7 @@
                 0.05,
                 0.52,
                 0.95,
-                0.68
+                0.72
               ],
               "cap_height_px": 76.0,
               "cap_height_pt": 30.34
@@ -348,58 +348,6 @@
           "notes": "text clear and matches request exactly",
           "model": "grok-4.3",
           "request_sha256": "da62cdefbcf1db662b4399596baf103be08eefaa142f563d3ed2decc8f856ae3"
-        },
-        "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "pass",
-        "message": "The smallest text prints at about 43.2 pt at 3 in, above the 6 pt minimum.",
-        "measured": {
-          "items": [
-            {
-              "seen": "Little Crumb",
-              "intended": "Little Crumb",
-              "letters": "L I T T L E / C R U M B",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.05,
-                0.52,
-                0.95,
-                0.68
-              ],
-              "cap_height_px": 76.0,
-              "cap_height_pt": 30.34
-            },
-            {
-              "seen": "Bakery",
-              "intended": "Bakery",
-              "letters": "B A K E R Y",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.22,
-                0.7,
-                0.78,
-                0.92
-              ],
-              "cap_height_px": 75.8,
-              "cap_height_pt": 30.26
-            }
-          ],
-          "notes": "text clear and matches request exactly",
-          "model": "grok-4.3",
-          "request_sha256": "da62cdefbcf1db662b4399596baf103be08eefaa142f563d3ed2decc8f856ae3",
-          "min_cap_height_pt": 30.26,
-          "min_text_pt_equiv": 43.23,
-          "threshold_cap_pt": 4.2,
-          "min_size_in_for_text": 0.59,
-          "max_size_in_at_floor": 3.57,
-          "unmeasured": 0
         },
         "fixer": "none",
         "boxes": []

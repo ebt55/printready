@@ -1,0 +1,1 @@
+The sticker is now a 3 in rounded-rectangle of the whole image (328 PPI). Text "STAY WILD" is readable but only ~2.8 pt at this size (needs 6.3 in or larger to meet 6 pt). A person can cut out part of the art instead. Please approve the proof.

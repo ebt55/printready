@@ -383,6 +383,23 @@ def test_the_spend_cap_stops_a_batch_without_recording_a_budget_outcome(tree, mo
     assert not paths.runs("agent").exists() and budget_script
 
 
+def test_a_rules_vision_check_stopped_by_the_cap_is_not_recorded(tree, monkeypatch):
+    paths = generated()
+    from printready.types import Finding, Report, RunResult
+
+    def capped(*a, **kw):
+        skip = Finding("text_garbled", "skip", "The text could not be checked.",
+                       {"reason": "vision check unavailable (BudgetExceeded: spend cap reached)"}, "none")
+        return RunResult(mode="rules", art=None, before=Report([]), after=Report([skip]), outcome="needs_person",
+                         customer_message="")
+
+    monkeypatch.setattr(runs, "run_rules", capped)
+    with pytest.raises(BudgetExceeded, match="not recorded"):
+        runs.run_split(paths, "rules", runs.select(paths, sample=False)[:1],
+                       client_factory=lambda: ChatClient("fake:v", FakeTransport([]), price=Price()), log=lambda s: None)
+    assert not paths.runs("rules").exists()
+
+
 def test_compare_sheet_marks_disagreements(tree):
     paths = generated()
     rules_rows = runs.run_split(paths, "rules", runs.select(paths, sample=False), log=lambda s: None)

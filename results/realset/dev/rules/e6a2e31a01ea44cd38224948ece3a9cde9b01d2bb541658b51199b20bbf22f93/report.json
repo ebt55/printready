@@ -4,8 +4,8 @@
   "handoff_reason": null,
   "customer_message": "This art has no plain background to cut around, so we suggest a 3 in rounded-rectangle sticker of the whole image; or ask a person to cut out part of the art. If the proof looks right, approve it to print your 3 in rounded-rectangle sticker.",
   "person_notes": [],
-  "cost_usd": 0.003687,
-  "elapsed_s": 17.395,
+  "cost_usd": 0.003469,
+  "elapsed_s": 9.947,
   "spec": {
     "product": "die_cut",
     "size_in": 3.0,
@@ -265,10 +265,10 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.78,
-                0.42,
-                0.88,
-                0.47
+                0.82,
+                0.35,
+                0.92,
+                0.4
               ],
               "cap_height_px": null,
               "cap_height_pt": null
@@ -281,13 +281,13 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.78,
-                0.47,
-                0.88,
-                0.52
+                0.82,
+                0.41,
+                0.93,
+                0.46
               ],
-              "cap_height_px": 34.0,
-              "cap_height_pt": 7.47
+              "cap_height_px": null,
+              "cap_height_pt": null
             },
             {
               "seen": "avocado",
@@ -297,86 +297,18 @@
               "misspelled": false,
               "broken": false,
               "box": [
-                0.78,
-                0.52,
-                0.88,
-                0.57
+                0.82,
+                0.47,
+                0.94,
+                0.53
               ],
-              "cap_height_px": 22.0,
-              "cap_height_pt": 4.83
+              "cap_height_px": 37.0,
+              "cap_height_pt": 8.13
             }
           ],
-          "notes": "clear text on sign only",
+          "notes": "text on sign is clear and correct",
           "model": "grok-4.3",
           "request_sha256": "3807940041b9e8c9f528edeb3e073f576857cecc7a74c3c3dfead3c77f80a50c"
-        },
-        "fixer": "none",
-        "boxes": []
-      },
-      {
-        "check": "text_small",
-        "status": "pass",
-        "message": "The smallest text prints at about 6.9 pt at 3 in, above the 6 pt minimum.",
-        "measured": {
-          "items": [
-            {
-              "seen": "inhale",
-              "intended": "inhale",
-              "letters": "I N H A L E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.78,
-                0.42,
-                0.88,
-                0.47
-              ],
-              "cap_height_px": null,
-              "cap_height_pt": null
-            },
-            {
-              "seen": "exhale",
-              "intended": "exhale",
-              "letters": "E X H A L E",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.78,
-                0.47,
-                0.88,
-                0.52
-              ],
-              "cap_height_px": 34.0,
-              "cap_height_pt": 7.47
-            },
-            {
-              "seen": "avocado",
-              "intended": "avocado",
-              "letters": "A V O C A D O",
-              "garbled": false,
-              "misspelled": false,
-              "broken": false,
-              "box": [
-                0.78,
-                0.52,
-                0.88,
-                0.57
-              ],
-              "cap_height_px": 22.0,
-              "cap_height_pt": 4.83
-            }
-          ],
-          "notes": "clear text on sign only",
-          "model": "grok-4.3",
-          "request_sha256": "3807940041b9e8c9f528edeb3e073f576857cecc7a74c3c3dfead3c77f80a50c",
-          "min_cap_height_pt": 4.83,
-          "min_text_pt_equiv": 6.9,
-          "threshold_cap_pt": 4.2,
-          "min_size_in_for_text": 2.63,
-          "max_size_in_at_floor": 6.32,
-          "unmeasured": 1
         },
         "fixer": "none",
         "boxes": []
