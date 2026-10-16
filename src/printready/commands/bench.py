@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-from printready.commands import not_implemented
+from printready.commands import not_implemented, positive_int
 
 SPLITS = ("dev", "test")
 
@@ -18,8 +19,20 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     actions = p.add_subparsers(dest="bench_action", metavar="ACTION", required=True)
 
-    gen = actions.add_parser("generate", help="write benchmark PNGs and the manifest")
+    gen = actions.add_parser(
+        "generate",
+        help="write benchmark PNGs and the manifest",
+        description="Render the planted-defect benchmark into data/bench/<split>/ and write "
+        "data/bench/manifest-<split>.jsonl. The test split needs a committed PREREG.md.",
+    )
     gen.add_argument("--split", choices=SPLITS, default="dev")
+    gen.add_argument("--limit", type=positive_int, default=None,
+                     help="only the first N samples of each family (writes manifest-<split>-limitN.jsonl)")
+    gen.add_argument("--jobs", type=positive_int, default=None, help="worker processes (default: up to 8)")
+    gen.add_argument("--root", type=Path, default=Path("."),
+                     help="repo root that data/bench/ and results/bench/ live under (default: .)")
+    gen.add_argument("--profile", type=Path, default=None,
+                     help="profile YAML (default: shipped die-cut profile)")
     gen.set_defaults(func=run_generate)
 
     runp = actions.add_parser("run", help="run a mode over a split")
@@ -35,7 +48,14 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def run_generate(args: argparse.Namespace) -> int:
-    return not_implemented("bench", "K2")
+    from printready.bench.generate import PreregMissing, generate_split
+
+    try:
+        generate_split(args.split, args.root, limit=args.limit, jobs=args.jobs, profile_path=args.profile)
+    except PreregMissing as exc:
+        print(f"bench generate: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def run_run(args: argparse.Namespace) -> int:
