@@ -1,0 +1,1 @@
+Removed the solid background and joined the book and text with a 0.1 in white border. At 3 in this prints at 132 PPI and will look soft. It prints sharp up to 1.4 in and acceptably up to 2.7 in; please pick a size. Approve this proof?

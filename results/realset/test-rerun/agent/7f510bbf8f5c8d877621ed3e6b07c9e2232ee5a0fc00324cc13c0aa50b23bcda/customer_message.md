@@ -1,0 +1,1 @@
+Removed the solid background and added a 0.1 in white border. At 3 in this prints at 258 PPI and will look soft. It prints sharp up to 2.6 in and acceptably up to 5.0 in; please pick a size. Approve this proof?
