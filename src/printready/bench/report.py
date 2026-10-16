@@ -257,6 +257,16 @@ def _vision_items(entry: dict | None) -> list[dict[str, Any]]:
     return ((entry or {}).get("measured") or {}).get("items") or []
 
 
+def _cap_text(item: dict[str, Any]) -> str:
+    """Cap height as reported: from the model's cap_height_frac (first vision version) or measured
+    by code inside the model's text box (later versions)."""
+    pt = item.get("cap_height_pt")
+    pt_text = "n/a" if pt is None else f"{pt} pt"
+    if item.get("cap_height_frac") is not None:
+        return f"{item['cap_height_frac']} -> {pt_text}"
+    return f"{pt_text} (measured in box)"
+
+
 def vision_metrics(rows, preds, vision: dict[str, dict], run_info: dict | None) -> dict[str, Any]:
     """Precision and recall of the live vision checks on the text family. A `skip` (unreadable
     answer, API error) counts as not flagged; a sample that was not run is left out and counted."""
@@ -297,8 +307,7 @@ def vision_metrics(rows, preds, vision: dict[str, dict], run_info: dict | None) 
                 "gt_cap_pt": row["gt"].get("cap_height_pt"),
                 "seen": "; ".join(f"{i.get('seen')} -> {i.get('intended')}" + (" (garbled)" if i.get("garbled") else "")
                                   for i in items) or "no text",
-                "model_cap": "; ".join(f"{i.get('cap_height_frac')} -> {i.get('cap_height_pt')} pt" for i in items)
-                or "n/a",
+                "model_cap": "; ".join(_cap_text(i) for i in items) or "n/a",
                 "reason": measured.get("error") or measured.get("reason"),
             })
     out["threshold_cap_pt"] = threshold_pt
@@ -453,7 +462,7 @@ def markdown(s: dict[str, Any]) -> str:
         if v["disagreements"]:
             out += [f"Text is small below a cap height of {v['threshold_cap_pt']} pt.", "",
                     "| sample | variant | check | planted (intended) | expected | predicted | model read "
-                    "| model cap_height_frac -> pt | true cap pt |",
+                    "| cap height (model frac -> pt, or measured) | true cap pt |",
                     "|---|---|---|---|---|---|---|---|---|"]
             for d in v["disagreements"]:
                 reason = f" [{d['reason']}]" if d["reason"] else ""

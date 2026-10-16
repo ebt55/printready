@@ -109,8 +109,8 @@ def test_vision_run_offline_with_the_fake_provider(generated, tmp_path, monkeypa
     that scores one garbled reading against the planted label."""
     root, manifest, rows = generated
     text_row = next(r for r in rows if r["family"] == "text")
-    answer = {"text": [{"seen": "XYZ", "intended": text_row["param"]["intended"], "garbled": True,
-                        "cap_height_frac": 0.09}], "notes": ""}
+    answer = {"text": [{"seen": "XYZ", "intended": text_row["param"]["intended"], "broken": False,
+                        "box": [0.2, 0.4, 0.8, 0.6]}], "notes": ""}  # the vision prompt's answer schema
     script = tmp_path / "fake.json"
     script.write_text(json.dumps([{"text": json.dumps(answer), "usage": {"in": 700, "out": 200}}]), encoding="utf-8")
     monkeypatch.setenv("PRINTREADY_SPEND_LEDGER", str(tmp_path / "ledger.jsonl"))
