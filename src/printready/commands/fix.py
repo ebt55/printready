@@ -1,7 +1,7 @@
 """`printready fix ART --size 3 [--mode rules|agent]`: check, fix, cut line, proof, report.
 
-Rules mode runs offline; with --model it also runs the vision text check. Agent mode needs
-printready.agent.run_agent and printready.llm.make_client (chunk K4).
+Rules mode runs offline; with --model it also runs the vision text check. Agent mode runs the
+tool-use agent (printready.agent) with an LLM client from printready.llm.
 Exit 0 for ready/fixable, 1 for needs_person, 2 for a usage, profile or setup error.
 """
 
@@ -42,7 +42,8 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def _client(model: str, env_file: Path | None):
-    """Build an LLM client lazily (K4 code); raises on any setup problem."""
+    """Build an LLM client (imported lazily so rules mode never loads the LLM code); raises on any
+    setup problem such as a missing key."""
     from printready import llm
 
     if env_file is not None:
@@ -104,9 +105,6 @@ def run(args: argparse.Namespace) -> int:
 
             client = _client(model, args.env_file)
             result = run_agent(args.art, spec, profile, out_dir, client)
-        except NotImplementedError:
-            print("fix --mode agent: not implemented yet (chunk K4)", file=sys.stderr)
-            return 2
         except (ImportError, OSError, KeyError, ValueError, RuntimeError) as exc:
             print(f"fix --mode agent: cannot run with {model}: {exc}", file=sys.stderr)
             return 2

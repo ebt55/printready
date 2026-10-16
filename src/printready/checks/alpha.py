@@ -1,10 +1,15 @@
-"""`soft_alpha`: a wide semi-transparent band (shadow, glow) leaves the cut position ambiguous."""
+"""`soft_alpha` check: is there a wide semi-transparent band (shadow, glow) around the art?
+
+The statistic is the 95th percentile distance, in inches, from each partial-alpha pixel (16-239)
+to the nearest opaque art pixel (240+). Above soft_alpha_max_in it warns for a person: nobody can
+say where the cut belongs. It reads the art layer only (geometry.art_alpha), so the white border a
+fix paints can never hide a shadow."""
 
 from __future__ import annotations
 
 import math
 
-from printready.checks._common import r, skip_needs_mask
+from printready.checks._common import rounded, skip_needs_mask
 from printready.geometry import PARTIAL_ALPHA, art_alpha, bbox, soft_alpha_p95_px
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
@@ -19,7 +24,7 @@ def check_soft_alpha(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     p95_px = soft_alpha_p95_px(alpha)
     band_in = p95_px / art.ppi
     measured = {
-        "band_p95_in": None if math.isinf(band_in) else r(band_in),
+        "band_p95_in": None if math.isinf(band_in) else rounded(band_in),
         "limit_in": profile.soft_alpha_max_in,
         "partial_px": int(partial.sum()),
     }

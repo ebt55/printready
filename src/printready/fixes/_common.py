@@ -1,4 +1,5 @@
-"""Helpers shared by the fix modules."""
+"""Helpers shared by the fix modules: refusing without changing anything, and building the new
+Artwork a fix returns without touching the input."""
 
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ def refuse(art: Artwork, note: str, **measured: Any) -> FixResult:
     return FixResult(art=art.copy(), ok=False, note=note, measured=measured)
 
 
-def evolve(art: Artwork, **changes: Any) -> Artwork:
+def copy_with(art: Artwork, **changes: Any) -> Artwork:
     """A new Artwork with `changes`, deep-copying everything else (history and meta included)."""
     base = art.copy()
     for key, value in changes.items():

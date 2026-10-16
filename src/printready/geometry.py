@@ -2,7 +2,7 @@
 
 Masks are HxW bool arrays. Distances are Euclidean, pixel centre to pixel centre, computed with
 OpenCV's exact distance transform, so dilation by r px keeps every pixel whose centre lies
-within r of a mask pixel. Physical scale (01-DESIGN.md, Units):
+within r of a mask pixel. Physical scale:
     ppi = subject_bbox_long_px / (size_in - 2 * profile.border_in)
 """
 
@@ -62,12 +62,6 @@ def min_margin_px(mask: np.ndarray) -> int | None:
 
 # ---------------------------------------------------------------- morphology
 
-def disk_kernel(radius_in: float, ppi: float) -> np.ndarray:
-    """uint8 disc structuring element of `radius_in` inches at `ppi` (for OpenCV morphology)."""
-    r = max(0, int(round(radius_in * ppi)))
-    return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
-
-
 def distance_to(mask: np.ndarray) -> np.ndarray:
     """float32 distance from every pixel to the nearest True pixel of `mask` (mask must be non-empty)."""
     return cv2.distanceTransform((~mask).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
@@ -114,6 +108,8 @@ def smooth(mask: np.ndarray, sigma_px: float) -> np.ndarray:
 
 @dataclass
 class Components:
+    """Connected parts of a mask after the speck filter."""
+
     masks: list[np.ndarray]  # significant components, largest first
     specks: int  # components dropped as specks
     speck_px: int  # weighted area of the dropped specks
@@ -210,6 +206,8 @@ def soft_alpha_p95_px(alpha: np.ndarray) -> float:
 
 @dataclass
 class EdgeRun:
+    """The longest stretch of mask pixels lying on one canvas edge."""
+
     length_px: int
     edge: str  # "top" | "bottom" | "left" | "right" | "" when no run
     start: int  # position along the edge, px
@@ -254,6 +252,8 @@ def edge_pixel_count(mask: np.ndarray) -> int:
 
 @dataclass
 class Ring:
+    """How uniform the outer band of an image is, and its dominant colour."""
+
     uniform_frac: float  # share of ring pixels within delta_e of the dominant colour
     rgb: tuple[int, int, int]  # dominant ring colour
     lab: tuple[float, float, float]
@@ -263,9 +263,9 @@ class Ring:
 def ring_pixels(rgb: np.ndarray, band_frac: float = RING_FRAC) -> tuple[np.ndarray, int]:
     """The outer band of an HxWx3 image as Nx3, plus the band width in px."""
     h, w = rgb.shape[:2]
-    b = max(1, int(round(band_frac * min(h, w))))
-    parts = [rgb[:b], rgb[h - b:], rgb[b:h - b, :b], rgb[b:h - b, w - b:]]
-    return np.concatenate([p.reshape(-1, 3) for p in parts]), b
+    band = max(1, int(round(band_frac * min(h, w))))
+    parts = [rgb[:band], rgb[h - band:], rgb[band:h - band, :band], rgb[band:h - band, w - band:]]
+    return np.concatenate([p.reshape(-1, 3) for p in parts]), band
 
 
 def distinct_colours(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -297,17 +297,17 @@ def ring_uniformity(rgb: np.ndarray, delta_e: float, band_frac: float = RING_FRA
     The dominant colour is seeded by the most common coarse RGB bin (32 levels per channel) and
     refined as the median CIELAB of that bin's pixels.
     """
-    ring, b = ring_pixels(rgb, band_frac)
-    keys = (ring[:, 0] // 32).astype(np.int32) * 64 + (ring[:, 1] // 32) * 8 + (ring[:, 2] // 32)
-    in_mode = keys == np.bincount(keys).argmax()
+    ring, band = ring_pixels(rgb, band_frac)
+    coarse_bin = (ring[:, 0] // 32).astype(np.int32) * 64 + (ring[:, 1] // 32) * 8 + (ring[:, 2] // 32)
+    in_mode = coarse_bin == np.bincount(coarse_bin).argmax()
     colours, inverse = distinct_colours(ring)
     lab = to_lab(colours)
     dominant = np.median(lab[inverse[in_mode]], axis=0)
     de = deltaE_ciede2000(lab, np.broadcast_to(dominant, lab.shape))[inverse]
-    rgb_dom = np.median(ring[in_mode], axis=0).round().astype(int)
+    dominant_rgb = np.median(ring[in_mode], axis=0).round().astype(int)
     return Ring(
         uniform_frac=float(np.mean(de <= delta_e)),
-        rgb=(int(rgb_dom[0]), int(rgb_dom[1]), int(rgb_dom[2])),
+        rgb=(int(dominant_rgb[0]), int(dominant_rgb[1]), int(dominant_rgb[2])),
         lab=(float(dominant[0]), float(dominant[1]), float(dominant[2])),
-        band_px=b,
+        band_px=band,
     )

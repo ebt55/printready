@@ -17,8 +17,7 @@ from typing import Any, Callable
 import numpy as np
 
 from printready import fixes
-from printready.fixes.background import background_lab_distance
-from printready.geometry import ring_uniformity
+from printready.geometry import delta_e_to, ring_uniformity
 from printready.profile import Profile
 from printready.types import Artwork, FixResult, Spec, Step
 
@@ -57,7 +56,7 @@ def removal_damage(before: Artwork, after: Artwork, profile: Profile) -> dict[st
     bg_lab = ring_uniformity(before.rgba[..., :3], profile.bg_delta_e).lab
     far = 0
     if removed.any():
-        distance = background_lab_distance(before.rgba[..., :3][removed], bg_lab)
+        distance = delta_e_to(before.rgba[..., :3][removed], bg_lab)
         far = int((distance > 2 * profile.bg_delta_e).sum())
     kept = int(after.subject.sum()) if after.subject is not None else 0
     return {"removed_px": int(removed.sum()), "far_px": far, "kept_px": kept, "frac": far / max(kept, 1)}
@@ -66,16 +65,16 @@ def removal_damage(before: Artwork, after: Artwork, profile: Profile) -> dict[st
 def measure(fix_name: str, before: Artwork, after: Artwork, profile: Profile) -> dict[str, Any]:
     """The guard result for one applied fix: {"metric", "label", "value", "limit", "passed", ...}."""
     if fix_name in REMOVAL_FIXES:
-        d = removal_damage(before, after, profile)
-        value, limit = round(d["frac"], 5), profile.damage_max_frac
+        damage = removal_damage(before, after, profile)
+        value, limit = round(damage["frac"], 5), profile.damage_max_frac
         return {
             "metric": "damage_frac",
             "label": "removed subject colour",
             "value": value,
             "limit": limit,
             "passed": value <= limit,
-            "far_px": d["far_px"],
-            "kept_px": d["kept_px"],
+            "far_px": damage["far_px"],
+            "kept_px": damage["kept_px"],
         }
     value = subject_px_changed(before, after)
     return {"metric": "subject_px_changed", "label": "subject pixels changed", "value": value, "limit": 0, "passed": value == 0}

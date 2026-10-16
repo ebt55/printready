@@ -1,4 +1,8 @@
-"""`file`: the image decodes, is under the upload limit, and is at least 64 px a side."""
+"""`file` check: can this upload be used at all?
+
+Passes when the image is at most max_upload_mb, at least 64 px on each side, and not fully
+transparent. A file that does not decode never becomes Artwork; callers report it with
+`load_failure`. Size and format come from `art.meta`, so padding added later never changes them."""
 
 from __future__ import annotations
 
@@ -28,11 +32,11 @@ def check_file(art: Artwork, spec: Spec, profile: Profile) -> Finding:
         return Finding("file", "fail", msg, measured, "none")
     if art.subject is not None and not art.subject.any():
         return Finding("file", "fail", "The image is fully transparent, so there is nothing to print.", measured, "none")
-    details = ", ".join(part for part in (f"{w} x {h} px", fmt, _size(nbytes)) if part)
+    details = ", ".join(part for part in (f"{w} x {h} px", fmt, _human_size(nbytes)) if part)
     return Finding("file", "pass", f"The file opens fine ({details}).", measured, "none")
 
 
-def _size(nbytes: int | None) -> str | None:
+def _human_size(nbytes: int | None) -> str | None:
     if nbytes is None:
         return None
     return f"{nbytes / BYTES_PER_MB:.1f} MB" if nbytes >= 100_000 else f"{max(1, round(nbytes / 1000))} KB"

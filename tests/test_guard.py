@@ -5,7 +5,7 @@ import json
 import cv2
 import numpy as np
 
-from printready.fixes._common import evolve
+from printready.fixes._common import copy_with
 from printready.guard import apply_fix
 from printready.imageio import artwork_from_rgba
 from printready.profile import load_profile
@@ -56,7 +56,7 @@ def test_damaging_background_removal_is_reverted():
         cv2.circle(hole, (150, 150), 40, 1, -1)
         rgba[hole.astype(bool)] = 0
         subject = good.subject & ~hole.astype(bool)
-        return FixResult(evolve(good, rgba=rgba, subject=subject, history=[]), ok=True, note="Removed the background.")
+        return FixResult(copy_with(good, rgba=rgba, subject=subject, history=[]), ok=True, note="Removed the background.")
 
     res = apply_fix(remove_background, art, SPEC, P)
     assert res.damaged and not res.ok
@@ -73,7 +73,7 @@ def test_border_fix_that_touches_subject_is_reverted():
     def add_border(art, spec, profile, border_in=None):
         rgba = art.rgba.copy()
         rgba[150, 150] = (0, 0, 0, 255)  # one subject pixel changed
-        return FixResult(evolve(art, rgba=rgba), ok=True, note="Added a border.")
+        return FixResult(copy_with(art, rgba=rgba), ok=True, note="Added a border.")
 
     res = apply_fix(add_border, art, SPEC, P)
     assert res.damaged

@@ -26,6 +26,7 @@ class ImageLoadError(ValueError):
 
 
 def has_real_alpha(alpha: np.ndarray) -> bool:
+    """True if the alpha channel is used, not just a flat 255 (or a few stray pixels)."""
     return float(np.mean(alpha < REAL_ALPHA_BELOW)) > REAL_ALPHA_MIN_FRAC
 
 

@@ -3,7 +3,8 @@
 Before a border exists: components of the subject dilated by profile.border_in ONLY (no closing),
 holes filled. Once a fix has built `art.cut`: components of the cut itself (border art.border_in).
 Components holding less subject than speck_max_in2 are specks: dropped and counted. Several
-pieces are fixer auto if they join at a dilation of max_bridge_border_in, else person.
+pieces are fixer auto if they join at a dilation of max_bridge_border_in and number at most
+max_pieces; otherwise a person decides the cut.
 """
 
 from __future__ import annotations

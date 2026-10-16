@@ -22,17 +22,17 @@ def test_fix_needs_person_exits_1(tmp_path):
     assert main(["fix", str(bad), "--size", "3", "--out", str(tmp_path / "out")]) == 1
 
 
-def test_fix_agent_reports_when_not_available(tmp_path, monkeypatch, capsys):
+def test_fix_agent_reports_setup_failure(tmp_path, monkeypatch, capsys):
     import printready.agent as agent
     import printready.llm as llm
 
     def not_yet(*args, **kwargs):
-        raise NotImplementedError("K4")
+        raise RuntimeError("no agent here")
 
     monkeypatch.setattr(llm, "make_client", lambda model: object(), raising=False)
     monkeypatch.setattr(agent, "run_agent", not_yet, raising=False)
     code = main(["fix", str(FIXTURES / "badge.png"), "--size", "1", "--mode", "agent", "--out", str(tmp_path)])
-    assert code == 2 and "not implemented yet (chunk K4)" in capsys.readouterr().err
+    assert code == 2 and "fix --mode agent: cannot run with" in capsys.readouterr().err
 
 
 def test_fix_size_too_small(tmp_path, capsys):

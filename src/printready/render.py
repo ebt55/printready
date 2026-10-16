@@ -1,4 +1,6 @@
-"""Proof and overlay images (PIL, RGB)."""
+"""The two pictures a person looks at: the proof (art, white border and magenta cut line over a
+checkerboard, labelled with size and PPI) and the overlay (the original art with a box and label
+for every warn/fail finding). Both are RGB PIL images."""
 
 from __future__ import annotations
 
@@ -13,7 +15,7 @@ from printready.types import SUBJECT_ALPHA, Artwork, Report, Spec
 
 MAGENTA = (255, 0, 255)
 STATUS_COLOURS = {"fail": (220, 30, 30), "warn": (240, 150, 0)}
-CHECKER = (255, 255, 255), (222, 222, 222)
+CHECKER_GREYS = (255, 222)  # light and dark squares
 PREVIEW_MARGIN_PX = 4
 
 
@@ -28,7 +30,8 @@ def checkerboard(h: int, w: int) -> np.ndarray:
     """HxWx3 uint8 light checkerboard (shows where the sticker is transparent)."""
     square = max(8, min(h, w) // 24)
     board = ((np.arange(h) // square) % 2)[:, None] ^ ((np.arange(w) // square) % 2)[None, :]
-    return np.where(board[..., None].astype(bool), np.uint8(CHECKER[1][0]), np.uint8(CHECKER[0][0])).repeat(3, axis=2)
+    light, dark = (np.uint8(grey) for grey in CHECKER_GREYS)
+    return np.where(board[..., None].astype(bool), dark, light).repeat(3, axis=2)
 
 
 def composite(rgba: np.ndarray, under: np.ndarray) -> np.ndarray:

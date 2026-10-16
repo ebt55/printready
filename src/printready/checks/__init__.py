@@ -1,4 +1,8 @@
-"""Deterministic checks, one module per check family. `run_checks` is the public entry point."""
+"""Deterministic checks: one module per check, each a pure function of (Artwork, Spec, Profile).
+
+`run_checks` runs them in DETERMINISTIC_CHECK_IDS order and returns one Finding each (the text
+checks need a vision model and live in printready.vision). A check never measures what a fix added
+(border pixels, padding), so re-checking after a fix only moves the checks that fix addresses."""
 
 from __future__ import annotations
 

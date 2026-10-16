@@ -1,4 +1,5 @@
-"""Helpers shared by the check modules."""
+"""Helpers shared by the check modules: the skip finding for mask-based checks on art that still
+has its background, and rounding for the numbers that go into report.json."""
 
 from __future__ import annotations
 
@@ -18,6 +19,6 @@ def skip_needs_mask(check: str) -> Finding:
     )
 
 
-def r(value: float, places: int = 4) -> float:
+def rounded(value: float, places: int = 4) -> float:
     """Round a measurement for report.json."""
     return round(float(value), places)

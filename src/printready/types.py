@@ -1,4 +1,6 @@
-"""The shared contract (see 01-DESIGN.md). Owned by the core agent; every other module imports only.
+"""The data contract every module shares: the order (Spec), check results (Finding, Report), the
+artwork being fixed (Artwork) and its fix history (Step), fix and run results, and the one
+outcome rule that turns a final report into ready / fixable / needs_person.
 
 Units: `Spec.size_in` is the longest side of the finished sticker, border included.
 `Artwork.ppi = subject_bbox_long_px / (size_in - 2 * profile.border_in)`, set once when the subject
@@ -20,7 +22,7 @@ SUBJECT_ALPHA = 128  # subject = pixels with alpha >= this, once a subject is kn
 
 Status = Literal["pass", "warn", "fail", "skip"]
 Fixer = Literal["auto", "customer", "person", "none"]  # who can resolve a failed/warned finding
-Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image, also Ebin's label set
+Outcome = Literal["ready", "fixable", "needs_person"]  # the decision per image; also the label set for real images
 Mode = Literal["rules", "agent"]
 
 STATUSES: tuple[str, ...] = get_args(Status)

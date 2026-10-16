@@ -1,10 +1,10 @@
-"""Rules mode and the shared output writer.
+"""Rules mode (a fixed sequence of checks and fixes) and the output writer both modes share.
 
 Fixed order: load -> check -> remove_background if background fail/auto -> re-check ->
 pad_canvas if edge_crop warn/auto or the margin is under the border it will need -> add_border ->
 bridge_islands if islands fail/auto -> re-check -> check_text if a client is given -> outcome().
 
-Events for the workbench (`on_event(dict)`, every payload JSON-ready):
+Progress events for the local web UI, `printready serve` (`on_event(dict)`, payloads JSON-ready):
   {"type": "findings", "stage": "before"|"after", "report": Report.to_dict()}
   {"type": "step", "index": n, "step": Step.to_dict(), "preview": "step-<n>-<fix>.png"}
   {"type": "done", "result": RunResult.to_dict()}
@@ -32,12 +32,14 @@ CHECK_FOR_FIX = {"remove_background": "background", "pad_canvas": "edge_crop", "
 MAX_MESSAGE_WORDS = 80
 
 
-def _is(report: Report, check: str, status: str, fixer: str | None = None) -> bool:
+def _has(report: Report, check: str, status: str, fixer: str | None = None) -> bool:
+    """Whether `check` reported `status` (and `fixer`, if given)."""
     f = report.by_check(check)
     return f is not None and f.status == status and (fixer is None or f.fixer == fixer)
 
 
 def _needs_pad(report: Report, profile: Profile, will_bridge: bool) -> bool:
+    """Pad when the art touches an edge, or its margin is narrower than the border it will get."""
     edge = report.by_check("edge_crop")
     if edge is None or edge.status in ("skip", "fail"):  # fail = art cut off: padding would hide it
         return False
@@ -49,7 +51,8 @@ def _needs_pad(report: Report, profile: Profile, will_bridge: bool) -> bool:
 
 
 def _vision(art: Artwork, spec: Spec, profile: Profile, client: Any) -> tuple[list[Finding], float]:
-    """check_text from printready.vision (K4); unavailable or crashing -> skip findings."""
+    """Text findings from printready.vision and their cost; if the vision check is unavailable or
+    fails, two `skip` findings say so (a failure is an outcome, never a crash)."""
     cost0 = float(getattr(client, "cost_usd", 0.0) or 0.0)
     try:
         from printready.vision import check_text
@@ -74,28 +77,29 @@ def _mark_refused(after: Report, history: list[Step]) -> None:
 
 # ---------------------------------------------------------------- messages
 
-def _change(step: Step) -> str | None:
-    m = step.measured
+def _change_phrase(step: Step) -> str | None:
+    """How an applied fix reads in the customer message ("We ...")."""
+    border = step.measured.get("border_in", 0.1)
     return {
         "remove_background": "removed the plain background",
         "pad_canvas": "added a little space around the edges",
-        "add_border": f"added a {m.get('border_in', 0.1):g} in white border with a cut line",
-        "bridge_islands": f"widened the border to {m.get('border_in', 0):.2f} in so the pieces cut as one sticker",
+        "add_border": f"added a {border:g} in white border with a cut line",
+        "bridge_islands": f"widened the border to {border:.2f} in so the pieces cut as one sticker",
     }.get(step.fix)
 
 
-def _join(items: list[str]) -> str:
+def _join_and(items: list[str]) -> str:
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
 def customer_message(result: Outcome, art: Artwork | None, after: Report, spec: Spec) -> str:
     """Rules-mode template: what changed, what the customer must decide, one approve line (< 80 words)."""
     size = f"{spec.size_in:g} in"
-    changes = [c for s in (art.history if art else []) if s.ok and (c := _change(s))]
-    parts = [f"We {_join(changes)}."] if changes else []
+    changes = [c for s in (art.history if art else []) if s.ok and (c := _change_phrase(s))]
+    parts = [f"We {_join_and(changes)}."] if changes else []
     res = after.by_check("resolution")
     if res is not None and res.status in ("warn", "fail") and res.fixer == "customer":
-        m = res.measured
+        m = res.measured  # ppi and the largest sharp sizes
         if res.status == "warn":
             parts.append(
                 f"At {size} it prints at {m['ppi']:.0f} PPI; at {m['max_size_in_at_target']:.1f} in or smaller it is fully sharp. "
@@ -124,6 +128,8 @@ def customer_message(result: Outcome, art: Artwork | None, after: Report, spec: 
 
 
 def person_notes(art: Artwork | None, after: Report) -> list[str]:
+    """One line per thing a person must look at: refused or reverted fixes, findings left to a
+    person, and checks that could not be verified."""
     notes = []
     for s in art.history if art else []:
         if s.damaged:
@@ -171,7 +177,8 @@ def run_rules(
         emit({"type": "findings", "stage": "before", "report": before.to_dict()})
         art, previews = original, {}
 
-        def step(fix: str) -> None:
+        def run_fix(fix: str) -> None:
+            """Apply one fix through the damage guard, save its preview and announce it."""
             nonlocal art
             art = apply_fix(fix, art, spec, profile).art
             n = len(previews) + 1
@@ -180,16 +187,16 @@ def run_rules(
             emit({"type": "step", "index": n, "step": art.history[-1].to_dict(), "preview": name})
 
         current = before
-        if _is(before, "background", "fail", "auto"):
-            step("remove_background")
+        if _has(before, "background", "fail", "auto"):
+            run_fix("remove_background")
             current = run_checks(art, spec, profile)
         if art.subject is not None:
-            will_bridge = _is(current, "islands", "fail", "auto")
+            will_bridge = _has(current, "islands", "fail", "auto")
             if _needs_pad(current, profile, will_bridge):
-                step("pad_canvas")
-            step("add_border")
+                run_fix("pad_canvas")
+            run_fix("add_border")
             if will_bridge:
-                step("bridge_islands")
+                run_fix("bridge_islands")
 
         after = run_checks(art, spec, profile)
         cost = 0.0

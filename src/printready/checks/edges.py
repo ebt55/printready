@@ -1,9 +1,12 @@
-"""`edge_crop`: subject pixels on the canvas edge. A long run means the art is cut off (person);
-a short touch can be fixed by padding the canvas (auto)."""
+"""`edge_crop` check: does the art run into the edge of the image?
+
+Measures the longest run of subject pixels along any canvas edge. Longer than edge_cut_min_run_in
+means the art is cut off (person). A shorter touch, or a built cut that runs off the canvas, is
+fixed by pad_canvas (auto)."""
 
 from __future__ import annotations
 
-from printready.checks._common import r, skip_needs_mask
+from printready.checks._common import rounded, skip_needs_mask
 from printready.geometry import edge_pixel_count, longest_edge_run, min_margin_px
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
@@ -17,11 +20,11 @@ def check_edge_crop(art: Artwork, spec: Spec, profile: Profile) -> Finding:
     margin = min_margin_px(art.subject)
     cut_on_edge = art.cut is not None and edge_pixel_count(art.cut) > 0
     measured = {
-        "longest_run_in": r(run_in),
+        "longest_run_in": rounded(run_in),
         "longest_run_px": run.length_px,
         "edge": run.edge or None,
         "edge_px": edge_pixel_count(art.subject),
-        "min_margin_in": None if margin is None else r(margin / art.ppi),
+        "min_margin_in": None if margin is None else rounded(margin / art.ppi),
         "limit_in": profile.edge_cut_min_run_in,
         "cut_on_edge": cut_on_edge,
     }

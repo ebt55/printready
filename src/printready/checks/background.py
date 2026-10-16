@@ -1,9 +1,12 @@
-"""`background`: an opaque image needs its background removed; a one-colour ring can be
-removed automatically, anything else (gradient, texture, photo) goes to a person."""
+"""`background` check: does the art still sit on a background?
+
+Art with real transparency passes. An opaque image fails: when at least bg_ring_uniform_frac of
+its outer 2 % ring is within bg_delta_e (CIEDE2000) of one colour, remove_background can take it
+off (auto); gradients, textures and photos need a person."""
 
 from __future__ import annotations
 
-from printready.checks._common import r
+from printready.checks._common import rounded
 from printready.geometry import ring_uniformity
 from printready.profile import Profile
 from printready.types import Artwork, Finding, Spec
@@ -20,8 +23,8 @@ def check_background(art: Artwork, spec: Spec, profile: Profile) -> Finding:
         "real_alpha": False,
         "colour_rgb": list(ring.rgb),
         "colour_hex": colour,
-        "colour_lab": [r(v, 2) for v in ring.lab],
-        "ring_uniform_frac": r(ring.uniform_frac),
+        "colour_lab": [rounded(v, 2) for v in ring.lab],
+        "ring_uniform_frac": rounded(ring.uniform_frac),
         "ring_band_px": ring.band_px,
     }
     if ring.uniform_frac >= profile.bg_ring_uniform_frac:

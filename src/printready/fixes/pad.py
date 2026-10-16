@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from printready.fixes._common import evolve, refuse
+from printready.fixes._common import copy_with, refuse
 from printready.geometry import bbox, longest_edge_run
 from printready.profile import Profile
 from printready.types import Artwork, FixResult, Spec
@@ -30,20 +30,20 @@ def pad_canvas(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
             f"The art is cut off along the {run.edge} edge ({run.length_px / art.ppi:.2f} in); padding cannot restore it.",
             run_in=round(run.length_px / art.ppi, 4),
         )
-    need = int(math.ceil(profile.max_bridge_border_in * art.ppi)) + EXTRA_PX
+    margin_px = int(math.ceil(profile.max_bridge_border_in * art.ppi)) + EXTRA_PX
     x0, y0, x1, y1 = box
-    left, top = max(0, need - x0), max(0, need - y0)
-    right, bottom = max(0, need - (art.width - x1)), max(0, need - (art.height - y1))
+    left, top = max(0, margin_px - x0), max(0, margin_px - y0)
+    right, bottom = max(0, margin_px - (art.width - x1)), max(0, margin_px - (art.height - y1))
     if not (left or top or right or bottom):
         return refuse(art, "The art already has room for the border; nothing to pad.")
     pads = ((top, bottom), (left, right))
-    new = evolve(
+    new = copy_with(
         art,
         rgba=np.pad(art.rgba, (*pads, (0, 0))),
         subject=np.pad(art.subject, pads),
         cut=None if art.cut is None else np.pad(art.cut, pads),
         offset=(art.offset[0] + left, art.offset[1] + top),
     )
-    measured = {"left_px": left, "top_px": top, "right_px": right, "bottom_px": bottom, "margin_in": round(need / art.ppi, 4)}
+    measured = {"left_px": left, "top_px": top, "right_px": right, "bottom_px": bottom, "margin_in": round(margin_px / art.ppi, 4)}
     note = f"Added transparent space around the art (up to {max(pads[0] + pads[1])} px) so the border fits."
     return FixResult(art=new, ok=True, note=note, measured=measured)

@@ -1,6 +1,7 @@
 """Static report.html per image: one self-contained page (images inline as data URLs) with
 before | after, findings table, fix timeline with the damage-guard numbers, customer message and
-person notes. The workbench is the real UI; this page is the file you can email or archive."""
+person notes. The interactive view is the local web UI (`printready serve`); this page is the
+file you can email or archive."""
 
 from __future__ import annotations
 

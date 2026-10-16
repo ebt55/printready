@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
-from printready.fixes._common import evolve, refuse
+
+from printready.fixes._common import copy_with, refuse
 from printready.geometry import (
     components,
     count_pieces,
@@ -32,11 +33,6 @@ INTERIOR_WINDOW_PX = 5  # window for the nearby interior subject colour
 MIN_CONTRAST_RGB = 30.0  # below this subject/background RGB distance, alpha cannot be estimated: keep opaque
 
 
-def background_lab_distance(rgb: np.ndarray, lab_colour: tuple[float, float, float]) -> np.ndarray:
-    """CIEDE2000 distance of every pixel of a ...x3 uint8 array from one CIELAB colour."""
-    return delta_e_to(rgb, lab_colour)
-
-
 def flood_from_edge(candidate: np.ndarray) -> np.ndarray:
     """Pixels of `candidate` 4-connected to the canvas border (4-connectivity cannot leak
     through a diagonal gap in an outline)."""
@@ -47,31 +43,39 @@ def flood_from_edge(candidate: np.ndarray) -> np.ndarray:
 
 
 def _feather(rgb: np.ndarray, keep: np.ndarray, bg_rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Alpha and unblended colour for the kept pixels that touch removed ones."""
+    """RGB and alpha after removal, with the 1 px ring of kept pixels that touch removed ones
+    feathered. An edge pixel is modelled as coverage * foreground + (1 - coverage) * background,
+    where the foreground is the mean colour of nearby interior pixels: coverage becomes its alpha
+    and the background share is subtracted from its colour, so no background fringe remains."""
     alpha = np.where(keep, 255, 0).astype(np.uint8)
     out = np.where(keep[..., None], rgb, 0).astype(np.uint8)
     edge = keep & dilate(~keep, EDGE_RADIUS_PX)
     interior = (keep & ~edge).astype(np.float32)
     window = (INTERIOR_WINDOW_PX, INTERIOR_WINDOW_PX)
-    num = cv2.blur(rgb.astype(np.float32) * interior[..., None], window)
-    den = cv2.blur(interior, window)
+    colour_sum = cv2.blur(rgb.astype(np.float32) * interior[..., None], window)
+    weight_sum = cv2.blur(interior, window)
 
-    c = rgb[edge].astype(np.float32)
-    has_f = den[edge] > 1e-6
-    f = np.where(has_f[:, None], num[edge] / np.maximum(den[edge], 1e-6)[:, None], c)
-    fb = f - bg_rgb
-    span = np.sum(fb * fb, axis=1)
-    a = np.sum((c - bg_rgb) * fb, axis=1) / np.maximum(span, 1e-6)
-    a = np.where(has_f & (span >= MIN_CONTRAST_RGB**2), np.clip(a, 0.0, 1.0), 1.0)
-    safe = np.maximum(a, 1e-3)[:, None]
-    unblended = np.clip((c - (1.0 - a)[:, None] * bg_rgb) / safe, 0, 255)
-    alpha[edge] = np.round(255 * a).astype(np.uint8)
+    observed = rgb[edge].astype(np.float32)
+    has_interior = weight_sum[edge] > 1e-6
+    foreground = np.where(
+        has_interior[:, None], colour_sum[edge] / np.maximum(weight_sum[edge], 1e-6)[:, None], observed
+    )
+    fg_minus_bg = foreground - bg_rgb
+    contrast_sq = np.sum(fg_minus_bg * fg_minus_bg, axis=1)
+    # coverage = projection of (observed - background) onto (foreground - background)
+    coverage = np.sum((observed - bg_rgb) * fg_minus_bg, axis=1) / np.maximum(contrast_sq, 1e-6)
+    coverage = np.where(has_interior & (contrast_sq >= MIN_CONTRAST_RGB**2), np.clip(coverage, 0.0, 1.0), 1.0)
+    unblended = np.clip((observed - (1.0 - coverage)[:, None] * bg_rgb) / np.maximum(coverage, 1e-3)[:, None], 0, 255)
+    alpha[edge] = np.round(255 * coverage).astype(np.uint8)
     out[edge] = np.round(unblended).astype(np.uint8)
     out[alpha == 0] = 0
     return out, alpha
 
 
 def remove_background(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
+    """Remove a solid background and set `subject` and `ppi`. Refused when the art is already
+    transparent, the ring is not one colour, the result is scattered (more than max_pieces parts or
+    max_specks specks), or it would remove less than 2 % or more than 95 % of the image."""
     if art.subject is not None:
         return refuse(art, "The background is already transparent; nothing to remove.")
     rgb = art.rgba[..., :3]
@@ -86,7 +90,7 @@ def remove_background(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
             **measured,
         )
 
-    background = flood_from_edge(background_lab_distance(rgb, ring.lab) <= profile.bg_delta_e)
+    background = flood_from_edge(delta_e_to(rgb, ring.lab) <= profile.bg_delta_e)
     keep = ~background
     if not keep.any():
         return refuse(art, "Removing the background would leave nothing.", removed_frac=1.0, **measured)
@@ -118,6 +122,6 @@ def remove_background(art: Artwork, spec: Spec, profile: Profile) -> FixResult:
     subject = alpha >= SUBJECT_ALPHA
     ppi = ppi_for_long_side(long_side_px(subject), spec, profile)
     measured["ppi"] = round(ppi, 2)
-    new = evolve(art, rgba=np.dstack([out_rgb, alpha]), subject=subject, ppi=ppi, border_in=None, cut=None)
+    new = copy_with(art, rgba=np.dstack([out_rgb, alpha]), subject=subject, ppi=ppi, border_in=None, cut=None)
     note = f"Removed the solid {colour} background ({removed_frac:.0%} of the image)."
     return FixResult(art=new, ok=True, note=note, measured=measured)
