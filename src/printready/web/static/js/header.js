@@ -90,9 +90,9 @@ export function renderFooter(host, app) {
   clear(host);
   append(host, [
     h("span", null, "Not affiliated with Sticker Mule."),
-    h("span", { class: "muted" }, "Rules paraphrased from public FAQ pages; conv marks our own thresholds."),
+    h("span", { class: "muted fb-shrink" }, "Rules paraphrased from public FAQ pages; conv marks our own thresholds."),
     h("span", { class: "spacer" }),
-    app && app.static ? h("span", null, "Read-only demo. Run it locally for your own art.") : null,
+    app && app.static ? h("span", { class: "fb-shrink fb-wide" }, "Read-only demo. Run it locally for your own art.") : null,
     h("span", { class: "num" }, app && app.version ? `printready ${app.version}` : "printready"),
     h("button", { type: "button", onClick: showShortcuts }, icon("keyboard", 13), "Press ? for shortcuts"),
   ]);

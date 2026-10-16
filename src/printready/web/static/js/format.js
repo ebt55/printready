@@ -167,6 +167,19 @@ export function plural(n, word, many) {
   return `${n} ${n === 1 ? word : many || word + "s"}`;
 }
 
+// A failed model call, explained in plain words; the raw message stays one click away.
+export function explainError(raw) {
+  const text = String(raw || "");
+  const msg = text.replace(/^(error|budget):\s*/i, "");
+  if (/^budget/i.test(text)) return { title: "Stopped by the spend cap", body: "The next call would have passed PRINTREADY_SPEND_CAP_USD, so it was never made. The run went to a person; nothing more was spent.", raw: msg };
+  if (/HTTP 403/.test(text) || /credit|balance|quota|billing/i.test(text)) return { title: "The API refused the call (out of credit or no access)", body: "This usually means the account has run out of credit, or the key cannot use this model. The run stopped here and went to a person; nothing more was spent.", raw: msg };
+  if (/HTTP 401/.test(text)) return { title: "The API key was rejected", body: "The key is missing, wrong or revoked. The run stopped here and went to a person.", raw: msg };
+  if (/HTTP 429/.test(text)) return { title: "Rate limited", body: "The API kept answering 'too many requests' through the retries. The run stopped here and went to a person.", raw: msg };
+  if (/HTTP 5\d\d/.test(text)) return { title: "The API had a server error", body: "The provider failed after the retries. The run stopped here and went to a person.", raw: msg };
+  if (/timeout|timed out/i.test(text)) return { title: "The model did not answer in time", body: "The call timed out. The run stopped here and went to a person.", raw: msg };
+  return { title: "The model call failed", body: "The run stopped here and went to a person. A failed call is an outcome, not a retry.", raw: msg };
+}
+
 // The one-line reason under the outcome banner, from the RunResult alone.
 export function outcomeReason(result) {
   if (!result) return "";
@@ -174,8 +187,12 @@ export function outcomeReason(result) {
   const history = result.history || (result.art && result.art.history) || [];
   const size = result.spec && result.spec.size_in ? sizeLabel(result.spec.size_in) : "the ordered size";
   if (result.handoff_reason) {
-    const auto = ["turn limit", "error", "budget"].includes(result.handoff_reason);
-    return auto ? `The agent run stopped (${result.handoff_reason}), so a person takes over.` : `The agent handed off: ${result.handoff_reason}.`;
+    if (result.handoff_reason === "error" || result.handoff_reason === "budget") {
+      const note = (result.person_notes || []).find((n) => /stopped \((error|budget)\)/.test(n)) || result.handoff_reason;
+      return `${explainError(note.replace(/^.*?stopped \((error|budget)\):\s*/, "$1: ")).title}, so a person takes over.`;
+    }
+    if (result.handoff_reason === "turn limit") return "The agent used all its turns without finishing, so a person takes over.";
+    return `The agent handed off: ${result.handoff_reason}.`;
   }
   const damaged = history.find((s) => s.damaged);
   if (damaged) return `${fixName(damaged.fix)} damaged the art and was reverted.`;
@@ -188,7 +205,7 @@ export function outcomeReason(result) {
     return "Something needs a closer look before printing.";
   }
   if (result.outcome === "ready") return `Passes every rule at ${size} with no corrections.`;
-  if (isShapeProduct(result)) return "A scene with no clean edge: it fits a whole-image rounded-rectangle sticker; the customer confirms the product.";
+  if (isShapeProduct(result)) return "Suggested as a whole-image rounded-rectangle sticker; the customer confirms.";
   const applied = history.filter((s) => s.ok && s.fix !== "add_border").map((s) => fixName(s.fix).toLowerCase());
   const customer = flagged.find((f) => f.fixer === "customer");
   const parts = [];

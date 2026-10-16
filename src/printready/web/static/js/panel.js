@@ -24,8 +24,14 @@ function banner(m, actions) {
   if (run) {
     push(run.mode === "agent" ? "bot" : "rules", run.mode === "agent" ? `Agent · ${(run.model || "").replace(/^xai:/, "")}` : run.vision ? "Rules + text check" : "Rules", "Mode");
     push("ruler", sizeLabel(run.spec.size_in) + (isShapeProduct(res) ? " rounded rectangle" : " die-cut"), "Ordered size (longest side, border included)");
-    if (res && res.cost_usd) push("coin", usd(res.cost_usd) + (run.demo ? " sim." : ""), run.demo ? "Simulated cost; nothing is charged in demo mode" : "Model cost of this run");
-    if (run.duration_ms) push("clock", ms(run.duration_ms), "Wall-clock time");
+    if (res && res.cost_usd)
+      push(
+        "coin",
+        usd(res.cost_usd) + (run.demo && !run.real ? " sim." : ""),
+        run.real ? "What the saved live run cost; nothing is charged by the replay" : run.demo ? "Simulated cost; nothing is charged in demo mode" : "Model cost of this run"
+      );
+    if (res && res.elapsed_s) push("clock", ms(res.elapsed_s * 1000), "Time the run took (the saved run's own timing when replayed)");
+    else if (run.duration_ms && !run.demo) push("clock", ms(run.duration_ms), "Wall-clock time");
   }
   const notices = run && run.notices && run.notices.length ? h("div", { class: "banner-notices" }, run.notices.map((n) => h("span", null, n))) : null;
 
@@ -226,7 +232,7 @@ function findingsSection(m, actions, ctx) {
   const run = m.run;
   if (!run) {
     // before a run: what will be checked, and the rule each check uses
-    const rows = CHECK_ORDER.filter((c) => (m.order.mode === "agent" || m.order.vision ? true : !c.startsWith("text_"))).map((c) =>
+    const rows = CHECK_ORDER.filter((c) => c !== "product_fit" && (m.order.mode === "agent" || m.order.vision ? true : !c.startsWith("text_"))).map((c) =>
       h("div", { class: "precheck-row" }, icon("dot", 14), h("span", null, h("b", null, CHECKS[c].name), h("span", { class: "muted" }, " · " + CHECKS[c].what)), h("span", null))
     );
     return section("Checks", h("span", { class: "hint" }, m.draft ? "will run" : ""), h("div", { class: "precheck" }, rows));
@@ -396,7 +402,7 @@ function detailsSection(m) {
     ["File", run.filename],
     ["Created", run.created ? `${new Date(run.created).toLocaleString()} (${timeAgo(run.created)})` : null],
     ["Mode", run.mode === "agent" ? `agent · ${run.model}` : run.vision ? `rules + text check (${run.model})` : "rules"],
-    ["Engine", run.demo ? "demo (saved real-pipeline output, scripted model)" : run.engine || "live"],
+    ["Engine", run.real ? "saved live run (real Grok output, dev set), replayed" : run.demo ? "demo (real pipeline, scripted model)" : run.engine || "live"],
     ["Art", res.art ? `${num(res.art.width)} × ${num(res.art.height)} px · ${num(res.art.ppi, 1)} PPI · offset ${res.art.offset.join(", ")}` : null],
     ["Pipeline time", res.elapsed_s ? `${num(res.elapsed_s, 2)} s` : null],
   ].filter((r) => r[1]);

@@ -184,7 +184,8 @@ def build_site(out: Path, *, realset: Path | None = None, bench: list[str] | Non
         if realset.parent.name != "realset" or realset.parent.parent.name != "results":
             raise ExportError("--realset must be a results/realset/<split> folder")
         split = realset.name
-        sources.append(res.Source(realset.parents[2]))
+        # naming a split explicitly (e.g. test, after pass 2) is what unblinds it
+        sources.append(res.Source(realset.parents[2], show_blind=True))
     if demo:
         sources.append(res.Source(demo_dir(), demo=True))
     if not sources:
@@ -232,10 +233,15 @@ def build_site(out: Path, *, realset: Path | None = None, bench: list[str] | Non
             run_id = f"sample-{entry['sample']}-{entry['mode']}"
             events = _strip_t(demomod.read_events(run_dir))
             record = {"id": run_id, "filename": sample.get("title", entry["sample"]), "sample_id": entry["sample"],
+                      "notices": [("Real Grok output, dev set: the saved live run (grok-4.3), every model turn "
+                                   "included." if entry["mode"] == "agent" else
+                                   "Real Grok output, dev set: the saved live run, with the text check's answer "
+                                   "from grok-4.3.")] if entry.get("real") else [],
                       "spec": {"product": "die_cut", "size_in": entry["size_in"], "prompt": None},
                       "mode": entry["mode"], "model": entry.get("model") if entry["mode"] == "agent" else None,
-                      "vision": entry.get("vision"), "status": "done", "demo": True, "engine": "demo"}
-            original = samples_dir() / sample.get("file", "")
+                      "vision": entry.get("vision"), "status": "done", "demo": True, "engine": "demo",
+                      "real": bool(entry.get("real"))}
+            original = demomod.sample_path(sample) if sample else samples_dir() / "missing"
             original_name = "original" + original.suffix  # the sample image, served next to the run's files
 
             def make(url, _d=run_dir, _r=record, _e=events, _o=original, _n=original_name):
@@ -249,10 +255,12 @@ def build_site(out: Path, *, realset: Path | None = None, bench: list[str] | Non
             runs[run_id] = view
             res_ = view.get("result") or {}
             examples.append({"id": run_id, "title": record["filename"], "filename": record["filename"],
+                             "sample": entry["sample"], "real": bool(entry.get("real")),
                              "mode": entry["mode"], "size_in": entry["size_in"], "outcome": res_.get("outcome"),
-                             "status": "done", "note": "demo sample",
+                             "status": "done", "note": sample.get("note") or "demo sample",
                              "thumb": copier.thumb(original, 160) if original.exists() else None})
 
+    examples.sort(key=lambda e: not e["real"])  # the real Grok examples lead (stable: sample order kept)
     state = {
         "version": webstate.version(), "mode": "app", "demo": demo, "static": True,
         "profile": webstate.profile_payload(), "models": webstate.models_payload(),

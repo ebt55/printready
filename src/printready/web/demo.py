@@ -37,13 +37,24 @@ from printready.web.paths import samples_dir as default_samples_dir
 DEMO_SIZE_IN = 3.0
 DEMO_MODEL = "xai:grok-4.3"  # what the scripted runs stand in for (prices and labels)
 MIN_GAP_S = 0.32  # replays space events at least this far apart, so the stream is visible
+MAX_GAP_S = 3.5  # ... and at most this far: long real model waits are shortened (cards keep the real latency)
 
 
-def load_samples(samples_dir: Path | None = None) -> list[dict]:
+def load_samples(samples_dir: Path | None = None, demo_dir: Path | None = None, include_real: bool = True) -> list[dict]:
+    """The bundled procedural samples, then (when built) the real Grok examples from the dev set."""
     path = (samples_dir or default_samples_dir()) / "samples.json"
-    if not path.exists():
-        return []
-    return json.loads(path.read_text(encoding="utf-8"))
+    out = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    real = (demo_dir or default_demo_dir()) / "real" / "real.json"
+    if include_real and real.exists():
+        out += json.loads(real.read_text(encoding="utf-8"))
+    return out
+
+
+def sample_path(sample: dict, samples_dir: Path | None = None, demo_dir: Path | None = None) -> Path:
+    """Where a sample's image lives: examples/samples/ (procedural) or the demo folder (real)."""
+    if sample.get("base") == "demo":
+        return (demo_dir or default_demo_dir()) / sample["file"]
+    return (samples_dir or default_samples_dir()) / sample["file"]
 
 
 def load_index(demo_dir: Path | None = None) -> dict:
@@ -81,14 +92,14 @@ def replay(source: Path, dest: Path, emit: Callable[[dict], None], speed: float 
     for f in source.iterdir():
         if not f.is_file() or f.name == "events.jsonl":
             continue
-        if f.name in FINAL_OUTPUTS:
+        if f.name in FINAL_OUTPUTS and f.name != "log.jsonl":  # a live agent writes its log as it goes
             finals.append(f)
         else:
             shutil.copy2(f, dest / f.name)
     last_t = 0.0
     for ev in read_events(source):
         t = ev.pop("_t", 0) / 1000.0
-        wait = max(t - last_t, MIN_GAP_S) * speed
+        wait = min(max(t - last_t, MIN_GAP_S), MAX_GAP_S) * speed
         last_t = t
         if wait > 0:
             time.sleep(wait)
@@ -198,7 +209,7 @@ def build_demo(samples_dir: Path | None = None, demo_dir: Path | None = None, re
     demo_dir = demo_dir or default_demo_dir()
     if redraw_samples or not (samples_dir / "samples.json").exists():
         samplemod.write_samples(samples_dir)
-    manifest = load_samples(samples_dir)
+    manifest = load_samples(samples_dir, include_real=False)
     if demo_dir.exists():
         shutil.rmtree(demo_dir)
     demo_dir.mkdir(parents=True)
@@ -214,9 +225,29 @@ def build_demo(samples_dir: Path | None = None, demo_dir: Path | None = None, re
                                                    "vision": True, "model": DEMO_MODEL, "dir": rel,
                                                    "outcome": result["outcome"]}
             log(f"  {s['id']:8} {mode:5} -> {result['outcome']}")
+    from printready.web.demo_real import build_real_examples
+    from printready.web.paths import repo_root
+
+    _, real_runs = build_real_examples(demo_dir, repo_root(), log=log)
+    index["runs"].update(real_runs)
     if realset:
         index["realset"] = build_demo_realset(demo_dir, log=log)
     index["bench"] = write_demo_bench(demo_dir / "results" / "bench")
+    (demo_dir / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+    return index
+
+
+def rebuild_real_examples(demo_dir: Path | None = None, log: Callable[[str], None] = print) -> dict:
+    """Refresh only the real Grok examples (seconds), keeping everything else in the demo folder."""
+    from printready.web.demo_real import build_real_examples
+    from printready.web.paths import repo_root
+
+    demo_dir = demo_dir or default_demo_dir()
+    index = load_index(demo_dir)
+    index.setdefault("runs", {})
+    index["runs"] = {k: v for k, v in index["runs"].items() if not v.get("real")}
+    _, real_runs = build_real_examples(demo_dir, repo_root(), log=log)
+    index["runs"].update(real_runs)
     (demo_dir / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
     return index
 

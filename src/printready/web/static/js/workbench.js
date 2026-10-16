@@ -33,8 +33,10 @@ export function applyEvent(run, ev) {
     const t = { ...ev };
     delete t.type;
     delete t.image_info;
+    delete t.trace_context;
     t.image = ev.image_info || null;
     next.turns.push(t);
+    if (ev.trace_context && !next.trace_context) next.trace_context = ev.trace_context;
   } else if (ev.type === "done") {
     next.status = "done";
     next.result = ev.result;
@@ -84,14 +86,31 @@ export function createWorkbench(root) {
     },
     setStep: (i) => store.set({ stepIndex: i, view: "steps" }),
     onFiles: (files) => onFiles(files),
-    onSample: (id) => (isStatic ? openRun(id) : pickSample(id)),
+    onSample: (id) => (isStatic ? openSaved(id) : pickSample(id)),
     pickFile: () => fileInput.click(),
     canDrop: () => !isStatic,
-    samples: () => (isStatic ? (st().runs || []).slice(0, 8).map((r) => ({ id: r.id, title: r.title || r.filename, thumb: r.thumb })) : (st().app && st().app.samples) || []),
+    samples: () => (isStatic ? staticSamples() : (st().app && st().app.samples) || []),
     heroMark: () => logoMark(64),
     renderTrace: (host) => st().run && renderTrace(host, st().run),
   };
   const stage = createStage(stageHost, stageActions);
+
+  function openSaved(id) {
+    const r = (st().runs || []).find((x) => x.id === id);
+    location.hash = `#/workbench/run/${encodeURIComponent(id)}${r && r.real && r.mode === "agent" ? "/trace" : ""}`;
+  }
+
+  // Read-only export: one saved run per sample (the agent run for real Grok examples, where the
+  // Trace is the point; the rules run for the drawn samples), as the empty stage's picker.
+  function staticSamples() {
+    const seen = new Map();
+    for (const r of st().runs || []) {
+      const key = r.sample || r.id;
+      const want = r.real ? "agent" : "rules";
+      if (!seen.has(key) || (r.mode === want && seen.get(key).mode !== want)) seen.set(key, r);
+    }
+    return [...seen.values()].map((r) => ({ id: r.id, title: r.title || r.filename, thumb: r.thumb, group: r.real ? "real" : "drawn", mode: r.mode }));
+  }
 
   const panelActions = {
     hoverCheck: (check) => {
@@ -254,7 +273,7 @@ export function createWorkbench(root) {
       const view = await api.run(id);
       local.loading = false;
       // Keep the current view when it makes sense for this run (continuity while browsing runs).
-      let v = st().view;
+      let v = (st().route && st().route.view) || st().view;
       if (!VIEW_KEYS.includes(v)) v = "after";
       if (v === "trace" && view.mode !== "agent") v = "after";
       if (v === "before" && !st().run) v = "after";
@@ -424,7 +443,8 @@ export function createWorkbench(root) {
 
   // ---------------------------------------------------------------- routing
   function show(route) {
-    const key = JSON.stringify(route);
+    const key = JSON.stringify({ ...route, view: null });
+    if (route.view && VIEW_KEYS.includes(route.view)) store.set({ view: route.view });
     if (key === routeKey) {
       renderAll();
       return;

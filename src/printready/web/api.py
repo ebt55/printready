@@ -35,7 +35,7 @@ from printready.web import state as webstate
 from printready.web.label import LabelError, LabelSession, items_from_dir
 from printready.web.paths import STATIC_DIR, cache_dir, safe_child
 from printready.web.runner import DemoRunner, LiveRunner, live_status
-from printready.web.runs import RunStore, image_size, make_thumb
+from printready.web.runs import RunStore, image_size, make_thumb, read_agent_log
 
 MAX_UPLOAD_BYTES = 20_000_000  # 20 MB, decimal, like the profile's max_upload_mb
 MAX_BODY_BYTES = 28_000_000  # base64 of 20 MB plus JSON overhead
@@ -96,12 +96,14 @@ def clean_filename(name: Any, fallback: str) -> str:
 
 class App:
     def __init__(self, *, root: Path, out_dir: Path, demo: bool = False, demo_speed: float = 1.0,
-                 label: LabelSession | None = None, demo_dir: Path | None = None, samples_dir: Path | None = None):
+                 label: LabelSession | None = None, demo_dir: Path | None = None, samples_dir: Path | None = None,
+                 show_test: bool = False):
         from printready.web.paths import demo_dir as _demo_dir
         from printready.web.paths import samples_dir as _samples_dir
 
         self.root = Path(root)
         self.demo = demo
+        self.show_test = show_test  # blinding: the test split is hidden unless asked for
         self.label = label
         self.label_mode = label is not None
         self.demo_dir = Path(demo_dir) if demo_dir else _demo_dir()
@@ -187,16 +189,17 @@ class App:
 
     def samples(self) -> list[dict]:
         out = []
-        for s in demomod.load_samples(self.samples_dir):
+        for s in demomod.load_samples(self.samples_dir, self.demo_dir, include_real=self.demo):
             out.append({"id": s["id"], "title": s["title"], "blurb": s["blurb"], "size_in": s["size_in"],
-                        "width": s.get("width"), "height": s.get("height"),
+                        "width": s.get("width"), "height": s.get("height"), "group": s.get("group", "procedural"),
+                        "note": s.get("note"), "prompt": s.get("prompt"), "image_model": s.get("image_model"),
                         "has_text": bool((s.get("vision") or {}).get("text")),
                         "image": f"/api/samples/{s['id']}/image", "thumb": f"/api/samples/{s['id']}/image?thumb=1"})
         return out
 
     def sources(self) -> list[res.Source]:
         """Where Results reads from: the repo first; in --demo also the demo folder (same layout)."""
-        out = [res.Source(self.root)]
+        out = [res.Source(self.root, show_blind=self.show_test)]
         if self.demo:
             out.append(res.Source(self.demo_dir, demo=True))
         return out
@@ -227,10 +230,11 @@ class App:
         })
 
     def sample_image(self, sid: str, query: dict) -> Response:
-        sample = next((s for s in demomod.load_samples(self.samples_dir) if s["id"] == sid), None)
+        sample = next((s for s in demomod.load_samples(self.samples_dir, self.demo_dir, include_real=self.demo)
+                       if s["id"] == sid), None)
         if not sample:
             return error(404, "not_found", f"no sample {sid!r}")
-        src = self.samples_dir / sample["file"]
+        src = demomod.sample_path(sample, self.samples_dir, self.demo_dir)
         if query.get("thumb"):
             dest = cache_dir(self.root) / "thumbs" / f"sample-{sid}-{int(src.stat().st_mtime)}.png"
             if dest.exists() or make_thumb(src, dest, 200):
@@ -262,12 +266,14 @@ class App:
             model = None
 
         sample_id = body.get("sample_id")
+        sample = None
         if sample_id:
-            sample = next((s for s in demomod.load_samples(self.samples_dir) if s["id"] == sample_id), None)
+            sample = next((s for s in demomod.load_samples(self.samples_dir, self.demo_dir, include_real=self.demo)
+                           if s["id"] == sample_id), None)
             if not sample:
                 return error(404, "no_sample", f"no sample {sample_id!r}")
-            data = (self.samples_dir / sample["file"]).read_bytes()
-            filename = sample["file"]
+            data = demomod.sample_path(sample, self.samples_dir, self.demo_dir).read_bytes()
+            filename = sample["title"] if sample.get("group") == "real" else sample["file"]
         else:
             raw = body.get("image_b64")
             if not isinstance(raw, str) or not raw:
@@ -288,14 +294,25 @@ class App:
             return error(415, "bad_type", "only PNG, JPG and WebP images are supported")
 
         notices = []
+        canned = real = False
         if self.demo:
             canned = sample_id and demomod.canned_run_dir(sample_id, mode, size_in, vision, self.demo_dir)
-            if canned:
+            real = sample_id and (sample or {}).get("group") == "real"
+            if canned and real and mode == "agent":
+                notices.append("Real Grok output, dev set: the image and every model turn are the saved live run "
+                               "(grok-4.3). Replayed with long waits shortened; each turn shows its real latency. "
+                               "Nothing is charged now.")
+            elif canned and real:
+                notices.append("Real Grok output, dev set: the image and the text check's answer are the saved live "
+                               "run (grok-4.3), replayed. Nothing is charged now.")
+            elif canned:
                 notices.append("Demo: replayed from a saved run. Nothing is charged.")
             else:
-                notices.append("Demo: simulated checks (not the real pipeline). Nothing is charged.")
+                notices.append("Demo: the real checks and fixes, with a scripted model standing in for Grok. "
+                               "Nothing is charged.")
                 if vision and not sample_id:
-                    notices.append("Demo: the text check is simulated only for the bundled samples.")
+                    notices.append("Demo: the scripted model cannot read an uploaded image, so the text check "
+                                   "reports no lettering.")
         else:
             status = live_status()[mode]
             if not status["ready"]:
@@ -310,7 +327,7 @@ class App:
 
         job = self.store.create(filename=filename, data=data, ext=ext, size_in=size_in, mode=mode, model=model,
                                 vision=vision, sample_id=sample_id, demo=self.demo, engine=self.runner.engine,
-                                notices=notices)
+                                notices=notices, real=bool(self.demo and canned and real))
         self.pool.submit(self.runner.run, job)
         return json_response({"run_id": job.id}, 201)
 
@@ -368,8 +385,17 @@ class App:
         builds file URLs itself: step -> preview_info, turn -> image_info."""
         if ev.get("type") == "step" and isinstance(ev.get("preview"), str):
             return {**ev, "preview_info": self._image_info(job, ev["preview"])}
-        if ev.get("type") == "turn" and isinstance(ev.get("image"), str):
-            return {**ev, "image_info": self._image_info(job, ev["image"])}
+        if ev.get("type") == "turn":
+            # the log is written before each turn is emitted: inner model calls and the context are there
+            log = read_agent_log(job.dir)
+            out = {**ev, "sub_calls": log["sub_calls"].get(ev.get("n"), [])}
+            if isinstance(ev.get("image"), str):
+                out["image_info"] = self._image_info(job, ev["image"])
+            if ev.get("n") == 1 and log["context"]:
+                ctx = dict(log["context"])
+                ctx["image"] = self._image_info(job, ctx["image"]) if ctx.get("image") else None
+                out["trace_context"] = ctx
+            return out
         return ev
 
     # ------------------------------------------------------------------ results
@@ -442,8 +468,8 @@ class App:
         for s in sessions:
             item = s.item_for(sha) if s else None
             if item:
-                return Response(200, item.path.read_bytes(), CONTENT_TYPES.get(item.path.suffix.lower(), "image/png"),
-                                {"Cache-Control": "no-cache"})
+                data, ctype = s.image_bytes(item)  # pass 2: the proof without its size caption
+                return Response(200, data, ctype, {"Cache-Control": "no-cache"})
         return error(404, "not_found", "no such image in this session")
 
     def label_post(self, body: Any) -> Response:

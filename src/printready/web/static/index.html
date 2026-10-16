@@ -15,7 +15,8 @@
     <script>
       // Apply the saved theme before first paint (no flash of the wrong theme).
       try {
-        var t = JSON.parse(localStorage.getItem("printready.theme") || '"auto"');
+        var q = new URLSearchParams(location.search).get("theme");
+        var t = q || JSON.parse(localStorage.getItem("printready.theme") || '"auto"');
         if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
       } catch (e) {}
     </script>

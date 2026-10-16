@@ -124,7 +124,7 @@ class DemoRunner:
             sample = None
             canned = None
             if job.sample_id:
-                sample = next((s for s in demo.load_samples(self.samples_dir) if s["id"] == job.sample_id), None)
+                sample = next((s for s in demo.load_samples(self.samples_dir, self.demo_dir) if s["id"] == job.sample_id), None)
                 canned = demo.canned_run_dir(job.sample_id, job.mode, job.size_in, job.vision, self.demo_dir)
             if canned is not None:
                 demo.replay(canned, job.dir, job.emit, self.speed)

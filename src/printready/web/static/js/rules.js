@@ -214,7 +214,7 @@ export function headline(f) {
     case "islands":
       return typeof m.components === "number" ? (m.components === 1 ? "1 piece" : `${m.components} pieces`) : "";
     case "text_garbled":
-      return m.items ? (m.items.length ? `${m.items.length} text` : "no text") : "";
+      return m.items ? (m.items.length ? `${m.items.length} ${m.items.length === 1 ? "line" : "lines"} read` : "no text") : "";
     case "text_small":
       return typeof m.min_cap_height_pt === "number" ? `${num(m.min_cap_height_pt, 1)} pt caps` : "";
     case "product_fit":

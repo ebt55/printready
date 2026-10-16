@@ -9,11 +9,16 @@ Storage is `labels.jsonl`, append-only, one line per keypress, and the LAST line
     {"ts": "...Z", "pass": 1|2, "image": "<sha256>", "proof": "<sha256>"|null, "label": "..."}
 Undo (Backspace) only moves the cursor back; the next keypress appends a row that replaces the
 previous label. `realset eval` (K5) reads this schema.
+
+Pass 2 serves the proof picture without the size caption that render_proof draws under it
+("3.0 in die-cut, 330 PPI"): the band is cropped when the image is served. The file, its hash,
+the label key and the list file are unchanged.
 """
 
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import random
@@ -40,6 +45,84 @@ PASS_KEYS: dict[int, list[dict[str, str]]] = {
 }
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 DEFAULT_SEED = 7
+TEXT_DARK = 110  # a caption pixel this dark (every channel) is lettering
+
+
+# ------------------------------------------------------------------ pass 2: the proof without its caption
+
+def _band_stats(band):
+    """(neutral share, white share, dark pixel count) of an RGB pixel block."""
+    import numpy as np
+
+    px = band.astype(np.int16)
+    spread = px.max(axis=-1) - px.min(axis=-1)
+    neutral = float((spread <= 12).mean())  # black-on-white lettering, even after palette reduction
+    white = float((px.min(axis=-1) >= 245).mean())
+    dark = int((px.max(axis=-1) < TEXT_DARK).sum())
+    return neutral, white, dark
+
+
+def _caption_like(band) -> bool:
+    """A render_proof caption band: neutral (black text on white, anti-aliased), mostly white,
+    with one line of lettering that starts at the left margin (render_proof writes it at x=10)
+    below a blank top row. Art, the checkerboard (half grey) and the magenta cut line fail this."""
+    import numpy as np
+
+    if band.size == 0:
+        return False
+    neutral, white, dark = _band_stats(band)
+    if not (neutral >= 0.94 and white >= 0.8 and dark >= 12):
+        return False
+    ys, xs = np.nonzero(band.max(axis=-1) < TEXT_DARK)
+    return bool(2 <= xs.min() <= 10 + len(band) // 2 and ys.min() >= 1)
+
+
+def caption_band_height(img) -> int:
+    """Rows of the size caption under a proof, or 0 when there is none.
+
+    First the height render_proof uses (render.py: font size max(14, w // 28), band 2 x size;
+    32 px with Pillow's bitmap font), confirmed by the band's content. Otherwise the trailing
+    rows that look like a caption band (white, neutral, with lettering), at most a quarter of
+    the image. Works on the pipeline's RGB proofs and on palette-reduced copies."""
+    import numpy as np
+
+    if img.mode in ("P", "L"):  # a palette-reduced copy (the demo folder slims its proofs)
+        img = img.convert("RGBA")
+    if img.mode == "RGBA":
+        if img.getchannel("A").getextrema()[0] < 255:
+            return 0  # transparent: a fixed.png, not a proof; it has no caption
+        img = img.convert("RGB")
+    if img.mode != "RGB":
+        return 0
+    arr = np.asarray(img)
+    h, w = arr.shape[:2]
+    for band_h in dict.fromkeys((int(max(14, w // 28) * 2), 32)):
+        if 0 < band_h < h // 2 and _caption_like(arr[h - band_h:]):
+            return band_h
+    n = 0
+    while n < h // 4:  # grow upward while each row stays white and neutral
+        neutral, white, _ = _band_stats(arr[h - n - 1: h - n])
+        if neutral < 0.97 or white < 0.8:
+            break
+        n += 1
+    return n if n >= 12 and _caption_like(arr[h - n:]) else 0
+
+
+def proof_without_caption(path: Path) -> bytes | None:
+    """PNG bytes of the proof with its caption band cropped off, or None to serve the file as is."""
+    from PIL import Image
+
+    try:
+        with Image.open(path) as im:
+            im.load()
+            band = caption_band_height(im)
+            if not band:
+                return None
+            buf = io.BytesIO()
+            im.crop((0, 0, im.width, im.height - band)).save(buf, "PNG")
+            return buf.getvalue()
+    except Exception:  # unreadable or exotic files are served unchanged
+        return None
 
 
 def sha256_file(path: Path) -> str:
@@ -132,6 +215,7 @@ class LabelSession:
         self.caption = caption if pass_no == 1 else None  # pass 2 shows the proof only
         self._by_shown = {it.shown: it for it in ordered}
         self._lock = threading.Lock()
+        self._served: dict[str, tuple[bytes, str]] = {}
 
     @classmethod
     def from_label_file(cls, path: Path) -> "LabelSession":
@@ -150,6 +234,23 @@ class LabelSession:
 
     def item_for(self, sha: str) -> LabelItem | None:
         return self._by_shown.get(sha)
+
+    def image_bytes(self, item: LabelItem) -> tuple[bytes, str]:
+        """What the page shows for an item: pass 1 the original file; pass 2 the proof picture
+        with render_proof's size caption cropped off (cached; the file itself is untouched)."""
+        ctype = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}.get(item.path.suffix.lower(), "image/png")
+        if self.pass_no != 2:
+            return item.path.read_bytes(), ctype
+        with self._lock:
+            hit = self._served.get(item.shown)
+        if hit is None:
+            cropped = proof_without_caption(item.path)
+            hit = (cropped, "image/png") if cropped is not None else (item.path.read_bytes(), ctype)
+            with self._lock:
+                if len(self._served) > 64:
+                    self._served.clear()
+                self._served[item.shown] = hit
+        return hit
 
     def current_labels(self) -> dict[tuple[str | None, str | None], str]:
         """Last label per (image, proof) key for this pass; malformed lines are ignored."""

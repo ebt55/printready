@@ -226,8 +226,26 @@ main {
   overflow: hidden;
 }
 
+.footbar > * {
+  flex: none;
+}
+
 .footbar .spacer {
   flex: 1;
+}
+
+/* the long notes give way first: they ellipsize, never push the shortcuts button off screen */
+.footbar .fb-shrink {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1180px) {
+  .footbar .fb-wide {
+    display: none;
+  }
 }
 
 .footbar button {
@@ -417,6 +435,14 @@ main {
   font-size: var(--fs-13);
   font-weight: 600;
   color: var(--ink);
+  line-height: 1.3;
+}
+
+.file-card .file-name.ellipsis {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .file-meta {
@@ -468,6 +494,22 @@ main {
 .samples-caption b {
   color: var(--ink);
   font-weight: 600;
+}
+
+.samples-prompt {
+  display: block;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.sample.real .thumb {
+  padding: 0;
+}
+
+.sample.real .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .field {
@@ -1158,8 +1200,8 @@ main {
   inset: 0;
   z-index: 8;
   display: grid;
-  place-items: center;
   padding: var(--s-6);
+  overflow-y: auto;
   cursor: default;
 }
 
@@ -1167,7 +1209,8 @@ main {
   display: grid;
   justify-items: center;
   gap: var(--s-3);
-  width: min(560px, 100%);
+  margin: auto; /* centred, and still scrollable from the top when the stage is short */
+  width: min(600px, 100%);
   padding: var(--s-10) var(--s-8);
   border-radius: 20px;
   border: 1.5px dashed var(--line-strong);
@@ -1198,17 +1241,23 @@ main {
   margin-bottom: var(--s-1);
 }
 
+.hero-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .stage-empty .samples-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--s-2);
+  gap: 6px;
   margin-top: var(--s-2);
 }
 
 .stage-empty .samples-row button {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   padding: 5px;
   border-radius: 12px;
   border: 1px solid var(--line);
@@ -1226,6 +1275,48 @@ main {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.stage-empty .samples-row button.real {
+  padding: 0;
+  overflow: hidden;
+}
+
+.stage-empty .samples-row button.real img {
+  object-fit: cover;
+}
+
+@container stage (max-width: 560px) {
+  .stage-empty {
+    padding: var(--s-4);
+  }
+
+  .stage-empty-card {
+    padding: var(--s-6) var(--s-4);
+  }
+
+  .stage-empty .samples-row {
+    gap: 5px;
+  }
+
+  .stage-empty .samples-row button {
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-height: 760px) {
+  .stage-empty-card {
+    gap: var(--s-2);
+    padding-block: var(--s-6);
+  }
+
+  .stage-empty .hero-mark {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 /* steps scrubber */
@@ -1315,9 +1406,12 @@ input[type="range"].scrub {
 /* ---------------------------------------------------------------- trace */
 
 .trace {
+  container-type: inline-size;
+  container-name: trace;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   border-radius: var(--r-xl);
   border: 1px solid var(--line);
   background: var(--surface-2);
@@ -1404,6 +1498,243 @@ input[type="range"].scrub {
   font-variant-numeric: tabular-nums;
 }
 
+/* compact timeline: one segment per turn, width = model time + tool time */
+.tl-strip {
+  display: flex;
+  gap: 3px;
+  height: 34px;
+  margin: var(--s-1) 0 var(--s-6);
+}
+
+.tl-seg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  overflow: hidden;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.tl-seg:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft-2);
+}
+
+.tl-seg-n {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-seg-tools {
+  display: inline-flex;
+  gap: 3px;
+  color: var(--ink-3);
+}
+
+.tl-seg[data-end="finish"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
+}
+
+.tl-seg[data-end="handoff"],
+.tl-seg[data-error] {
+  background: var(--person-bg);
+  border-color: var(--person-line);
+  color: var(--person-ink);
+}
+
+.trace-verdict {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  flex: none;
+}
+
+.turn-meta .running {
+  padding-left: var(--s-2);
+  border-left: 1px solid var(--line);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.call-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.call-right .call-status {
+  margin-left: 0;
+}
+
+.call-ms {
+  font-size: var(--fs-11);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.call-quote {
+  padding: 0 var(--s-3) var(--s-2);
+}
+
+.subcalls {
+  display: grid;
+  gap: 2px;
+  padding: 6px var(--s-3) 8px;
+  border-top: 1px dashed var(--line);
+  background: var(--surface-2);
+}
+
+.subcall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: var(--fs-12);
+  color: var(--ink-2);
+}
+
+.subcall-arrow {
+  color: var(--ink-3);
+}
+
+.subcall-meta {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.subcall.failed .subcall-err {
+  color: var(--person-ink);
+}
+
+/* a failed model call: calm, explained, the raw message one click away */
+.turn-error {
+  display: grid;
+  gap: 6px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: 10px;
+  background: var(--person-bg);
+  border: 1px solid var(--person-line);
+  color: var(--ink);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.turn-error-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--person-ink);
+  font-size: var(--fs-14);
+}
+
+.turn[data-error] .turn-n {
+  background: var(--person-bg);
+  border-color: var(--person-line);
+  color: var(--person-ink);
+}
+
+.turn-nudge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 10px;
+  border: 1px dashed var(--line-strong);
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+}
+
+.turn-nudge svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+
+.turn.context .turn-card {
+  background: var(--surface-2);
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.context-img {
+  width: 96px;
+  height: 96px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.context-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.context-text {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.context-text b {
+  color: var(--ink);
+}
+
+.tool-chip {
+  display: inline-block;
+  margin: 1px 4px 1px 0;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+.prompt-text {
+  max-height: 260px;
+}
+
+.turn.end .turn-card {
+  background: var(--surface-2);
+}
+
+@container trace (max-width: 620px) {
+  .trace-inner {
+    padding: var(--s-4) var(--s-4) var(--s-8);
+  }
+  .trace-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .trace-head {
+    flex-direction: column;
+  }
+  .trace-verdict {
+    justify-items: start;
+  }
+  .context-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .turns {
   position: relative;
   display: grid;
@@ -1472,8 +1803,9 @@ input[type="range"].scrub {
 
 .turn-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-3);
+  gap: 4px var(--s-3);
   padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4);
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
@@ -1493,10 +1825,15 @@ input[type="range"].scrub {
 
 .turn-meta {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
-  gap: var(--s-3);
+  gap: 2px var(--s-3);
   margin-left: auto;
   font-variant-numeric: tabular-nums;
+}
+
+.turn-meta > span {
   white-space: nowrap;
 }
 
@@ -1676,6 +2013,8 @@ input[type="range"].scrub {
 }
 
 .turn-image figcaption {
+  display: grid;
+  gap: 2px;
   font-size: var(--fs-12);
   color: var(--ink-3);
   line-height: 1.45;
@@ -2641,8 +2980,10 @@ input[type="range"].scrub {
 }
 
 .gcard-imgs img {
-  max-width: 100%;
-  max-height: 100%;
+  position: absolute;
+  inset: var(--s-2);
+  width: calc(100% - 2 * var(--s-2));
+  height: calc(100% - 2 * var(--s-2));
   object-fit: contain;
 }
 
@@ -2762,15 +3103,58 @@ input[type="range"].scrub {
 }
 
 .paired {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--s-3);
   padding: var(--s-5);
 }
 
+.paired h3,
+.matrices h3 {
+  font-size: var(--fs-15);
+}
+
+.paired-foot {
+  margin-top: auto;
+}
+
+.matrices {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) auto;
+  align-items: start;
+  gap: var(--s-4) var(--s-6);
+  margin-top: var(--s-3);
+  padding: var(--s-5);
+}
+
+.matrices .hint {
+  margin-top: 4px;
+}
+
+.matrices-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6);
+}
+
+@media (max-width: 1100px) {
+  .matrices {
+    grid-template-columns: 1fr;
+  }
+}
+
 .paired-table {
+  justify-self: start;
   border-collapse: separate;
   border-spacing: 4px;
+  margin-left: -4px;
   font-size: var(--fs-13);
+}
+
+.paired-table tbody th {
+  text-align: left;
+  padding-left: 0;
 }
 
 .paired-table th {
@@ -2801,6 +3185,71 @@ input[type="range"].scrub {
 .paired-table td.key {
   background: var(--accent-soft);
   color: var(--accent-ink);
+}
+
+.exploratory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-5);
+  margin-top: var(--s-3);
+  padding: var(--s-5);
+  border-style: dashed;
+  background: var(--surface-2);
+}
+
+.exploratory-head {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.exploratory-head .pill {
+  justify-self: start;
+}
+
+.exploratory-head h3 {
+  font-size: var(--fs-16);
+}
+
+.exploratory-body {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+}
+
+.paired-table.compact td {
+  width: 96px;
+  height: 40px;
+  font-size: var(--fs-15);
+}
+
+@media (max-width: 1100px) {
+  .exploratory {
+    grid-template-columns: 1fr;
+  }
+}
+
+.res-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+}
+
+.res-note .empty-icon {
+  flex: none;
+  margin: 0;
+}
+
+.res-note h3 {
+  font-size: var(--fs-15);
+}
+
+.res-note p {
+  margin-top: 2px;
+  color: var(--ink-3);
+  font-size: var(--fs-13);
+  max-width: 80ch;
 }
 
 .demo-note {

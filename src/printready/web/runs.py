@@ -138,6 +138,35 @@ def text_boxes(run_dir: Path, fixed_name: str, result: dict | None) -> list[dict
     return out
 
 
+def read_agent_log(run_dir: Path) -> dict:
+    """From an agent's log.jsonl: the run's context (model, turn limit, tools, system prompt, the
+    upload the model was shown) and, per turn, the model calls made inside its tools (read_text's
+    vision call). Agent turns themselves come from the event stream."""
+    context, sub_calls, pending = None, {}, []
+    path = run_dir / "log.jsonl"
+    if not path.exists():
+        return {"context": None, "sub_calls": {}}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        kind = r.get("type")
+        if kind == "start":
+            context = {k: r.get(k) for k in ("model", "max_turns", "tools", "system_prompt", "image", "file", "spec")}
+        elif kind == "call" and r.get("purpose") not in (None, "agent"):
+            pending.append({"purpose": r.get("purpose"), "model": r.get("model_returned") or r.get("model"),
+                            "tokens_in": r.get("tokens_in"), "tokens_cached": r.get("tokens_cached"),
+                            "tokens_out": r.get("tokens_out"), "cost_usd": r.get("cost_usd"),
+                            "latency_ms": r.get("latency_ms"), "status": r.get("status"), "error": r.get("error"),
+                            "attempts": r.get("attempts")})
+        elif kind == "turn":
+            if pending:
+                sub_calls[r.get("n")] = pending
+                pending = []
+    return {"context": context, "sub_calls": sub_calls}
+
+
 def make_thumb(src: Path, dest: Path, max_px: int = 160) -> bool:
     try:
         with Image.open(src) as im:
@@ -207,12 +236,17 @@ def build_view(run_dir: Path, record: dict, url: Callable[[str], str], events: l
     if not steps and result:  # a saved run without its event log: history + previews from outputs
         history = result.get("history") or (result.get("art") or {}).get("history", [])
         steps = [{"step": s, "preview": img(outputs.get(f"step-{i + 1}"))} for i, s in enumerate(history)]
+    agent_log = read_agent_log(run_dir) if record.get("mode") == "agent" else {"context": None, "sub_calls": {}}
     turns = []
     for e in events:
         if e.get("type") == "turn":
-            t = {k: v for k, v in e.items() if k not in ("type", "image_url")}
+            t = {k: v for k, v in e.items() if k not in ("type", "image_url", "image_info")}
             t["image"] = img(e.get("image")) if e.get("image") else None
+            t["sub_calls"] = e.get("sub_calls") or agent_log["sub_calls"].get(e.get("n"), [])
             turns.append(t)
+    context = agent_log["context"]
+    if context:
+        context = {**context, "image": img(context.get("image")) if context.get("image") else None}
     reports = [e["report"] for e in events if e.get("type") == "findings" and isinstance(e.get("report"), dict)]
     error = record.get("error")
     if not error:
@@ -234,6 +268,7 @@ def build_view(run_dir: Path, record: dict, url: Callable[[str], str], events: l
         "model": record.get("model"),
         "vision": bool(record.get("vision")),
         "demo": bool(record.get("demo")),
+        "real": bool(record.get("real")),
         "engine": record.get("engine"),
         "readonly": readonly,
         "status": record.get("status", "done"),
@@ -245,6 +280,7 @@ def build_view(run_dir: Path, record: dict, url: Callable[[str], str], events: l
         "cutline": {"url": url(cut_name), "name": cut_name} if cut_name in files else None,
         "steps": steps,
         "turns": turns,
+        "trace_context": context,
         "text_boxes": text_boxes(run_dir, fixed_name, result) if fixed_name in files else [],
         "reports": {"first": reports[0] if reports else None, "latest": reports[-1] if reports else None},
         "result": result,
@@ -374,7 +410,8 @@ class RunStore:
         return f"{self.url_prefix}{run_id}/files/{name}"
 
     def create(self, *, filename: str, data: bytes, ext: str, size_in: float, mode: str, model: str | None,
-               vision: bool, sample_id: str | None, demo: bool, engine: str, notices: list[str] | None = None) -> RunJob:
+               vision: bool, sample_id: str | None, demo: bool, engine: str, notices: list[str] | None = None,
+               real: bool = False) -> RunJob:
         run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3)
         run_dir = self.out_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=False)
@@ -384,6 +421,8 @@ class RunStore:
                   "spec": {"product": "die_cut", "size_in": size_in, "prompt": None}, "mode": mode,
                   "model": model, "vision": vision, "sample_id": sample_id, "demo": demo, "engine": engine,
                   "status": "queued", "outcome": None, "notices": notices or []}
+        if real:
+            record["real"] = True  # a saved live run (real Grok output, dev set) replayed in the demo
         job = RunJob(run_dir, record)
         job.save_record()
         with self._lock:

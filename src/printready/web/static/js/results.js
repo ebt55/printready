@@ -71,6 +71,11 @@ function labelChip(label) {
   return h("span", { class: "outcome outcome-sm", "data-outcome": meta.outcome, title: `Ebin: ${meta.text}${label === "scene" ? " (counts as fixable: whole-image sticker)" : ""}` }, meta.text);
 }
 
+// "xai:grok-imagine-image-2.0" -> "imagine 2.0" (the full id is in the tooltip)
+function modelShort(id) {
+  return String(id || "").replace(/^xai:/, "").replace(/^grok-imagine-image/, "imagine").replace(/-(\d)/, " $1").replace(/^imagine$/, "imagine 1") || "";
+}
+
 function demoBadge(isDemo) {
   return isDemo ? h("span", { class: "pill pill-accent", "data-tip": "Built from the bundled procedural samples; illustrative, not results" }, "Demo data") : null;
 }
@@ -98,7 +103,7 @@ export function createResults(root) {
     const a = app();
     const splits = (a.results && a.results.bench_splits) || [];
     const runs = (a.results && a.results.realset_runs) || [];
-    if (!ui.split) ui.split = splits.length ? splits[splits.length - 1].split : "dev";
+    if (!ui.split) ui.split = (splits.find((x) => x.split === "test") || splits[splits.length - 1] || { split: "dev" }).split;
     if (!ui.run) ui.run = runs.length ? runs[0].id : null;
     ui.loading = true;
     render();
@@ -125,7 +130,32 @@ export function createResults(root) {
       demoBadge(rs && rs.demo)
     );
     if (!rs || rs.error) return h("section", { class: "res-section", id: "agreement" }, head, h("div", { class: "card" }, empty("grid", "No real-set run yet", "Generate, run and label a split with `printready realset gen | run | label`, then `printready realset eval`.")));
-    if (!ag) return h("section", { class: "res-section", id: "agreement" }, head, h("div", { class: "card" }, empty("rules", "No evaluation yet", "Run `printready realset eval --split " + rs.run + "` once both modes have run and the labels are in. The gallery below already shows each run.")));
+    const labelled = rs.items.filter((c) => c.label).length;
+    if (!ag && !labelled) {
+      return h(
+        "section",
+        { class: "res-section", id: "agreement" },
+        head,
+        h(
+          "div",
+          { class: "card res-note" },
+          h("div", { class: "empty-icon" }, icon("lock", 18)),
+          h(
+            "div",
+            null,
+            h("h3", null, rs.run === "dev" ? "The dev split is for tuning, so it is not labelled" : "No labels yet"),
+            h(
+              "p",
+              null,
+              rs.run === "dev"
+                ? "Agreement is measured on the test split after Ebin labels it blind (pass 1 outcomes, pass 2 proofs); until then the test split stays hidden here. The gallery below shows every dev run."
+                : "Agreement appears once Ebin's labels are in and `printready realset eval` has run."
+            )
+          )
+        )
+      );
+    }
+    if (!ag) return h("section", { class: "res-section", id: "agreement" }, head, h("div", { class: "card" }, empty("rules", "No evaluation yet", "Run `printready realset eval --split " + rs.run + "`. The exploratory view below already uses the labels.")), mergedCard(rs));
     const modes = ag.modes || {};
     const R = modes.rules || {};
     const A = modes.agent || {};
@@ -154,7 +184,7 @@ export function createResults(root) {
     const verdict = h(
       "div",
       { class: "card verdict", "data-verdict": vStatus },
-      h("div", { class: "row" }, h("span", { class: "pill" }, "Keep-or-remove"), h("span", { class: "grow" }), h("span", { class: "num", style: { fontWeight: 650 } }, `agent − rules: ${v.agent_minus_rules > 0 ? "+" : ""}${v.agent_minus_rules ?? "–"} (needs +5)`)),
+      h("div", { class: "row" }, h("span", { class: "pill" }, "Keep-or-remove · preregistered"), h("span", { class: "grow" }), h("span", { class: "num", style: { fontWeight: 650 } }, `agent − rules: ${v.agent_minus_rules > 0 ? "+" : ""}${v.agent_minus_rules ?? "–"} (needs +5)`)),
       h("h3", null, vTitle),
       h("p", null, vText),
       h("div", { class: "bars" }, bar("Rules", R), bar("Agent", A)),
@@ -168,7 +198,7 @@ export function createResults(root) {
     const paired = h(
       "div",
       { class: "card paired" },
-      h("h3", { style: { fontSize: "15px" } }, "Paired outcomes"),
+      h("h3", null, "Paired outcomes"),
       h("p", { class: "hint" }, "Discordant pairs decide the verdict: images where exactly one mode agrees with Ebin."),
       h(
         "table",
@@ -182,19 +212,86 @@ export function createResults(root) {
         )
       ),
       h(
-        "div",
-        { class: "row", style: { gap: "24px", flexWrap: "wrap", alignItems: "flex-start", marginTop: "4px" } },
-        R.matrix ? h("div", null, h("div", { class: "hint", style: { marginBottom: "4px" } }, "Rules"), heatTable(matrixOf(R.matrix, null, OUTS), { rowAxis: "Ebin", colAxis: "rules", label: "Rules versus Ebin" })) : null,
-        A.matrix ? h("div", null, h("div", { class: "hint", style: { marginBottom: "4px" } }, "Agent"), heatTable(matrixOf(A.matrix, null, OUTS), { rowAxis: "Ebin", colAxis: "agent", label: "Agent versus Ebin" })) : null
-      ),
-      h(
         "p",
-        { class: "hint" },
+        { class: "hint paired-foot" },
         `Cost per image: rules ${usd((R.cost_usd && R.cost_usd.mean) || 0)}, agent ${usd((A.cost_usd && A.cost_usd.mean) || 0)} (mean). `,
         `Time per image: rules ${num((R.elapsed_s && R.elapsed_s.median) || 0, 1)} s, agent ${num((A.elapsed_s && A.elapsed_s.median) || 0, 1)} s (median).`
       )
     );
-    return h("section", { class: "res-section", id: "agreement" }, head, tiles, h("div", { class: "agreement" }, verdict, paired));
+    const matrices =
+      R.matrix || A.matrix
+        ? h(
+            "div",
+            { class: "card matrices" },
+            h("div", null, h("h3", null, "Outcome by Ebin's label"), h("p", { class: "hint" }, "Rows are Ebin's pass-1 labels, columns what each mode decided. Under PREREG a scene counts as fixable.")),
+            h(
+              "div",
+              { class: "matrices-pair" },
+              R.matrix ? heatTable(matrixOf(R.matrix, null, OUTS), { rowAxis: "Ebin", colAxis: "rules", label: "Rules versus Ebin" }) : null,
+              A.matrix ? heatTable(matrixOf(A.matrix, null, OUTS), { rowAxis: "Ebin", colAxis: "agent", label: "Agent versus Ebin" }) : null
+            )
+          )
+        : null;
+    return h("section", { class: "res-section", id: "agreement" }, head, tiles, h("div", { class: "agreement" }, verdict, paired), matrices, mergedCard(rs));
+  }
+
+  // EXPLORATORY: ready and fixable merged into one class ("can go out without a person"). Decided
+  // after labelling, so it is shown apart from, and never instead of, the preregistered numbers.
+  function mergedCard(rs) {
+    const cls = (o) => (o === "needs_person" ? "person" : o ? "ok" : null);
+    const factCls = (l) => cls(labelOutcome(l));
+    const scored = rs.items.filter((c) => c.label && factCls(c.label));
+    const modes = ["rules", "agent"].filter((m) => scored.some((c) => c.modes[m]));
+    if (!scored.length || !modes.length) return null;
+    const right = {};
+    for (const m of modes) right[m] = new Set(scored.filter((c) => c.modes[m] && cls(c.modes[m].outcome) === factCls(c.label)).map((c) => c.image));
+    const n = (m) => scored.filter((c) => c.modes[m]).length;
+    const paired = modes.length === 2;
+    const both = paired ? scored.filter((c) => right.rules.has(c.image) && right.agent.has(c.image)).length : 0;
+    const onlyR = paired ? scored.filter((c) => right.rules.has(c.image) && !right.agent.has(c.image)).length : 0;
+    const onlyA = paired ? scored.filter((c) => !right.rules.has(c.image) && right.agent.has(c.image)).length : 0;
+    const neither = scored.length - both - onlyR - onlyA;
+    return h(
+      "div",
+      { class: "card exploratory" },
+      h(
+        "div",
+        { class: "exploratory-head" },
+        h("span", { class: "pill" }, icon("info", 11), "Exploratory"),
+        h("h3", null, "Ready and fixable as one class"),
+        h("p", { class: "hint" }, "Decided after labelling, so it is not the preregistered rule and does not change the verdict. It asks a simpler question: can the art go out without a person?")
+      ),
+      h(
+        "div",
+        { class: "exploratory-body" },
+        h(
+          "div",
+          { class: "bars" },
+          modes.map((m) =>
+            h(
+              "div",
+              { class: "bar-row" },
+              h("span", null, m === "rules" ? "Rules" : "Agent"),
+              h("div", { class: "bar-track" }, h("i", { style: { width: (n(m) ? (right[m].size / n(m)) * 100 : 0) + "%" } })),
+              h("span", { class: "num" }, `${right[m].size} / ${n(m)}`)
+            )
+          )
+        ),
+        paired
+          ? h(
+              "table",
+              { class: "paired-table compact" },
+              h("thead", null, h("tr", null, h("th", null, ""), h("th", null, "Agent right"), h("th", null, "Agent wrong"))),
+              h(
+                "tbody",
+                null,
+                h("tr", null, h("th", { scope: "row" }, "Rules right"), h("td", null, both), h("td", { class: "key" }, onlyR)),
+                h("tr", null, h("th", { scope: "row" }, "Rules wrong"), h("td", { class: "key" }, onlyA), h("td", null, neither))
+              )
+            )
+          : null
+      )
+    );
   }
 
   // ------------------------------------------------------------ real set: gallery
@@ -246,7 +343,7 @@ export function createResults(root) {
       h(
         "div",
         { class: "gcard-body" },
-        h("div", { class: "gcard-top" }, h("span", { class: "mono" }, card.short), h("span", { class: "ellipsis", title: card.image_model || "" }, (card.image_model || "").replace(/^xai:/, ""))),
+        h("div", { class: "gcard-top" }, h("span", { class: "mono" }, card.short), h("span", { class: "ellipsis", title: card.image_model || "" }, modelShort(card.image_model))),
         h(
           "div",
           { class: "gcard-rows" },
@@ -276,8 +373,8 @@ export function createResults(root) {
         runs.length > 1
           ? h(
               "select",
-              { class: "input", style: { width: "auto" }, "aria-label": "Split", onChange: (e) => ((ui.run = e.target.value), load()) },
-              runs.map((r) => h("option", { value: r.id, selected: r.id === ui.run }, `${r.id}${r.demo ? " (demo)" : ""} · ${r.n} images`))
+              { class: "input", style: { width: "auto" }, "aria-label": "Split", onChange: (e) => pickRun(e.target.value) },
+              runs.map((r) => h("option", { value: r.id, selected: r.id === ui.run }, `${r.id}${r.demo && r.id !== "demo" ? " (demo)" : ""} · ${r.n} images`))
             )
           : null
       )
@@ -298,7 +395,7 @@ export function createResults(root) {
       h(
         "select",
         { class: "input", "aria-label": "Image model", onChange: (e) => setFilter({ model: e.target.value }) },
-        [h("option", { value: "any", selected: f.model === "any" }, "Any image model")].concat((rs.image_models || []).map((m) => h("option", { value: m, selected: f.model === m }, m.replace(/^xai:/, ""))))
+        [h("option", { value: "any", selected: f.model === "any" }, "Any image model")].concat((rs.image_models || []).map((m) => h("option", { value: m, selected: f.model === m }, modelShort(m))))
       ),
       h("button", { class: "filter-toggle", type: "button", "aria-pressed": String(f.disagree), onClick: () => setFilter({ disagree: !f.disagree }) }, icon("compare", 13), "Modes disagree"),
       h("button", { class: "filter-toggle", type: "button", "aria-pressed": String(f.vsLabel), onClick: () => setFilter({ vsLabel: !f.vsLabel }) }, icon("user", 13), `Disagrees with ${rs.labeller || "Ebin"}`),
@@ -409,6 +506,12 @@ export function createResults(root) {
     return h("section", { class: "res-section", id: "bench" }, head, tiles, h("div", { class: "check-grid" }, cards, outCard, visionCard));
   }
 
+  function pickRun(id) {
+    ui.run = id;
+    history.replaceState(null, "", `#/results/${encodeURIComponent(id)}`);
+    load();
+  }
+
   function render() {
     clear(inner);
     const rs = ui.run ? ui.realset[ui.run] : null;
@@ -438,7 +541,9 @@ export function createResults(root) {
   }
 
   return {
-    show() {
+    show(r) {
+      const runs = (app().results && app().results.realset_runs) || [];
+      if (r && r.run && runs.some((x) => x.id === r.run)) ui.run = r.run;
       load();
     },
     reset() {

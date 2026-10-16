@@ -25,12 +25,17 @@ from printready.web.runs import build_view, make_thumb
 
 BENCH_SPLITS = ("dev", "test")
 MODES = ("rules", "agent")
+# Blinding: the test split's images, runs and labels stay out of the workbench until Ebin's pass 2
+# is done. Only `serve --show-test` or an explicit `site build --realset results/realset/test`
+# shows them.
+BLIND_SPLITS = ("test",)
 
 
 @dataclass(frozen=True)
 class Source:
     root: Path
     demo: bool = False
+    show_blind: bool = False  # True only when the caller explicitly unblinds the test split
 
 
 def _read_json(path: Path):
@@ -96,6 +101,8 @@ def _split_dirs(src: Source) -> list[Path]:
         return []
     out = []
     for d in sorted(base.iterdir()):
+        if d.name in BLIND_SPLITS and not src.show_blind:
+            continue
         if d.is_dir() and ((d / "summary.json").exists() or any((d / m / "runs.jsonl").exists() for m in MODES)):
             out.append(d)
     return out

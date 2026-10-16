@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import inspect
+import io
 import json
 import http.client
+import shutil
 
 import pytest
 from PIL import Image
@@ -172,3 +174,56 @@ def test_pass_two_from_the_realset_file(tmp_path):
 def test_items_without_a_proof_cannot_be_pass_two(tmp_path):
     with pytest.raises(ValueError):
         LabelSession([LabelItem("a" * 64, None, tmp_path / "x.png")], tmp_path / "l.jsonl", 2)
+
+
+@pytest.fixture(scope="module")
+def real_proof(tmp_path_factory):
+    """A proof from the real rules pipeline (no model, no network) and its art (fixed.png)."""
+    from printready.web.paths import samples_dir
+    from printready.web.runner import call_run_rules
+
+    out = tmp_path_factory.mktemp("proof-run")
+    call_run_rules(samples_dir() / "mascot.png", 3.0, out, lambda e: None)
+    return out / "proof.png", out / "fixed.png"
+
+
+def test_caption_band_detection(real_proof, tmp_path):
+    from printready.web.label import caption_band_height
+
+    proof, fixed = real_proof
+    with Image.open(proof) as p, Image.open(fixed) as f:
+        assert p.height > f.height  # render_proof adds the size caption under the art
+        assert caption_band_height(p) == p.height - f.height
+        assert caption_band_height(p.quantize(256)) == p.height - f.height  # the demo's palette copies too
+        assert caption_band_height(f) == 0  # transparent art: nothing to crop
+        assert caption_band_height(p.crop((0, 0, p.width, p.height - caption_band_height(p)))) == 0
+
+
+def test_pass_two_serves_the_proof_without_its_caption_and_pass_one_unchanged(real_proof, tmp_path):
+    proof, fixed = real_proof
+    proof_sha = hashlib.sha256(proof.read_bytes()).hexdigest()
+    original = tmp_path / "original.png"
+    original_sha = make_png(original, "orange")
+    shutil.copy(proof, tmp_path / "proof.png")
+    write_pass_file(tmp_path, 2, [{"image": original_sha, "proof": proof_sha, "file": "proof.png"}])
+    write_pass_file(tmp_path, 1, [{"image": original_sha, "proof": None, "file": "original.png"}])
+    for n in (1, 2):
+        session = LabelSession.from_label_file(tmp_path / f"label-pass{n}.json")
+        server, app, _ = start_in_thread(AppConfig(root=tmp_path, label=session, quiet=True))
+        try:
+            c = Client(server.server_address[1])
+            sha = proof_sha if n == 2 else original_sha
+            status, body = c.req("GET", f"/api/label/image/{sha}")
+            assert status == 200
+            if n == 1:
+                assert body == original.read_bytes()  # pass 1: the file as is
+                continue
+            with Image.open(io.BytesIO(body)) as shown, Image.open(fixed) as art:
+                assert shown.size == art.size  # the proof picture only: no size/PPI caption band
+            assert (tmp_path / "proof.png").read_bytes() == proof.read_bytes()  # the file is untouched
+            _, view = c.req("GET", "/api/label/session")
+            assert json.loads(view)["items"][0]["sha"] == proof_sha  # key and hash unchanged
+        finally:
+            server.shutdown()
+            server.server_close()
+            app.shutdown()

@@ -286,3 +286,51 @@ def test_a_running_view_never_shows_final_outputs(tmp_path):
     assert view["cutline"] is None and view["downloads"] == []
     view = build_view(tmp_path, {**record, "status": "done"}, lambda n: n, [])
     assert view["images"]["fixed"] and view["cutline"]
+
+
+def test_trace_reads_context_and_tool_model_calls_from_the_agent_log(tmp_path):
+    """The Trace's context card and per-turn sub-calls come from log.jsonl: the read_text vision
+    call made inside turn 1's tools belongs to turn 1, not turn 2."""
+    from printready.web.runs import build_view
+
+    log = [
+        {"type": "start", "model": "xai:grok-4.3", "max_turns": 8, "tools": ["check", "read_text", "finish"],
+         "system_prompt": "You prepare sticker art.", "image": "look-0-upload.png"},
+        {"type": "call", "purpose": "agent", "tokens_in": 3000, "cost_usd": 0.004, "status": "ok"},
+        {"type": "call", "purpose": "vision", "model": "xai:grok-4.3", "tokens_in": 1200, "tokens_cached": 0,
+         "tokens_out": 90, "cost_usd": 0.002, "latency_ms": 2100, "status": "ok"},
+        {"type": "turn", "n": 1},
+        {"type": "call", "purpose": "agent", "tokens_in": 3400, "cost_usd": 0.004, "status": "ok"},
+        {"type": "turn", "n": 2},
+    ]
+    (tmp_path / "log.jsonl").write_text("\n".join(json.dumps(r) for r in log) + "\n", encoding="utf-8")
+    turn = {"type": "turn", "text": "", "tool_calls": [], "tokens": {"in": 3000, "cached": 0, "out": 40},
+            "cost_usd": 0.004, "latency_ms": 900}
+    events = [{**turn, "n": 1}, {**turn, "n": 2}]
+    view = build_view(tmp_path, {"id": "x", "status": "running", "mode": "agent", "spec": {"size_in": 3}},
+                      lambda n: n, events)
+    ctx = view["trace_context"]
+    assert ctx["model"] == "xai:grok-4.3" and ctx["max_turns"] == 8 and "read_text" in ctx["tools"]
+    assert [t["n"] for t in view["turns"]] == [1, 2]
+    assert [c["purpose"] for c in view["turns"][0]["sub_calls"]] == ["vision"]
+    assert view["turns"][0]["sub_calls"][0]["latency_ms"] == 2100
+    assert view["turns"][1]["sub_calls"] == []
+
+
+def test_real_example_notices_match_the_mode(demo_server):
+    """Real Grok examples (dev set) say so, and a rules replay does not claim model turns."""
+    c, _ = demo_server
+    _, state = c.json("GET", "/api/state")
+    real = [s for s in state["samples"] if s.get("group") == "real"]
+    if not real:
+        pytest.skip("no real examples in the demo folder")
+    for mode in ("rules", "agent"):
+        status, body = c.json("POST", "/api/runs", {"sample_id": real[0]["id"], "size_in": 3, "mode": mode,
+                                                     "vision": True, "model": "xai:grok-4.3"})
+        assert status == 201, body
+        c.events(body["run_id"])
+        _, view = c.json("GET", f"/api/runs/{body['run_id']}")
+        text = " ".join(view.get("notices") or [])
+        assert "Real Grok output, dev set" in text
+        assert ("model turn" in text) == (mode == "agent")
+        assert view["status"] == "done" and view["result"]["mode"] == mode

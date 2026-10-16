@@ -1,6 +1,6 @@
 // Boot, routing, theme and the global shortcuts. Screens live in their own modules.
-// Routes: #/workbench, #/workbench/run/<id>, #/workbench/realset/<split>/<sha>/<mode>,
-//         #/results, #/label, #/label/2
+// Routes: #/workbench, #/workbench/run/<id>[/<view>], #/workbench/realset/<split>/<sha>/<mode>,
+//         #/results[/<real-set split>], #/label, #/label/1, #/label/2
 
 import { h, clear, qs, storageGet, storageSet } from "./dom.js";
 import { api, isStatic } from "./api.js";
@@ -23,9 +23,10 @@ function applyTheme(theme) {
 function parseRoute() {
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   const screen = ["workbench", "results", "label"].includes(parts[0]) ? parts[0] : "workbench";
-  if (screen === "workbench" && parts[1] === "run" && parts[2]) return { screen, runId: parts[2] };
-  if (screen === "workbench" && parts[1] === "realset" && parts[4]) return { screen, realset: { run: parts[2], sha: parts[3], mode: parts[4] } };
+  if (screen === "workbench" && parts[1] === "run" && parts[2]) return { screen, runId: parts[2], view: parts[3] || null };
+  if (screen === "workbench" && parts[1] === "realset" && parts[4]) return { screen, realset: { run: parts[2], sha: parts[3], mode: parts[4] }, view: parts[5] || null };
   if (screen === "label") return { screen, pass: parts[1] === "2" ? 2 : parts[1] === "1" ? 1 : null };
+  if (screen === "results" && parts[1]) return { screen, run: parts[1] };
   return { screen };
 }
 
@@ -37,7 +38,8 @@ async function boot() {
   const labelMode = (qs('meta[name="printready-mode"]') || {}).content === "label";
   appEl.dataset.mode = labelMode ? "label" : "app";
 
-  const theme = storageGet("theme", "auto");
+  const forced = new URLSearchParams(location.search).get("theme");
+  const theme = THEMES.includes(forced) ? forced : storageGet("theme", "auto");
   applyTheme(theme);
   store.set({ theme });
 

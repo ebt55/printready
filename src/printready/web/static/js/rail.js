@@ -68,32 +68,32 @@ function artworkSection(m, a) {
   return h("section", { class: "section" }, sectionHead("Artwork"), body, m.fileError ? h("div", { class: "drop-error", role: "alert" }, m.fileError) : null);
 }
 
-function samplesSection(m, a) {
-  const samples = (m.app && m.app.samples) || [];
-  if (!samples.length) return null;
-  const selected = samples.find((x) => m.draft && m.draft.sampleId === x.id);
+// One group of sample tiles with a caption line that describes the hovered (or chosen) tile.
+function sampleGroup(m, a, list, title, hint, idle) {
+  const selected = list.find((x) => m.draft && m.draft.sampleId === x.id);
   const caption = h("p", { class: "samples-caption" });
   const describe = (x) => {
     clear(caption);
-    if (x) caption.append(h("b", null, x.title), " · ", x.blurb);
-    else caption.append("Each one trips a different rule. Hover to see which.");
+    if (!x) return caption.append(idle);
+    caption.append(h("b", null, x.title), " · ", x.blurb);
+    if (x.prompt) caption.append(h("span", { class: "samples-prompt" }, `Prompt: "${x.prompt}"`));
   };
   describe(selected);
   return h(
     "section",
     { class: "section" },
-    sectionHead("Samples", h("span", { class: "hint" }, "drawn in code, not AI")),
+    sectionHead(title, h("span", { class: "hint" }, hint)),
     h(
       "div",
       { class: "samples", onMouseleave: () => describe(selected) },
-      samples.map((x) =>
+      list.map((x) =>
         h(
           "button",
           {
-            class: "sample",
+            class: "sample" + (x.group === "real" ? " real" : ""),
             type: "button",
             "aria-pressed": String(selected === x),
-            "aria-label": `${x.title}: ${x.blurb}`,
+            "aria-label": `${x.title}: ${x.blurb}${x.note ? " (" + x.note + ")" : ""}`,
             onClick: () => a.onSample(x.id),
             onMouseenter: () => describe(x),
             onFocus: () => describe(x),
@@ -104,6 +104,19 @@ function samplesSection(m, a) {
     ),
     caption
   );
+}
+
+function samplesSection(m, a) {
+  const samples = (m.app && m.app.samples) || [];
+  if (!samples.length) return null;
+  const drawn = samples.filter((x) => x.group !== "real");
+  const real = samples.filter((x) => x.group === "real");
+  return [
+    real.length
+      ? sampleGroup(m, a, real, "Real Grok output", "dev set", "Real grok-imagine images from the dev set, with their saved rules and agent runs (real grok-4.3 turns).")
+      : null,
+    drawn.length ? sampleGroup(m, a, drawn, "Samples", "drawn in code, not AI", "Each one trips a different rule. Hover to see which.") : null,
+  ];
 }
 
 function orderSection(m, a) {
@@ -297,8 +310,7 @@ export function renderRail(host, m, a) {
     );
   } else {
     scroll.append(artworkSection(m, a));
-    const samples = samplesSection(m, a);
-    if (samples) scroll.append(samples);
+    for (const sec of samplesSection(m, a) || []) if (sec) scroll.append(sec);
     scroll.append(orderSection(m, a), modeSection(m, a), recentSection(m, a));
   }
   host.append(scroll);

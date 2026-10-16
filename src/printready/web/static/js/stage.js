@@ -552,18 +552,25 @@ export function createStage(root, actions) {
               h("button", { class: "btn btn-primary", type: "button", onClick: () => actions.pickFile() }, icon("upload", 15), "Choose a file"),
               h("span", { class: "hint" }, "or paste with Ctrl+V")
             ),
-        samples.length
-          ? h(
+        [
+          { list: samples.filter((x) => x.group === "real"), label: m.readonly ? "Real Grok output, dev set · opens the agent's trace" : "Real Grok output, dev set" },
+          { list: samples.filter((x) => x.group !== "real"), label: m.readonly ? "Drawn samples (not AI)" : "Or try a sample (drawn in code)" },
+        ]
+          .filter((g) => g.list.length)
+          .map((g) =>
+            h(
               "div",
               { style: { marginTop: "12px" } },
-              h("div", { class: "hint", style: { marginBottom: "6px" } }, m.readonly ? "Saved runs" : "Or try a sample"),
+              h("div", { class: "hint", style: { marginBottom: "6px" } }, g.label),
               h(
                 "div",
                 { class: "samples-row" },
-                samples.map((x) => h("button", { type: "button", "data-tip": x.title, "aria-label": `Sample: ${x.title}`, onClick: () => actions.onSample(x.id) }, h("img", { src: x.thumb, alt: "" })))
+                g.list.map((x) =>
+                  h("button", { type: "button", class: x.group === "real" ? "real" : null, "data-tip": x.title, "aria-label": `Sample: ${x.title}`, onClick: () => actions.onSample(x.id) }, h("img", { src: x.thumb, alt: "" }))
+                )
               )
             )
-          : null
+          )
       )
     );
   }

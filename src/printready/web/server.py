@@ -37,10 +37,12 @@ class AppConfig:
     demo_dir: Path | None = None
     samples_dir: Path | None = None
     quiet: bool = False
+    show_test: bool = False  # blinding: the real-set test split stays hidden unless this is set
 
     def build(self) -> App:
         return App(root=self.root, out_dir=self.out_dir or default_out_dir(self.root), demo=self.demo,
-                   demo_speed=self.demo_speed, label=self.label, demo_dir=self.demo_dir, samples_dir=self.samples_dir)
+                   demo_speed=self.demo_speed, label=self.label, demo_dir=self.demo_dir, samples_dir=self.samples_dir,
+                   show_test=self.show_test)
 
 
 class Handler(BaseHTTPRequestHandler):

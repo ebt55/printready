@@ -28,7 +28,11 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--demo-speed", type=float, default=1.0, help="demo replay time factor (0 = instant)")
     p.add_argument("--rebuild-demo", action="store_true", help="rebuild examples/samples/demo/ and exit")
     p.add_argument("--redraw-samples", action="store_true", help="with --rebuild-demo: redraw the sample images too")
+    p.add_argument("--real-only", action="store_true",
+                   help="with --rebuild-demo: refresh only the real Grok examples (dev set) from results/realset/dev")
     p.add_argument("--out", type=Path, default=None, help="run store (default out/workbench/)")
+    p.add_argument("--show-test", action="store_true",
+                   help="show the real-set TEST split in Results (blind until Ebin's pass 2 is done)")
     p.add_argument("--label", type=Path, default=None, metavar="DIR", help="label mode over the images in DIR")
     p.add_argument("--pass", dest="pass_no", type=int, choices=(1, 2), default=1, help="label pass (default 1)")
     p.add_argument("--labels", type=Path, default=None, help="labels.jsonl path (default DIR/labels.jsonl)")
@@ -42,6 +46,10 @@ def run(args: argparse.Namespace) -> int:
     from printready.web import demo
     from printready.web.server import AppConfig, run_server
 
+    if args.rebuild_demo and args.real_only:
+        index = demo.rebuild_real_examples()
+        print(f"done: {sum(1 for v in index['runs'].values() if v.get('real'))} real example runs")
+        return 0
     if args.rebuild_demo:
         print("rebuilding the demo folder ...")
         index = demo.build_demo(redraw_samples=args.redraw_samples)
@@ -74,5 +82,6 @@ def run(args: argparse.Namespace) -> int:
     if args.demo and not demo.load_index():
         print("no demo folder yet; building it from the real pipeline (a few minutes) ...")
         demo.build_demo()
-    return run_server(AppConfig(root=root, out_dir=args.out, demo=args.demo, demo_speed=max(0.0, args.demo_speed)),
+    return run_server(AppConfig(root=root, out_dir=args.out, demo=args.demo, demo_speed=max(0.0, args.demo_speed),
+                                show_test=args.show_test),
                       port=args.port, open_browser=args.open)
