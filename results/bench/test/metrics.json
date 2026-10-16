@@ -1,0 +1,1510 @@
+{
+ "split": "test",
+ "n": 258,
+ "predicted": 258,
+ "errors": 0,
+ "statuses": [
+  "pass",
+  "warn",
+  "fail",
+  "skip"
+ ],
+ "checks": {
+  "file": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      258,
+      0,
+      0,
+      0
+     ]
+    ]
+   },
+   "recall": null,
+   "detected": null,
+   "recall_by_status": {},
+   "n_expected_flagged": 0,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": null,
+   "fixer_pairs": {
+    "n": 0,
+    "agree": 0
+   },
+   "disagreements": 0
+  },
+  "resolution": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass",
+     "warn",
+     "fail"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      230,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      14,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      14,
+      0
+     ]
+    ]
+   },
+   "recall": 1.0,
+   "detected": 1.0,
+   "recall_by_status": {
+    "warn": {
+     "n": 14,
+     "hit": 14,
+     "rate": 1.0
+    },
+    "fail": {
+     "n": 14,
+     "hit": 14,
+     "rate": 1.0
+    }
+   },
+   "n_expected_flagged": 28,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": 1.0,
+   "fixer_pairs": {
+    "n": 28,
+    "agree": 28
+   },
+   "disagreements": 0
+  },
+  "background": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass",
+     "fail"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      218,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      40,
+      0
+     ]
+    ]
+   },
+   "recall": 1.0,
+   "detected": 1.0,
+   "recall_by_status": {
+    "fail": {
+     "n": 40,
+     "hit": 40,
+     "rate": 1.0
+    }
+   },
+   "n_expected_flagged": 40,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": 1.0,
+   "fixer_pairs": {
+    "n": 40,
+    "agree": 40
+   },
+   "disagreements": 0
+  },
+  "soft_alpha": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass",
+     "warn",
+     "skip"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      202,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      16,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      40
+     ]
+    ]
+   },
+   "recall": 1.0,
+   "detected": 1.0,
+   "recall_by_status": {
+    "warn": {
+     "n": 16,
+     "hit": 16,
+     "rate": 1.0
+    }
+   },
+   "n_expected_flagged": 16,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": 1.0,
+   "fixer_pairs": {
+    "n": 16,
+    "agree": 16
+   },
+   "disagreements": 0
+  },
+  "edge_crop": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      194,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      8,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      16,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      40
+     ]
+    ]
+   },
+   "recall": 1.0,
+   "detected": 1.0,
+   "recall_by_status": {
+    "warn": {
+     "n": 8,
+     "hit": 8,
+     "rate": 1.0
+    },
+    "fail": {
+     "n": 16,
+     "hit": 16,
+     "rate": 1.0
+    }
+   },
+   "n_expected_flagged": 24,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": 1.0,
+   "fixer_pairs": {
+    "n": 24,
+    "agree": 24
+   },
+   "disagreements": 0
+  },
+  "islands": {
+   "n": 258,
+   "matrix": {
+    "rows": [
+     "pass",
+     "fail",
+     "skip"
+    ],
+    "cols": [
+     "pass",
+     "warn",
+     "fail",
+     "skip"
+    ],
+    "counts": [
+     [
+      194,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      24,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      40
+     ]
+    ]
+   },
+   "recall": 1.0,
+   "detected": 1.0,
+   "recall_by_status": {
+    "fail": {
+     "n": 24,
+     "hit": 24,
+     "rate": 1.0
+    }
+   },
+   "n_expected_flagged": 24,
+   "clean_false_flag": 0.0,
+   "clean_false_flags": {
+    "n": 40,
+    "flagged": 0
+   },
+   "fixer_agreement": 1.0,
+   "fixer_pairs": {
+    "n": 24,
+    "agree": 24
+   },
+   "disagreements": 0
+  }
+ },
+ "heat": [
+  {
+   "check": "file",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 258
+  },
+  {
+   "check": "file",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "file",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "file",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 230
+  },
+  {
+   "check": "resolution",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "warn",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "warn",
+   "predicted": "warn",
+   "count": 14
+  },
+  {
+   "check": "resolution",
+   "expected": "warn",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "warn",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "fail",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "fail",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "resolution",
+   "expected": "fail",
+   "predicted": "fail",
+   "count": 14
+  },
+  {
+   "check": "resolution",
+   "expected": "fail",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 218
+  },
+  {
+   "check": "background",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "fail",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "fail",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "background",
+   "expected": "fail",
+   "predicted": "fail",
+   "count": 40
+  },
+  {
+   "check": "background",
+   "expected": "fail",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 202
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "warn",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "warn",
+   "predicted": "warn",
+   "count": 16
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "warn",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "warn",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "skip",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "skip",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "skip",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "soft_alpha",
+   "expected": "skip",
+   "predicted": "skip",
+   "count": 40
+  },
+  {
+   "check": "edge_crop",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 194
+  },
+  {
+   "check": "edge_crop",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "warn",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "warn",
+   "predicted": "warn",
+   "count": 8
+  },
+  {
+   "check": "edge_crop",
+   "expected": "warn",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "warn",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "fail",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "fail",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "fail",
+   "predicted": "fail",
+   "count": 16
+  },
+  {
+   "check": "edge_crop",
+   "expected": "fail",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "skip",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "skip",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "skip",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "edge_crop",
+   "expected": "skip",
+   "predicted": "skip",
+   "count": 40
+  },
+  {
+   "check": "islands",
+   "expected": "pass",
+   "predicted": "pass",
+   "count": 194
+  },
+  {
+   "check": "islands",
+   "expected": "pass",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "pass",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "pass",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "fail",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "fail",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "fail",
+   "predicted": "fail",
+   "count": 24
+  },
+  {
+   "check": "islands",
+   "expected": "fail",
+   "predicted": "skip",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "skip",
+   "predicted": "pass",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "skip",
+   "predicted": "warn",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "skip",
+   "predicted": "fail",
+   "count": 0
+  },
+  {
+   "check": "islands",
+   "expected": "skip",
+   "predicted": "skip",
+   "count": 40
+  }
+ ],
+ "clean_images": {
+  "n": 40,
+  "any_flag": 0,
+  "rate": 0.0,
+  "ids": []
+ },
+ "fix_success": {
+  "n": 48,
+  "ok": 48,
+  "rate": 1.0,
+  "by_family": {
+   "background": {
+    "n": 24,
+    "ok": 24
+   },
+   "islands": {
+    "n": 16,
+    "ok": 16
+   },
+   "edge_crop": {
+    "n": 8,
+    "ok": 8
+   }
+  },
+  "rows": [
+   {
+    "id": "background-000",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-001",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-002",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-003",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-004",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-005",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-006",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-007",
+    "family": "background",
+    "param": "white",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-008",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-009",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-010",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-011",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-012",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-013",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-014",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-015",
+    "family": "background",
+    "param": "saturated",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-016",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-017",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-018",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-019",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-020",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-021",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-022",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "background-023",
+    "family": "background",
+    "param": "near_white_noise",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "remove_background",
+     "add_border"
+    ]
+   },
+   {
+    "id": "islands-016",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-017",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-018",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-019",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-020",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-021",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-022",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-023",
+    "family": "islands",
+    "param": "gap 0.27 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-024",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-025",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-026",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-027",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-028",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-029",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-030",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "islands-031",
+    "family": "islands",
+    "param": "gap 0.4 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "add_border",
+     "bridge_islands"
+    ]
+   },
+   {
+    "id": "edge_crop-000",
+    "family": "edge_crop",
+    "param": "case a, run 0.048 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-001",
+    "family": "edge_crop",
+    "param": "case a, run 0.057 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-002",
+    "family": "edge_crop",
+    "param": "case a, run 0.043 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-003",
+    "family": "edge_crop",
+    "param": "case a, run 0.066 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-004",
+    "family": "edge_crop",
+    "param": "case a, run 0.050 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-005",
+    "family": "edge_crop",
+    "param": "case a, run 0.048 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-006",
+    "family": "edge_crop",
+    "param": "case a, run 0.037 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   },
+   {
+    "id": "edge_crop-007",
+    "family": "edge_crop",
+    "param": "case a, run 0.061 in",
+    "ok": true,
+    "iou": 1.0,
+    "reasons": [],
+    "steps": [
+     "pad_canvas",
+     "add_border"
+    ]
+   }
+  ]
+ },
+ "outcome": {
+  "n": 258,
+  "agree": 258,
+  "accuracy": 1.0,
+  "matrix": {
+   "rows": [
+    "ready",
+    "fixable",
+    "needs_person"
+   ],
+   "cols": [
+    "ready",
+    "fixable",
+    "needs_person"
+   ],
+   "counts": [
+    [
+     126,
+     0,
+     0
+    ],
+    [
+     0,
+     92,
+     0
+    ],
+    [
+     0,
+     0,
+     40
+    ]
+   ]
+  },
+  "misses": []
+ },
+ "final_agreement": {
+  "file": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "resolution": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "background": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "soft_alpha": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "edge_crop": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "islands": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  },
+  "product_fit": {
+   "n": 258,
+   "agree": 258,
+   "rate": 1.0
+  }
+ },
+ "pipeline_before_disagrees": [],
+ "disagreements": [],
+ "run": {
+  "split": "test",
+  "samples": 258,
+  "jobs": 8,
+  "seconds": 36.0,
+  "manifest": "manifest-test.jsonl",
+  "manifest_sha256": "9d0797e0aaec01c69f79139441ef059e749652e3e48aef0e1519aa66278361a7",
+  "errors": 0
+ },
+ "note": "Deterministic checks from `bench run`; vision only when `bench run --vision` was run live (text family). Agent mode is not run on the benchmark.",
+ "vision": {
+  "model": "xai:grok-4.3",
+  "cost_usd": 0.130365,
+  "n": 48,
+  "text_garbled": {
+   "precision": 1.0,
+   "recall": 0.9375,
+   "n": 48,
+   "tp": 15,
+   "fp": 0,
+   "fn": 1,
+   "tn": 32,
+   "skip": 0,
+   "not_run": 0
+  },
+  "text_small": {
+   "disabled": true,
+   "note": "disabled by default (see docs/vision-notes.md)",
+   "precision": null,
+   "recall": null,
+   "n": 0
+  },
+  "threshold_cap_pt": null,
+  "disagreements": [
+   {
+    "id": "text-024",
+    "variant": "garbled",
+    "check": "text_garbled",
+    "planted": "MOUNTIAN",
+    "intended": "MOUNTAIN",
+    "expected": "fail/person",
+    "predicted": "pass",
+    "gt_cap_pt": 14.1488,
+    "seen": "MOUNTAIN -> MOUNTAIN",
+    "model_cap": "14.4 pt (measured in box)",
+    "reason": null
+   }
+  ],
+  "outcome_vision": {
+   "n": 48,
+   "agree": 39,
+   "accuracy": 0.8125,
+   "misses": [
+    {
+     "id": "text-024",
+     "expected": "needs_person",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-032",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-033",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-034",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-035",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-036",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-037",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-038",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-039",
+     "expected": "fixable",
+     "predicted": "ready"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,9 @@
+{
+  "split": "test",
+  "samples": 258,
+  "jobs": 8,
+  "seconds": 36.0,
+  "manifest": "manifest-test.jsonl",
+  "manifest_sha256": "9d0797e0aaec01c69f79139441ef059e749652e3e48aef0e1519aa66278361a7",
+  "errors": 0
+}
