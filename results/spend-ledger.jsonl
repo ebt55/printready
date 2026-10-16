@@ -1,0 +1,5 @@
+{"ts": "2026-10-16T18:55:24Z", "provider": "xai", "model": "grok-4.3", "tokens_in": 706, "tokens_cached": 128, "tokens_out": 245, "images": 0, "usd": 0.001361, "purpose": "vision"}
+{"ts": "2026-10-16T18:55:41Z", "provider": "xai", "model": "grok-4.3", "tokens_in": 2025, "tokens_cached": 128, "tokens_out": 209, "images": 0, "usd": 0.002919, "purpose": "agent"}
+{"ts": "2026-10-16T18:55:42Z", "provider": "xai", "model": "grok-4.3", "tokens_in": 2131, "tokens_cached": 1920, "tokens_out": 25, "images": 0, "usd": 0.00071, "purpose": "agent"}
+{"ts": "2026-10-16T18:55:44Z", "provider": "xai", "model": "grok-4.3", "tokens_in": 2643, "tokens_cached": 2048, "tokens_out": 264, "images": 0, "usd": 0.001813, "purpose": "agent"}
+{"ts": "2026-10-16T19:00:07Z", "provider": "xai", "model": "grok-4.3", "tokens_in": 1087, "tokens_cached": 128, "tokens_out": 272, "images": 0, "usd": 0.001904, "purpose": "smoke"}
