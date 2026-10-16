@@ -15,7 +15,6 @@ def test_help_lists_command_groups(capsys):
 @pytest.mark.parametrize(
     "argv, chunk",
     [
-        (["fix", "art.png", "--size", "3", "--mode", "agent"], "K3"),
         (["bench", "generate", "--split", "dev"], "K2"),
         (["bench", "run", "--mode", "rules"], "K2b"),
         (["bench", "report"], "K2b"),

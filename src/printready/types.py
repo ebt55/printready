@@ -14,6 +14,8 @@ from typing import Any, Literal, get_args
 
 import numpy as np
 
+from printready.profile import Profile
+
 SUBJECT_ALPHA = 128  # subject = pixels with alpha >= this, once a subject is known
 
 Status = Literal["pass", "warn", "fail", "skip"]
@@ -146,19 +148,36 @@ class Report:
 
 @dataclass
 class Step:
-    """One entry in Artwork.history."""
+    """One entry in Artwork.history: every fix call, applied, refused or reverted."""
 
     fix: str  # function name, e.g. "remove_background"
-    ok: bool
-    damaged: bool
-    note: str
+    ok: bool  # True only if the fix was applied and kept
+    damaged: bool  # True if the damage guard reverted it
+    note: str  # one plain sentence
+    measured: dict[str, Any] = field(default_factory=dict)  # the fix's own numbers, e.g. {"border_in": 0.18}
+    # Damage-guard result for a threshold bar: {"metric", "label", "value", "limit", "passed"}; {} if not run
+    guard: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"fix": self.fix, "ok": self.ok, "damaged": self.damaged, "note": self.note}
+        return {
+            "fix": self.fix,
+            "ok": self.ok,
+            "damaged": self.damaged,
+            "note": self.note,
+            "measured": _jsonable(self.measured),
+            "guard": _jsonable(self.guard),
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Step:
-        return cls(fix=data["fix"], ok=bool(data["ok"]), damaged=bool(data["damaged"]), note=data["note"])
+        return cls(
+            fix=data["fix"],
+            ok=bool(data["ok"]),
+            damaged=bool(data["damaged"]),
+            note=data["note"],
+            measured=dict(data.get("measured", {})),
+            guard=dict(data.get("guard", {})),
+        )
 
 
 @dataclass
@@ -218,17 +237,27 @@ class FixResult:
     ok: bool
     note: str
     damaged: bool = False
+    measured: dict[str, Any] = field(default_factory=dict)  # the fix's own numbers (copied into its Step)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"ok": self.ok, "note": self.note, "damaged": self.damaged, "art": self.art.to_dict()}
+        return {
+            "ok": self.ok,
+            "note": self.note,
+            "damaged": self.damaged,
+            "measured": _jsonable(self.measured),
+            "art": self.art.to_dict(),
+        }
 
 
 @dataclass
 class RunResult:
-    """What both modes (pipeline.run_rules, agent.run_agent) return for one image."""
+    """What both modes (pipeline.run_rules, agent.run_agent) return for one image.
+    pipeline.write_outputs(run, out_dir) needs `spec`; it uses `original` for the overlay and the
+    before image (reloading art.meta["path"] if original is None) and the shipped profile if
+    `profile` is None."""
 
     mode: Mode
-    art: Artwork  # the final Artwork (after fixes; history holds every Step)
+    art: Artwork | None  # the final Artwork (history holds every Step); None if the file never loaded
     before: Report  # run_checks on the loaded art
     after: Report  # final report: last run_checks (+ vision findings if any); the one outcome() uses
     outcome: Outcome
@@ -236,7 +265,11 @@ class RunResult:
     person_notes: list[str] = field(default_factory=list)
     handoff_reason: str | None = None
     cost_usd: float = 0.0
-    outputs: dict[str, str] = field(default_factory=dict)  # output name -> file path, e.g. "proof" -> ".../proof.png"
+    outputs: dict[str, str] = field(default_factory=dict)  # output name -> file name in out_dir, e.g. "proof" -> "proof.png"
+    spec: Spec | None = None
+    profile: Profile | None = None
+    original: Artwork | None = None  # the art as loaded, before any fix
+    elapsed_s: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -246,7 +279,11 @@ class RunResult:
             "customer_message": self.customer_message,
             "person_notes": list(self.person_notes),
             "cost_usd": float(self.cost_usd),
-            "art": self.art.to_dict(),
+            "elapsed_s": round(float(self.elapsed_s), 3),
+            "spec": self.spec.to_dict() if self.spec is not None else None,
+            "profile": self.profile.name if self.profile is not None else None,
+            "art": self.art.to_dict() if self.art is not None else None,
+            "history": [s.to_dict() for s in self.art.history] if self.art is not None else [],
             "before": self.before.to_dict(),
             "after": self.after.to_dict(),
             "outputs": dict(self.outputs),
@@ -256,17 +293,19 @@ class RunResult:
 def outcome(art: Artwork | None, final: Report, handoff: bool = False) -> Outcome:
     """The ONE outcome rule, used by both modes and by eval.
 
-    needs_person: handoff, or any Step damaged, or any warn/fail in `final` with fixer person|none,
-        or any `skip` in `final` (something could not be verified).
+    needs_person: handoff, or any Step damaged, or any warn/fail in `final` with fixer
+        person|none|auto (auto left in the FINAL report means the tool could have fixed it but did
+        not, or its fix was refused), or any `skip` in `final` (something could not be verified).
     ready: no successful CORRECTIVE_FIXES step in history and `final` has no warn/fail.
-    fixable: otherwise (corrective fixes applied, and/or remaining warn/fail are fixer auto|customer).
+    fixable: otherwise (corrective fixes applied, and/or remaining warn/fail are fixer customer,
+        e.g. pick a smaller size).
     `art` may be None when the file never loaded (the `file` fail finding then decides).
     """
     history = art.history if art is not None else []
     flagged = [f for f in final.findings if f.status in ("warn", "fail")]
     if handoff or any(s.damaged for s in history):
         return "needs_person"
-    if any(f.fixer in ("person", "none") for f in flagged):
+    if any(f.fixer in ("person", "none", "auto") for f in flagged):
         return "needs_person"
     if any(f.status == "skip" for f in final.findings):
         return "needs_person"

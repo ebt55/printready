@@ -71,8 +71,9 @@ def test_outcome_fixable():
     assert outcome(art_with(), customer) == "fixable"
 
 
-@pytest.mark.parametrize("fixer", ["person", "none"])
+@pytest.mark.parametrize("fixer", ["person", "none", "auto"])
 def test_outcome_needs_person_from_findings(fixer):
+    # auto left in the FINAL report: the tool could have fixed it but did not (or was refused).
     report = Report([f("background", "pass"), f("soft_alpha", "warn", fixer)])
     assert outcome(art_with(), report) == "needs_person"
 
@@ -129,12 +130,20 @@ def test_artwork_and_results_to_dict_exclude_arrays():
         "cut_px": None, "history": [step.to_dict()], "meta": {"path": "a.png", "bytes": 1234, "format": "PNG"},
     }
     assert Step.from_dict(step.to_dict()) == step
+    guarded = Step("add_border", True, False, "border added", {"border_in": 0.1},
+                   {"metric": "subject_px_changed", "value": np.int64(0), "limit": 0, "passed": True})
+    assert Step.from_dict(json.loads(json.dumps(guarded.to_dict()))) == guarded
     run = RunResult(
         mode="rules", art=art, before=CLEAN, after=CLEAN, outcome="fixable", customer_message="Approve?",
         outputs={"proof": "out/a/proof.png"},
     )
     rd = json.loads(json.dumps(run.to_dict()))
     assert rd["mode"] == "rules" and rd["person_notes"] == [] and rd["after"]["status"] == "pass"
+    assert rd["history"] == [step.to_dict()] and rd["spec"] is None
+    failed = RunResult(mode="rules", art=None, before=CLEAN, after=CLEAN, outcome="needs_person",
+                       customer_message="", spec=Spec("die_cut", 3.0))
+    fd = json.loads(json.dumps(failed.to_dict()))
+    assert fd["art"] is None and fd["history"] == [] and fd["spec"]["size_in"] == 3.0
 
 
 def test_artwork_validates_and_copy_is_deep():
