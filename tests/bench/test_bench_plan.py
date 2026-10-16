@@ -107,10 +107,11 @@ def test_dev_bases_render_clean():
         assert np.all(_near(alpha == 255)[partial]) and np.all(_near(alpha == 0)[partial]), f"base {i}"
 
 
-def test_test_split_refuses_without_committed_prereg(tmp_path):
+def test_test_split_refuses_without_a_verified_prereg(tmp_path):
+    """The gate is prereg.require_verified: PREREG.md with a frozen block that matches, committed."""
     with pytest.raises(PreregMissing, match="does not exist"):
         generate_split("test", tmp_path, limit=1, jobs=1)
     (tmp_path / "PREREG.md").write_text("draft\n", encoding="utf-8")
-    with pytest.raises(PreregMissing, match="not committed|could not run git"):
+    with pytest.raises(PreregMissing, match="no frozen block"):
         generate_split("test", tmp_path, limit=1, jobs=1)
     assert not (tmp_path / "data").exists()

@@ -12,7 +12,6 @@ import hashlib
 import io
 import json
 import os
-import subprocess
 import time
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
@@ -309,20 +308,6 @@ def _generate_one(args: tuple[PlanItem, str, Thresholds, str]) -> dict[str, Any]
 # --- the split ------------------------------------------------------------------------------------
 
 
-def prereg_committed(root: Path) -> tuple[bool, str]:
-    """True when PREREG.md exists and git has at least one commit touching it (read-only git)."""
-    if not (root / "PREREG.md").is_file():
-        return False, "PREREG.md does not exist"
-    try:
-        res = subprocess.run(["git", "log", "--oneline", "--", "PREREG.md"], cwd=root,
-                             capture_output=True, text=True, timeout=60)
-    except (OSError, subprocess.SubprocessError) as exc:
-        return False, f"could not run git: {exc}"
-    if res.returncode != 0 or not res.stdout.strip():
-        return False, "PREREG.md is not committed (git log --oneline -- PREREG.md is empty)"
-    return True, ""
-
-
 def manifest_path(root: Path, split: str, limit: int | None = None) -> Path:
     suffix = f"-limit{limit}" if limit is not None else ""
     return root / "data" / "bench" / f"manifest-{split}{suffix}.jsonl"
@@ -348,9 +333,12 @@ def generate_split(
         raise ValueError(f"unknown split {split!r}; choose from {sorted(SEEDS)}")
     root = Path(root)
     if split == "test":
-        ok, why = prereg_committed(root)
-        if not ok:
-            raise PreregMissing(f"refusing to generate the test split: {why}")
+        from printready.prereg import PreregError, require_verified
+
+        try:  # PREREG.md committed, unmodified, and every frozen artifact unchanged
+            require_verified(root)
+        except PreregError as exc:
+            raise PreregMissing(f"refusing to generate the test split: {exc}") from exc
     th = Thresholds.from_profile(load_profile(profile_path))
     items = limited(plan(split), limit)
     jobs = jobs or default_jobs()
