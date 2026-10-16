@@ -1334,8 +1334,8 @@
  },
  "outcome": {
   "n": 258,
-  "agree": 250,
-  "accuracy": 0.969,
+  "agree": 258,
+  "accuracy": 1.0,
   "matrix": {
    "rows": [
     "ready",
@@ -1359,94 +1359,13 @@
      0
     ],
     [
-     8,
      0,
-     48
+     0,
+     56
     ]
    ]
   },
-  "misses": [
-   {
-    "id": "soft_alpha-008",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (20 px, shadow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-009",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (21 px, glow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-010",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (21 px, shadow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-011",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (20 px, glow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-012",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (21 px, shadow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-013",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (21 px, glow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-014",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (20 px, shadow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   },
-   {
-    "id": "soft_alpha-015",
-    "family": "soft_alpha",
-    "param": "ramp 0.06 in (21 px, glow)",
-    "expected": "needs_person",
-    "predicted": "ready",
-    "final": "all pass",
-    "steps": "add_border",
-    "handoff": null
-   }
-  ]
+  "misses": []
  },
  "final_agreement": {
   "file": {
@@ -1466,8 +1385,8 @@
   },
   "soft_alpha": {
    "n": 258,
-   "agree": 250,
-   "rate": 0.969
+   "agree": 258,
+   "rate": 1.0
   },
   "edge_crop": {
    "n": 258,
@@ -1486,10 +1405,227 @@
   "split": "dev",
   "samples": 258,
   "jobs": 8,
-  "seconds": 33.6,
+  "seconds": 34.9,
   "manifest": "manifest-dev.jsonl",
   "manifest_sha256": "3ceb160d4500066a44a6c02b33d7de9cc07943bce5e89e18e2fc7ab70be7850a",
   "errors": 0
  },
- "note": "Deterministic checks only. Vision (text_garbled, text_small) is scored live; agent mode is not run on the benchmark."
+ "note": "Deterministic checks from `bench run`; vision only when `bench run --vision` was run live (text family). Agent mode is not run on the benchmark.",
+ "vision": {
+  "model": "xai:grok-4.3",
+  "cost_usd": 0.137026,
+  "n": 48,
+  "text_garbled": {
+   "precision": 1.0,
+   "recall": 0.875,
+   "n": 48,
+   "tp": 14,
+   "fp": 0,
+   "fn": 2,
+   "tn": 32,
+   "skip": 0,
+   "not_run": 0
+  },
+  "text_small": {
+   "precision": null,
+   "recall": 0.0,
+   "n": 48,
+   "tp": 0,
+   "fp": 0,
+   "fn": 8,
+   "tn": 40,
+   "skip": 0,
+   "not_run": 0
+  },
+  "threshold_cap_pt": 4.2,
+  "disagreements": [
+   {
+    "id": "text-029",
+    "variant": "garbled",
+    "check": "text_garbled",
+    "planted": "WELCME",
+    "intended": "WELCOME",
+    "expected": "fail/person",
+    "predicted": "pass",
+    "gt_cap_pt": 18.9347,
+    "seen": "WELCOME -> WELCOME",
+    "model_cap": "0.38 -> 47.92 pt",
+    "reason": null
+   },
+   {
+    "id": "text-030",
+    "variant": "garbled",
+    "check": "text_garbled",
+    "planted": "FOERST",
+    "intended": "FOREST",
+    "expected": "fail/person",
+    "predicted": "pass",
+    "gt_cap_pt": 15.6669,
+    "seen": "FOERST -> FOERST",
+    "model_cap": "0.15 -> 30.24 pt",
+    "reason": null
+   },
+   {
+    "id": "text-032",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "BREWERY",
+    "intended": "BREWERY",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 2.5007,
+    "seen": "BREWERY -> BREWERY",
+    "model_cap": "0.05 -> 10.08 pt",
+    "reason": null
+   },
+   {
+    "id": "text-033",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "SUMMER",
+    "intended": "SUMMER",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 2.4992,
+    "seen": "SUMMER -> SUMMER",
+    "model_cap": "0.07 -> 8.06 pt",
+    "reason": null
+   },
+   {
+    "id": "text-034",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "BOOKS",
+    "intended": "BOOKS",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 2.5002,
+    "seen": "BOOKS -> BOOKS",
+    "model_cap": "0.05 -> 10.08 pt",
+    "reason": null
+   },
+   {
+    "id": "text-035",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "COOKIES",
+    "intended": "COOKIES",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 2.5007,
+    "seen": "COOKIES -> COOKIES",
+    "model_cap": "0.05 -> 6.65 pt",
+    "reason": null
+   },
+   {
+    "id": "text-036",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "ROCKET",
+    "intended": "ROCKET",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 2.9988,
+    "seen": "ROCKET -> ROCKET",
+    "model_cap": "0.06 -> 12.1 pt",
+    "reason": null
+   },
+   {
+    "id": "text-037",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "DONUTS",
+    "intended": "DONUTS",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 3.0009,
+    "seen": "DONUTS -> DONUTS",
+    "model_cap": "0.08 -> 8.89 pt",
+    "reason": null
+   },
+   {
+    "id": "text-038",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "ADVENTURE",
+    "intended": "ADVENTURE",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 3.0,
+    "seen": "ADVENTURE -> ADVENTURE",
+    "model_cap": "0.06 -> 12.08 pt",
+    "reason": null
+   },
+   {
+    "id": "text-039",
+    "variant": "sized",
+    "check": "text_small",
+    "planted": "TACOS",
+    "intended": "TACOS",
+    "expected": "warn/customer",
+    "predicted": "pass",
+    "gt_cap_pt": 3.0008,
+    "seen": "TACOS -> TACOS",
+    "model_cap": "0.05 -> 10.07 pt",
+    "reason": null
+   }
+  ],
+  "outcome_vision": {
+   "n": 48,
+   "agree": 38,
+   "accuracy": 0.7917,
+   "misses": [
+    {
+     "id": "text-029",
+     "expected": "needs_person",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-030",
+     "expected": "needs_person",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-032",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-033",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-034",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-035",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-036",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-037",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-038",
+     "expected": "fixable",
+     "predicted": "ready"
+    },
+    {
+     "id": "text-039",
+     "expected": "fixable",
+     "predicted": "ready"
+    }
+   ]
+  }
+ }
 }

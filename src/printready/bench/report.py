@@ -3,11 +3,12 @@
 Writes to results/bench/<split>/:
 - report.md     headline table, confusion matrices, fixer agreement, fix success, outcomes, and every
                 disagreement with the ground-truth value, its threshold and what the detector measured
-- summary.json  the same numbers for the UI's Results screen (heat-table shaped; metrics.json is an
-                identical copy under the name the Results screen reads)
+- metrics.json  the same numbers for the UI's Results screen (its documented schema, plus a flat
+                `heat` list: check x expected x predicted counts)
 - confusion.png one confusion matrix per deterministic check plus the outcome matrix
 
-Vision checks are live-only and not scored here; agent mode is not run on the benchmark.
+Vision (text_garbled, text_small) is scored when `bench run --vision` has written vision.jsonl
+(a live run on the text family). Agent mode is not run on the benchmark.
 """
 
 from __future__ import annotations
@@ -18,11 +19,13 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from printready.bench.generate import read_manifest
 from printready.bench.labels import Thresholds
 from printready.bench.run import default_manifest, limit_rows, results_dir
 from printready.profile import load_profile
-from printready.types import DETERMINISTIC_CHECK_IDS, OUTCOMES
+from printready.types import DETERMINISTIC_CHECK_IDS, OUTCOMES, Artwork, Finding, Report, Step, outcome
 
 STATUSES = ("pass", "warn", "fail", "skip")
 FLAGGED = ("warn", "fail")
@@ -247,7 +250,85 @@ def final_agreement(rows, preds) -> dict[str, dict[str, Any]]:
     return out
 
 
-def summarize(rows, preds, th: Thresholds, run_info: dict[str, Any] | None, split: str) -> dict[str, Any]:
+VISION_POSITIVE = {"text_garbled": "fail", "text_small": "warn"}
+
+
+def _vision_items(entry: dict | None) -> list[dict[str, Any]]:
+    return ((entry or {}).get("measured") or {}).get("items") or []
+
+
+def vision_metrics(rows, preds, vision: dict[str, dict], run_info: dict | None) -> dict[str, Any]:
+    """Precision and recall of the live vision checks on the text family. A `skip` (unreadable
+    answer, API error) counts as not flagged; a sample that was not run is left out and counted."""
+    text_rows = [r for r in rows if r["family"] == "text"]
+    out: dict[str, Any] = {"model": (run_info or {}).get("model"), "cost_usd": (run_info or {}).get("cost_usd"),
+                           "n": len(text_rows)}
+    for check, positive in VISION_POSITIVE.items():
+        c: Counter = Counter()
+        for row in text_rows:
+            findings = (vision.get(row["id"]) or {}).get("findings")
+            if not findings:
+                c["not_run"] += 1
+                continue
+            got = findings[check]["status"]
+            c["skip"] += got == "skip"
+            exp_pos, got_pos = row["expected"][check]["status"] == positive, got in FLAGGED
+            c[("tp" if got_pos else "fn") if exp_pos else ("fp" if got_pos else "tn")] += 1
+        out[check] = {"precision": _rate(c["tp"], c["tp"] + c["fp"]), "recall": _rate(c["tp"], c["tp"] + c["fn"]),
+                      "n": c["tp"] + c["fp"] + c["fn"] + c["tn"],
+                      **{k: c[k] for k in ("tp", "fp", "fn", "tn", "skip", "not_run")}}
+    misses = []
+    threshold_pt = None
+    for row in text_rows:
+        findings = (vision.get(row["id"]) or {}).get("findings")
+        if not findings:
+            continue
+        items = _vision_items(findings.get("text_small")) or _vision_items(findings.get("text_garbled"))
+        threshold_pt = threshold_pt or (findings["text_small"].get("measured") or {}).get("threshold_cap_pt")
+        for check in VISION_POSITIVE:
+            exp, got = row["expected"][check], findings[check]
+            if got["status"] == exp["status"]:
+                continue
+            measured = got.get("measured") or {}
+            misses.append({
+                "id": row["id"], "variant": row["param"]["variant"], "check": check,
+                "planted": row["param"]["word"], "intended": row["param"]["intended"],
+                "expected": _label(exp["status"], exp["fixer"]), "predicted": _label(got["status"], got["fixer"]),
+                "gt_cap_pt": row["gt"].get("cap_height_pt"),
+                "seen": "; ".join(f"{i.get('seen')} -> {i.get('intended')}" + (" (garbled)" if i.get("garbled") else "")
+                                  for i in items) or "no text",
+                "model_cap": "; ".join(f"{i.get('cap_height_frac')} -> {i.get('cap_height_pt')} pt" for i in items)
+                or "n/a",
+                "reason": measured.get("error") or measured.get("reason"),
+            })
+    out["threshold_cap_pt"] = threshold_pt
+    out["disagreements"] = misses
+    out["outcome_vision"] = _outcome_with_vision(text_rows, preds, vision)
+    return out
+
+
+def _outcome_with_vision(text_rows, preds, vision) -> dict[str, Any]:
+    """outcome() on the pipeline's final report plus the live vision findings, vs outcome_vision."""
+    n = agree = 0
+    misses = []
+    for row in text_rows:
+        pred, findings = preds.get(row["id"]), (vision.get(row["id"]) or {}).get("findings")
+        if not pred or not pred.get("after") or not findings:
+            continue
+        final = [Finding(check=c, status=v["status"], message="", measured={}, fixer=v["fixer"])
+                 for c, v in {**pred["after"], **findings}.items()]
+        history = [Step(fix=st["fix"], ok=st["ok"], damaged=st["damaged"], note="") for st in pred.get("steps", [])]
+        art = Artwork(rgba=np.zeros((1, 1, 4), dtype=np.uint8), subject=None, ppi=1.0, history=history)
+        got = outcome(art, Report(final), handoff=bool(pred.get("handoff_reason")))
+        n += 1
+        agree += got == row["outcome_vision"]
+        if got != row["outcome_vision"]:
+            misses.append({"id": row["id"], "expected": row["outcome_vision"], "predicted": got})
+    return {"n": n, "agree": agree, "accuracy": _rate(agree, n), "misses": misses}
+
+
+def summarize(rows, preds, th: Thresholds, run_info: dict[str, Any] | None, split: str,
+              vision: dict[str, dict] | None = None, vision_info: dict | None = None) -> dict[str, Any]:
     checks = {c: check_metrics(rows, preds, c) for c in DETERMINISTIC_CHECK_IDS}
     heat = [{"check": c, "expected": r, "predicted": col, "count": m["matrix"]["counts"][i][j]}
             for c, m in checks.items()
@@ -258,7 +339,7 @@ def summarize(rows, preds, th: Thresholds, run_info: dict[str, Any] | None, spli
     dis = disagreements(rows, preds, th)
     for c in checks:
         checks[c]["disagreements"] = sum(d["check"] == c for d in dis)
-    return {
+    summary = {
         "split": split,
         "n": len(rows),
         "predicted": sum(1 for r in rows if r["id"] in preds),
@@ -275,9 +356,12 @@ def summarize(rows, preds, th: Thresholds, run_info: dict[str, Any] | None, spli
                                       if (preds.get(r["id"]) or {}).get("pipeline_before_agrees") is False],
         "disagreements": dis,
         "run": run_info,
-        "note": "Deterministic checks only. Vision (text_garbled, text_small) is scored live; "
-                "agent mode is not run on the benchmark.",
+        "note": "Deterministic checks from `bench run`; vision only when `bench run --vision` was run live "
+                "(text family). Agent mode is not run on the benchmark.",
     }
+    if vision:
+        summary["vision"] = vision_metrics(rows, preds, vision, vision_info)
+    return summary
 
 
 # --- writing --------------------------------------------------------------------------------------
@@ -353,6 +437,30 @@ def markdown(s: dict[str, Any]) -> str:
     out += ["## Final statuses vs `expected_final`", "", "| check | agree |", "|---|---|"]
     out += [f"| {c} | {v['agree']}/{v['n']} |" for c, v in s["final_agreement"].items()]
     out.append("")
+
+    v = s.get("vision")
+    if v:
+        cost = f", cost ${v['cost_usd']:.4f}" if v.get("cost_usd") is not None else ""
+        out += [f"## Vision (live, text family, {v['model']}{cost})", "",
+                "| check | precision | recall | tp | fp | fn | tn | skip | not run |",
+                "|---|---|---|---|---|---|---|---|---|"]
+        for check in VISION_POSITIVE:
+            m = v[check]
+            out.append(f"| {check} | {_pct(m['precision'])} | {_pct(m['recall'])} | {m['tp']} | {m['fp']} "
+                       f"| {m['fn']} | {m['tn']} | {m['skip']} | {m['not_run']} |")
+        ov = v["outcome_vision"]
+        out += ["", f"Outcome with the vision findings: {ov['agree']}/{ov['n']} agree with `outcome_vision`.", ""]
+        if v["disagreements"]:
+            out += [f"Text is small below a cap height of {v['threshold_cap_pt']} pt.", "",
+                    "| sample | variant | check | planted (intended) | expected | predicted | model read "
+                    "| model cap_height_frac -> pt | true cap pt |",
+                    "|---|---|---|---|---|---|---|---|---|"]
+            for d in v["disagreements"]:
+                reason = f" [{d['reason']}]" if d["reason"] else ""
+                out.append(f"| {d['id']} | {d['variant']} | {d['check']} | {d['planted']} ({d['intended']}) "
+                           f"| {d['expected']} | {d['predicted']} | {d['seen']}{reason} | {d['model_cap']} "
+                           f"| {d['gt_cap_pt']:.2f} |")
+            out.append("")
 
     out += ["## Disagreements (BEFORE), by check", ""]
     if not s["disagreements"]:
@@ -454,10 +562,11 @@ def report_split(
     if run_info and run_info.get("manifest_sha256") != hashlib.sha256(manifest.read_bytes()).hexdigest():
         log("warning: predictions were made against a different manifest")
     th = Thresholds.from_profile(load_profile(profile_path))
-    s = summarize(rows, preds, th, run_info, split)
-    text = json.dumps(s, indent=1, ensure_ascii=False) + "\n"
-    (out / "summary.json").write_text(text, encoding="utf-8")
-    (out / "metrics.json").write_text(text, encoding="utf-8")
+    vision = load_predictions(out / "vision.jsonl") if (out / "vision.jsonl").exists() else None
+    vision_path = out / "vision-run.json"
+    vision_info = json.loads(vision_path.read_text(encoding="utf-8")) if vision_path.exists() else None
+    s = summarize(rows, preds, th, run_info, split, vision, vision_info)
+    (out / "metrics.json").write_text(json.dumps(s, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     (out / "report.md").write_text(markdown(s), encoding="utf-8")
     figure(s, out / "confusion.png")
     log(f"bench report --split {split}: {out / 'report.md'}")

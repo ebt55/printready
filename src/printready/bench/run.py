@@ -223,3 +223,144 @@ def run_split(
         f"{info['errors']} with errors")
     log(f"  predictions {out / 'predictions.jsonl'}")
     return info
+
+
+# --- vision (live, text family only) ---------------------------------------------------------------
+
+VISION_FAMILY = "text"
+DEFAULT_VISION_MODEL = "xai:grok-4.3"
+DEFAULT_VISION_MAX_USD = 0.15
+RETRY_MARGIN = 1.2  # a parse failure costs one more call
+FALLBACK_TOKENS = (2600, 400)  # in (2000 for the image + the prompt), out: when the ledger has no history
+
+
+def _ledger_rows() -> list[dict[str, Any]]:
+    from printready import spend
+
+    path = spend.ledger_path()
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def vision_estimate(model: str, n_calls: int) -> tuple[float, float, str]:
+    """(total USD, USD per call, basis). Per call: the largest earlier vision call of this model in
+    the spend ledger, priced with no cache credit; else a generous fixed token count. Times n and
+    a 20 % margin for parse retries."""
+    from printready import spend
+
+    price = spend.price_for(model)
+    name = model.split(":", 1)[-1]
+    past = [r for r in _ledger_rows() if r.get("purpose") == "vision" and r.get("model") == name]
+    if past:
+        t_in, t_out = max(r["tokens_in"] for r in past), max(r["tokens_out"] for r in past)
+        basis = f"largest of {len(past)} earlier vision call(s) in the ledger: {t_in} in, {t_out} out"
+    else:
+        t_in, t_out = FALLBACK_TOKENS
+        basis = f"no vision calls in the ledger yet; assumed {t_in} tokens in, {t_out} out"
+    per_call = spend.cost(price, tokens_in=t_in, tokens_out=t_out)
+    return per_call * n_calls * RETRY_MARGIN, per_call, basis
+
+
+def run_vision(
+    split: str,
+    root: Path | str = ".",
+    *,
+    model: str = DEFAULT_VISION_MODEL,
+    yes: bool = False,
+    resume: bool = False,
+    max_usd: float = DEFAULT_VISION_MAX_USD,
+    limit: int | None = None,
+    manifest: Path | None = None,
+    profile_path: Path | None = None,
+    env_file: Path | None = None,
+    log: Callable[[str], None] = print,
+) -> dict[str, Any]:
+    """vision.check_text on every text-family sample; writes vision.jsonl and vision-run.json.
+
+    Prints the estimate first. Without `yes` nothing is spent. Refuses when the estimate is above
+    `max_usd`, and stops early (remaining samples recorded as not run) if actual spend would pass it.
+    Spend is this client's own `cost_usd` (the ledger is shared with other runs). With `resume`,
+    samples that already have findings from the same model in vision.jsonl are kept, not re-called.
+    """
+    from printready import spend
+    from printready.imageio import load_artwork
+    from printready.llm import make_client
+    from printready.vision import check_text
+
+    root = Path(root)
+    manifest = Path(manifest) if manifest else default_manifest(root, split)
+    if not manifest.exists():
+        raise BenchDataError(f"{manifest} not found; run `printready bench generate --split {split}` first")
+    rows = limit_rows([r for r in read_manifest(manifest) if r["family"] == VISION_FAMILY], limit)
+    check_images(root, rows)
+    out = results_dir(root, split, limit)
+    kept: dict[str, dict[str, Any]] = {}
+    prior_cost = 0.0
+    if resume and (out / "vision.jsonl").exists():
+        for line in (out / "vision.jsonl").read_text(encoding="utf-8").splitlines():
+            rec = json.loads(line)
+            if rec.get("findings") and rec.get("model") == model:
+                kept[rec["id"]] = rec
+                prior_cost += rec.get("cost_usd") or 0.0
+    todo = [r for r in rows if r["id"] not in kept]
+    estimate_usd, per_call, basis = vision_estimate(model, len(todo))
+    log(f"bench run --vision: {len(todo)} calls to {model} ({len(kept)} kept from an earlier run), "
+        f"estimated ${estimate_usd:.4f} (${per_call:.5f} per call; {basis}; "
+        f"+{RETRY_MARGIN - 1:.0%} for retries); budget ${max_usd:.2f} for this run")
+    info: dict[str, Any] = {"split": split, "model": model, "samples": len(rows), "kept": len(kept),
+                            "estimate_usd": estimate_usd, "estimate_basis": basis, "max_usd": max_usd, "ran": False}
+    if estimate_usd > max_usd:
+        log("  estimate is above the budget: nothing was called")
+        return info
+    if not yes:
+        log("  dry run: re-run with --yes to make the calls")
+        return info
+
+    profile = load_profile(profile_path)
+    client = make_client(model, env_file)
+    out.mkdir(parents=True, exist_ok=True)
+    records = []
+    start = time.perf_counter()
+    stopped = None
+    for row in rows:
+        if row["id"] in kept:
+            records.append(kept[row["id"]])
+            continue
+        rec: dict[str, Any] = {"id": row["id"], "family": row["family"], "model": model, "errors": []}
+        spent = client.cost_usd
+        if stopped or spent + per_call > max_usd:
+            stopped = stopped or f"budget: ${spent:.4f} spent of ${max_usd:.2f}"
+            rec.update(findings=None, cost_usd=0.0, elapsed_s=0.0)
+            rec["errors"].append(f"not run ({stopped})")
+            records.append(rounded_json(rec))
+            continue
+        t0, before = time.perf_counter(), client.cost_usd
+        try:
+            spec = Spec(row["spec"]["product"], float(row["spec"]["size_in"]))
+            art = load_artwork(Path(root) / row["image"], spec, profile)
+            findings = check_text(art, spec, profile, client)
+            rec["findings"] = _findings(Report(findings), measured=True)
+        except spend.BudgetExceeded as exc:
+            rec["findings"] = None
+            rec["errors"].append(_error("check_text", exc))
+            stopped = "the spend cap refused the call"
+        except Exception as exc:  # recorded, never retried
+            rec["findings"] = None
+            rec["errors"].append(_error("check_text", exc))
+        rec["cost_usd"] = client.cost_usd - before
+        rec["elapsed_s"] = time.perf_counter() - t0
+        records.append(rounded_json(rec))
+    with (out / "vision.jsonl").open("w", encoding="utf-8", newline="\n") as fh:
+        for rec in records:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    cost_usd = client.cost_usd
+    info.update(ran=True, completed=sum(1 for r in records if r["findings"] is not None),
+                cost_usd=round(prior_cost + cost_usd, 6), cost_usd_this_run=round(cost_usd, 6),
+                seconds=round(time.perf_counter() - start, 1), stopped=stopped,
+                manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest())
+    (out / "vision-run.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+    log(f"  {info['completed']}/{len(rows)} samples done in {info['seconds']} s, this run cost ${cost_usd:.4f}"
+        + (f"; stopped early: {stopped}" if stopped else ""))
+    log(f"  vision predictions {out / 'vision.jsonl'}")
+    return info

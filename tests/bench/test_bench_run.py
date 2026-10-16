@@ -84,8 +84,8 @@ def test_run_and_report_end_to_end(generated):
         assert p["iou"] is None or 0.0 <= p["iou"] <= 1.0
     opaque = next(p for p in preds if p["family"] == "background")
     assert opaque["iou"] is not None  # removal ran (white background), so the subject was scored
-    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
-    assert summary == json.loads((out / "metrics.json").read_text(encoding="utf-8"))
+    assert not (out / "summary.json").exists()
+    summary = json.loads((out / "metrics.json").read_text(encoding="utf-8"))
     assert summary["n"] == len(rows) and set(summary["checks"]) == set(DETERMINISTIC_CHECK_IDS)
     for m in summary["checks"].values():
         assert {"n", "matrix", "recall", "clean_false_flag", "fixer_agreement"} <= set(m)
@@ -102,3 +102,30 @@ def test_run_and_report_refuse_without_data(tmp_path, capsys):
     assert main(["bench", "report", "--split", "dev", "--root", str(tmp_path)]) == 1
     err = capsys.readouterr().err
     assert "bench generate" in err and "bench run" in err
+
+
+def test_vision_run_offline_with_the_fake_provider(generated, tmp_path, monkeypatch):
+    """--vision through the public vision API with scripted answers: estimate, dry run, then a run
+    that scores one garbled reading against the planted label."""
+    root, manifest, rows = generated
+    text_row = next(r for r in rows if r["family"] == "text")
+    answer = {"text": [{"seen": "XYZ", "intended": text_row["param"]["intended"], "garbled": True,
+                        "cap_height_frac": 0.09}], "notes": ""}
+    script = tmp_path / "fake.json"
+    script.write_text(json.dumps([{"text": json.dumps(answer), "usage": {"in": 700, "out": 200}}]), encoding="utf-8")
+    monkeypatch.setenv("PRINTREADY_SPEND_LEDGER", str(tmp_path / "ledger.jsonl"))
+    common = ["bench", "run", "--split", "dev", "--limit", "1", "--root", str(root), "--manifest", str(manifest),
+              "--vision", "--model", f"fake:{script}"]
+    out = root / "results" / "bench" / "dev" / "limit1"
+    assert main(common) == 0 and not (out / "vision.jsonl").exists()  # dry run: estimate only
+    assert main([*common, "--yes"]) == 0
+    vision = [json.loads(line) for line in (out / "vision.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [v["id"] for v in vision] == [text_row["id"]]
+    assert vision[0]["findings"]["text_garbled"]["status"] == "fail"
+    assert main(["bench", "report", "--split", "dev", "--limit", "1", "--root", str(root),
+                 "--manifest", str(manifest)]) == 0
+    metrics = json.loads((out / "metrics.json").read_text(encoding="utf-8"))
+    garbled = metrics["vision"]["text_garbled"]
+    assert garbled["n"] == 1 and garbled["fp"] == 1  # the planted word is spelled right, the fake says garbled
+    assert metrics["vision"]["disagreements"][0]["check"] == "text_garbled"
+    assert "## Vision" in (out / "report.md").read_text(encoding="utf-8")

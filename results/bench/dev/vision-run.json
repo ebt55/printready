@@ -1,0 +1,16 @@
+{
+  "split": "dev",
+  "model": "xai:grok-4.3",
+  "samples": 48,
+  "kept": 12,
+  "estimate_usd": 0.162,
+  "estimate_basis": "largest of 13 earlier vision call(s) in the ledger: 1138 in, 931 out",
+  "max_usd": 0.2,
+  "ran": true,
+  "completed": 48,
+  "cost_usd": 0.137026,
+  "cost_usd_this_run": 0.10201,
+  "seconds": 283.5,
+  "stopped": null,
+  "manifest_sha256": "3ceb160d4500066a44a6c02b33d7de9cc07943bce5e89e18e2fc7ab70be7850a"
+}
