@@ -48,6 +48,7 @@ def tree(tmp_path):
     unprefixed = [  # the same model's original test runs: two scenes, one die-cut
         {"image": f"{i:064x}", "prompt_id": f"p{i + 1:02d}", "image_model": pp.MODEL, "outcome": "fixable",
          "shape": shape, "after": {"background": {"status": "pass", "fixer": "none"},
+                                   "resolution": {"status": "pass", "fixer": "none"},
                                    "text_garbled": {"status": "skip", "fixer": "none"}}}
         for i, shape in enumerate(["rounded_rect", "rounded_rect", "die_cut"])]
     realset.append_jsonl(tmp_path / "results" / "realset" / "test" / "rules" / "runs.jsonl", unprefixed)
