@@ -1,7 +1,5 @@
 # printready
 
-By Ebin Babu Thomas.
-
 ## What it does
 
 - You give it an image and a sticker size. It checks the image against Sticker Mule's published artwork rules at that size. The rules cover sharpness, a plain background, art cut off at the edge, and one piece or several. It also asks a vision model to read the lettering, and code flags misspelled words.
